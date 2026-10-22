@@ -4,7 +4,7 @@ import { GlassCard } from "@/components/ui/glass";
 import { db } from "@/db";
 import { cmsPages, newsPosts, testimonials } from "@/db/schema";
 import { desc } from "drizzle-orm";
-import { AdminNewsCreate, AdminReviewDecision } from "@/components/admin-cms-controls";
+import { AdminCmsPageCreate, AdminCmsPageEditor, AdminNewsCreate, AdminReviewDecision } from "@/components/admin-cms-controls";
 import { AnnouncementCreate } from "@/components/announcement-create";
 import { classes } from "@/db/schema";
 import { isNull } from "drizzle-orm";
@@ -33,12 +33,15 @@ export default async function AdminCms() {
           <AnnouncementCreate classes={schoolClasses} allowAll />
         </GlassCard>
         <GlassCard className="p-5" strong>
+          <h2 className="font-semibold mb-3">Create a website page</h2>
+          <AdminCmsPageCreate />
+        </GlassCard>
+        <GlassCard className="p-5 lg:col-span-2" strong>
           <h2 className="font-semibold mb-3">Website pages ({pages.length})</h2>
-          {pages.length ? <ul className="space-y-2 text-sm">{pages.map((page) => (
-            <li className="glass flex items-center justify-between gap-3 px-3 py-2" key={page.id}>
-              <span>{page.title}</span><span className="text-xs opacity-65">{page.status}</span>
-            </li>
-          ))}</ul> : <p className="text-sm opacity-65">No CMS pages have been created yet.</p>}
+          <p className="mb-4 text-xs opacity-65">Page content is plain text, safely escaped on display. Each save creates an audited version; archived and unpublished pages are not public.</p>
+          {pages.length ? <div className="space-y-4">{pages.map((page) => (
+            <AdminCmsPageEditor key={page.id} page={page} />
+          ))}</div> : <p className="text-sm opacity-65">No CMS pages have been created yet.</p>}
         </GlassCard>
         <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">News and stories ({posts.length})</h2>
