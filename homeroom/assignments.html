@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>document.documentElement.classList.add('js')</script>
+  <script>(function(){var t;try{t=localStorage.getItem('homeroom-theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-bs-theme',t)})()</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Assignments — Homeroom Student Portal</title>
+  <meta name="description" content="Assignments in the Homeroom student portal: to do, submitted and graded work with a detail drawer, rubric and file submission.">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%234f46e5'/%3E%3Cpath d='M10.5 21 20 12.5l9.5 8.5M14 19v9h12v-9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='30' cy='10.5' r='4' fill='%23ff7a5c'/%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html" aria-label="Homeroom, Harbourview Academy — home">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect class="bm-bg" width="40" height="40" rx="12"/><path class="bm-line" d="M10.5 21 20 12.5l9.5 8.5"/><path class="bm-line" d="M14 19v9h12v-9"/><path class="bm-line" d="M18 28v-4.5h4V28"/><circle class="bm-sun" cx="30" cy="10.5" r="4"/></svg>
+        <span class="brand-text"><span class="brand-name">Homeroom</span><span class="brand-school">Harbourview Academy</span></span>
+      </a>
+
+      <span class="term-chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Autumn term &middot; Week 4</span>
+
+      <nav class="portal-switch" aria-label="Portal view">
+        <a href="index.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Student</a>
+        <a href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Parent</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <button class="icon-btn theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme">
+          <svg class="ic ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="ic ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+
+        <div class="dropdown">
+          <button class="icon-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Notifications, 3 new">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="icon-btn-dot" aria-hidden="true"></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end notif-menu">
+            <div class="notif-head"><span>Notifications</span><span class="chip chip-primary">3 new</span></div>
+            <ul class="list-unstyled m-0">
+          <li><a class="notif" href="grades.html"><span class="notif-ic tone-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span><strong>Ms. Harlow returned your essay</strong><span class="notif-meta">"An Inspector Calls" &middot; A&minus; &middot; 1h ago</span></span></a></li>
+          <li><a class="notif" href="assignments.html"><span class="notif-ic tone-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span><strong>Spanish quiz prep is due today</strong><span class="notif-meta">Sra. Ruiz &middot; before 15:00</span></span></a></li>
+          <li><a class="notif" href="messages.html"><span class="notif-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span><strong>New message from Coach Whitfield</strong><span class="notif-meta">Netball squad list &middot; 3h ago</span></span></a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button class="account-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Account menu for Maya Okafor">
+            <span class="avatar avatar-sm av-indigo" aria-hidden="true">MO</span>
+            <span class="account-name">Maya</span>
+            <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end account-menu">
+            <li class="account-card"><span class="avatar av-indigo" aria-hidden="true">MO</span><span><strong>Maya Okafor</strong><span>Year 10 &middot; Form 10H</span></span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="grades.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg> My grades</a></li>
+            <li><a class="dropdown-item" href="timetable.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> My timetable</a></li>
+            <li><a class="dropdown-item" href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Switch to parent view</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="rail" aria-label="Primary">
+    <ul>
+        <li><a class="rail-link" href="index.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="rail-label">Home</span></a></li>
+        <li><a class="rail-link active" href="assignments.html" aria-current="page"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="rail-label">Assignments</span></a></li>
+        <li><a class="rail-link" href="grades.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="rail-label">Grades</span></a></li>
+        <li><a class="rail-link" href="timetable.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="rail-label">Timetable</span></a></li>
+        <li><a class="rail-link" href="messages.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="rail-label">Messages</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="rail-link" href="parent.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rail-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <main id="main" class="app-main">
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg> Year 10 &middot; Autumn term</p>
+          <h1>Assignments</h1>
+          <p class="page-sub">Everything your teachers have set, in one place. Open a task to read the brief, check the rubric and hand in your work.</p>
+        </div>
+        <div class="page-actions">
+          <a class="btn btn-ghost" href="timetable.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> This week's timetable</a>
+        </div>
+      </div>
+
+      <div class="summary-row">
+        <div class="stat-tile">
+          <span class="stat-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Due this week</span>
+          <span class="stat-value">4</span>
+          <span class="stat-sub">1 due today, 3 on Friday</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 3v4M17 5h4M5 17v4M3 19h4"/></svg> On-time streak</span>
+          <span class="stat-value">12</span>
+          <span class="stat-sub">Steady Hand badge at 14</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg> Awaiting feedback</span>
+          <span class="stat-value">3</span>
+          <span class="stat-sub">Usually back within a week</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Average score</span>
+          <span class="stat-value">89%</span>
+          <span class="stat-sub">Across your last 4 graded</span>
+        </div>
+      </div>
+
+      <section class="card-hr" aria-labelledby="list-title">
+        <h2 id="list-title" class="visually-hidden">Assignment list</h2>
+        <div class="toolbar">
+          <div class="seg-tabs js-only" role="tablist" aria-label="Filter by status">
+            <button class="seg-tab" type="button" role="tab" id="tab-todo" data-status-tab="todo" aria-selected="true" aria-controls="assign-panel">To do <span class="count">7</span></button>
+            <button class="seg-tab" type="button" role="tab" id="tab-submitted" data-status-tab="submitted" aria-selected="false" aria-controls="assign-panel" tabindex="-1">Submitted <span class="count">3</span></button>
+            <button class="seg-tab" type="button" role="tab" id="tab-graded" data-status-tab="graded" aria-selected="false" aria-controls="assign-panel" tabindex="-1">Graded <span class="count">4</span></button>
+          </div>
+          <div class="toolbar-controls">
+            <label class="visually-hidden" for="filter-subject">Filter by subject</label>
+            <select class="form-select js-only" id="filter-subject">
+              <option value="all">All subjects</option>
+              <option value="art">Art &amp; Design</option>
+              <option value="comp">Computer Science</option>
+              <option value="eng">English Literature</option>
+              <option value="geo">Geography</option>
+              <option value="hist">History</option>
+              <option value="maths">Mathematics</option>
+              <option value="music">Music</option>
+              <option value="pe">PE</option>
+              <option value="sci">Science</option>
+              <option value="span">Spanish</option>
+            </select>
+            <button class="btn btn-ghost js-only" type="button" data-sort aria-label="Sort by due date, currently soonest first"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h11M3 12h8M3 18h5"/><path d="m16 15 3 3 3-3M19 18V6"/></svg> <span data-sort-label>Soonest first</span></button>
+          </div>
+        </div>
+
+        <div id="assign-panel" role="tabpanel" aria-labelledby="tab-todo">
+          <ul class="assign-list" data-assign-list>
+              <li class="assign-item s-span" data-id="a1" data-status="todo" data-due="09-24" data-subject="span" data-subject-name="Spanish" data-teacher="Sra. Ruiz" data-points="10" data-due-label="Due today, 15:00">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">Spanish</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Mi rutina diaria: vocabulary quiz prep</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Sra. Ruiz</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 10 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 2 files</span></p>
+                </div>
+                <div class="assign-side"><span class="chip chip-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Today, 15:00</span><span class="due-state">Not started</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-maths" data-id="a2" data-status="todo" data-due="09-25" data-subject="maths" data-subject-name="Mathematics" data-teacher="Mr. Adeyemi" data-points="20" data-due-label="Due Fri 25 Sep">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">Mathematics</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Quadratics practice set 3</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Mr. Adeyemi</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 20 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 2 files</span></p>
+                </div>
+                <div class="assign-side"><span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Fri 25 Sep</span><span class="bar" role="progressbar" aria-label="Progress" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"><span style="width:60%"></span></span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-comp" data-id="a3" data-status="todo" data-due="09-25" data-subject="comp" data-subject-name="Computer Science" data-teacher="Mr. Patel" data-points="25" data-due-label="Due Fri 25 Sep">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">Computer Science</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Python loops challenge</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Mr. Patel</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 25 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 2 files</span></p>
+                </div>
+                <div class="assign-side"><span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Fri 25 Sep</span><span class="bar" role="progressbar" aria-label="Progress" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"><span style="width:25%"></span></span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-geo" data-id="a4" data-status="todo" data-due="09-25" data-subject="geo" data-subject-name="Geography" data-teacher="Ms. Ferreira" data-points="15" data-due-label="Due Fri 25 Sep">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">Geography</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Coastal erosion annotated diagram</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Ms. Ferreira</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 15 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 1 file</span></p>
+                </div>
+                <div class="assign-side"><span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Fri 25 Sep</span><span class="due-state">Not started</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-eng" data-id="a5" data-status="todo" data-due="09-28" data-subject="eng" data-subject-name="English Literature" data-teacher="Ms. Harlow" data-points="20" data-due-label="Due Mon 28 Sep">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">English Literature</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Macbeth Act 1 reading log</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Ms. Harlow</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 20 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 1 file</span></p>
+                </div>
+                <div class="assign-side"><span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Mon 28 Sep</span><span class="due-state">Not started</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-hist" data-id="a6" data-status="todo" data-due="09-29" data-subject="hist" data-subject-name="History" data-teacher="Mr. Brennan" data-points="30" data-due-label="Due Tue 29 Sep">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">History</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Source analysis: the Treaty of Versailles</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Mr. Brennan</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 30 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 1 file</span></p>
+                </div>
+                <div class="assign-side"><span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Tue 29 Sep</span><span class="due-state">Not started</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-sci" data-id="a7" data-status="todo" data-due="10-02" data-subject="sci" data-subject-name="Biology" data-teacher="Dr. Castellanos" data-points="40" data-due-label="Due Fri 2 Oct">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">Biology</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Science fair proposal</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Dr. Castellanos</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 40 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 2 files</span></p>
+                </div>
+                <div class="assign-side"><span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Fri 2 Oct</span><span class="bar" role="progressbar" aria-label="Progress" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"><span style="width:10%"></span></span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-sci" data-id="s1" data-status="submitted" data-due="09-22" data-subject="sci" data-subject-name="Chemistry" data-teacher="Dr. Castellanos" data-points="25" data-due-label="Was due Tue 22 Sep">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">Chemistry</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Rates of reaction lab report</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Dr. Castellanos</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 25 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 1 file</span></p>
+                </div>
+                <div class="assign-side"><span class="chip chip-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Turned in</span><span class="due-state">Mon 21 Sep</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-music" data-id="s2" data-status="submitted" data-due="09-23" data-subject="music" data-subject-name="Music" data-teacher="Mr. Osei" data-points="15" data-due-label="Was due Wed 23 Sep">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">Music</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Film score listening journal</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Mr. Osei</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 15 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 1 file</span></p>
+                </div>
+                <div class="assign-side"><span class="chip chip-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Turned in</span><span class="due-state">Tue 22 Sep</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-pe" data-id="s3" data-status="submitted" data-due="09-24" data-subject="pe" data-subject-name="PE" data-teacher="Coach Whitfield" data-points="10" data-due-label="Was due Thu 24 Sep">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">PE</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Fitness testing reflection</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Coach Whitfield</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 10 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 1 file</span></p>
+                </div>
+                <div class="assign-side"><span class="chip chip-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Turned in</span><span class="due-state">Wed 23 Sep</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-art" data-id="g1" data-status="graded" data-due="09-21" data-subject="art" data-subject-name="Art &amp; Design" data-teacher="Ms. Lindqvist" data-points="100" data-due-label="Was due Mon 21 Sep" data-grade="A" data-pct="94%">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">Art &amp; Design</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Coastal sketchbook review</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Ms. Lindqvist</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 100 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 1 file</span></p>
+                </div>
+                <div class="assign-side"><span class="grade-pill">A <small>94%</small></span><span class="due-state">Returned 22 Sep</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-eng" data-id="g2" data-status="graded" data-due="09-18" data-subject="eng" data-subject-name="English Literature" data-teacher="Ms. Harlow" data-points="100" data-due-label="Was due Fri 18 Sep" data-grade="A−" data-pct="88%">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">English Literature</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">&ldquo;An Inspector Calls&rdquo; essay</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Ms. Harlow</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 100 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 1 file</span></p>
+                </div>
+                <div class="assign-side"><span class="grade-pill">A&minus; <small>88%</small></span><span class="due-state">Returned 23 Sep</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-sci" data-id="g3" data-status="graded" data-due="09-15" data-subject="sci" data-subject-name="Biology" data-teacher="Dr. Castellanos" data-points="25" data-due-label="Was due Tue 15 Sep" data-grade="A" data-pct="92%">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">Biology</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Enzymes practical write-up</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Dr. Castellanos</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 25 points</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 1 file</span></p>
+                </div>
+                <div class="assign-side"><span class="grade-pill">A <small>92%</small></span><span class="due-state">Returned 18 Sep</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+              <li class="assign-item s-maths" data-id="g4" data-status="graded" data-due="09-14" data-subject="maths" data-subject-name="Mathematics" data-teacher="Mr. Adeyemi" data-points="50" data-due-label="Sat on Mon 14 Sep" data-grade="B+" data-pct="82%">
+                <span class="subj-bar" aria-hidden="true"></span>
+                <div class="assign-main">
+                  <p class="subj-label">Mathematics</p>
+                  <h3 class="assign-title"><button class="assign-open" type="button" data-bs-toggle="offcanvas" data-bs-target="#assignmentDrawer" aria-controls="assignmentDrawer">Simultaneous equations test</button></h3>
+                  <p class="assign-meta"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Mr. Adeyemi</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 50 marks</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> 1 file</span></p>
+                </div>
+                <div class="assign-side"><span class="grade-pill">B+ <small>82%</small></span><span class="due-state">Returned 16 Sep</span></div>
+                <span class="assign-chev" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></span>
+              </li>
+          </ul>
+          <div class="empty-state" data-empty hidden>
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+            <h3>Nothing here</h3>
+            <p class="mb-0">No assignments match this subject. Try another filter or tab.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <p>&copy; Harbourview Academy &middot; Homeroom student and parent portal</p>
+      <p>Portal help: <a href="mailto:help@example.com">help@example.com</a> &middot; <a href="tel:+15555550142">555-0142</a></p>
+      <p class="credit">Template by <a href="https://uicookies.com/">uiCookies</a></p>
+    </div>
+  </footer>
+
+  <nav class="tabbar" aria-label="Primary">
+    <ul>
+        <li><a class="tab-link" href="index.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="tab-label">Home</span></a></li>
+        <li><a class="tab-link active" href="assignments.html" aria-current="page"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="tab-label">Tasks</span></a></li>
+        <li><a class="tab-link" href="grades.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="tab-label">Grades</span></a></li>
+        <li><a class="tab-link" href="timetable.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="tab-label">Timetable</span></a></li>
+        <li><a class="tab-link" href="messages.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="tab-label">Inbox</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="tab-link" href="parent.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="tab-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <div class="offcanvas offcanvas-end drawer" tabindex="-1" id="assignmentDrawer" aria-labelledby="drawer-title">
+    <div class="offcanvas-header">
+      <div>
+        <span class="chip chip-subj" data-drawer-subject>Assignment</span>
+        <h2 class="offcanvas-title" id="drawer-title" data-drawer-title>Assignment details</h2>
+        <div class="drawer-facts" data-drawer-facts></div>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close assignment details"></button>
+    </div>
+    <div class="offcanvas-body" data-drawer-body></div>
+  </div>
+
+  <script src="js/vendor/bootstrap.bundle.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

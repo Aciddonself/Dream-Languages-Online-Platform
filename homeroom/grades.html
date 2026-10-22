@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>document.documentElement.classList.add('js')</script>
+  <script>(function(){var t;try{t=localStorage.getItem('homeroom-theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-bs-theme',t)})()</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Grades — Homeroom Student Portal</title>
+  <meta name="description" content="Report card in the Homeroom student portal: grades by term, teacher comments and a grade-trend chart.">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%234f46e5'/%3E%3Cpath d='M10.5 21 20 12.5l9.5 8.5M14 19v9h12v-9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='30' cy='10.5' r='4' fill='%23ff7a5c'/%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html" aria-label="Homeroom, Harbourview Academy — home">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect class="bm-bg" width="40" height="40" rx="12"/><path class="bm-line" d="M10.5 21 20 12.5l9.5 8.5"/><path class="bm-line" d="M14 19v9h12v-9"/><path class="bm-line" d="M18 28v-4.5h4V28"/><circle class="bm-sun" cx="30" cy="10.5" r="4"/></svg>
+        <span class="brand-text"><span class="brand-name">Homeroom</span><span class="brand-school">Harbourview Academy</span></span>
+      </a>
+
+      <span class="term-chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Autumn term &middot; Week 4</span>
+
+      <nav class="portal-switch" aria-label="Portal view">
+        <a href="index.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Student</a>
+        <a href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Parent</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <button class="icon-btn theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme">
+          <svg class="ic ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="ic ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+
+        <div class="dropdown">
+          <button class="icon-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Notifications, 3 new">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="icon-btn-dot" aria-hidden="true"></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end notif-menu">
+            <div class="notif-head"><span>Notifications</span><span class="chip chip-primary">3 new</span></div>
+            <ul class="list-unstyled m-0">
+          <li><a class="notif" href="grades.html"><span class="notif-ic tone-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span><strong>Ms. Harlow returned your essay</strong><span class="notif-meta">"An Inspector Calls" &middot; A&minus; &middot; 1h ago</span></span></a></li>
+          <li><a class="notif" href="assignments.html"><span class="notif-ic tone-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span><strong>Spanish quiz prep is due today</strong><span class="notif-meta">Sra. Ruiz &middot; before 15:00</span></span></a></li>
+          <li><a class="notif" href="messages.html"><span class="notif-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span><strong>New message from Coach Whitfield</strong><span class="notif-meta">Netball squad list &middot; 3h ago</span></span></a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button class="account-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Account menu for Maya Okafor">
+            <span class="avatar avatar-sm av-indigo" aria-hidden="true">MO</span>
+            <span class="account-name">Maya</span>
+            <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end account-menu">
+            <li class="account-card"><span class="avatar av-indigo" aria-hidden="true">MO</span><span><strong>Maya Okafor</strong><span>Year 10 &middot; Form 10H</span></span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="grades.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg> My grades</a></li>
+            <li><a class="dropdown-item" href="timetable.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> My timetable</a></li>
+            <li><a class="dropdown-item" href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Switch to parent view</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="rail" aria-label="Primary">
+    <ul>
+        <li><a class="rail-link" href="index.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="rail-label">Home</span></a></li>
+        <li><a class="rail-link" href="assignments.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="rail-label">Assignments</span></a></li>
+        <li><a class="rail-link active" href="grades.html" aria-current="page"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="rail-label">Grades</span></a></li>
+        <li><a class="rail-link" href="timetable.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="rail-label">Timetable</span></a></li>
+        <li><a class="rail-link" href="messages.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="rail-label">Messages</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="rail-link" href="parent.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rail-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <main id="main" class="app-main">
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg> Report card</p>
+          <h1>Grades</h1>
+          <p class="page-sub">Your results by term, with comments from your teachers. Each percentage is the average of the assessed work set that term.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost js-only" type="button" data-print><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg> Print report</button>
+          <a class="btn btn-soft" href="assignments.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg> Graded work</a>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-xl-4">
+          <div class="stack">
+            <section class="card-hr" aria-labelledby="overall-title">
+              <div class="overall-card">
+                <div class="ring" data-ring="85.5" role="img" aria-label="Overall average this term: 85.5 percent">
+                  <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+                    <circle class="ring-track" cx="60" cy="60" r="50"/>
+                    <circle class="ring-fill" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="85.5 100"/>
+                  </svg>
+                  <span class="ring-label"><strong>85.5%</strong><span>average</span></span>
+                </div>
+                <div>
+                  <h2 id="overall-title">Overall this term</h2>
+                  <p class="overall-grade">A&minus;</p>
+                  <p><span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg> 3.5</span> on last term, and 9.5 higher than the start of Year 9.</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="card-hr flex-grow-1" aria-labelledby="insight-title">
+              <div class="card-hr-head"><h2 id="insight-title">Highlights</h2></div>
+              <div class="insight">
+                <span class="news-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></span>
+                <div><h3>Strongest subject</h3><p>Art &amp; Design at 93%, with an A for your coastal sketchbook.</p></div>
+              </div>
+              <div class="insight">
+                <span class="news-ic tone-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
+                <div><h3>Most improved</h3><p>Spanish is up 7 points since summer. Your speaking practice is paying off.</p></div>
+              </div>
+              <div class="insight">
+                <span class="news-ic tone-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 22V4a1 1 0 0 1 1-1h12l-2 4 2 4H5"/></svg></span>
+                <div><h3>Next step</h3><p>Geography at 78%: quoting precise figures from data is the quickest win.</p></div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="col-xl-8">
+          <section class="card-hr h-100" aria-labelledby="trend-title">
+            <div class="chart-head">
+              <div>
+                <h2 id="trend-title" class="chart-title">Grade trend</h2>
+                <p class="card-hr-sub">Average at each half-term checkpoint since Year 9</p>
+              </div>
+              <div class="chart-compare js-only">
+                <label for="compare-subject">Compare with</label>
+                <select class="form-select" id="compare-subject">
+                  <option value="none">No subject</option>
+                  <option value="english">English Literature</option>
+                  <option value="maths" selected>Mathematics</option>
+                  <option value="science">Science</option>
+                  <option value="history">History</option>
+                  <option value="geography">Geography</option>
+                  <option value="spanish">Spanish</option>
+                  <option value="art">Art &amp; Design</option>
+                  <option value="computing">Computer Science</option>
+                </select>
+              </div>
+            </div>
+            <ul class="chart-legend js-only">
+              <li><span class="lk" aria-hidden="true"></span>Overall average</li>
+              <li data-legend-compare><span class="lk lk-coral" aria-hidden="true"></span><span data-legend-compare-name>Mathematics</span></li>
+            </ul>
+            <div class="chart-wrap" data-chart tabindex="0" role="group" aria-label="Grade trend chart. Use the left and right arrow keys to read each checkpoint.">
+              <p class="chart-fallback no-js-only">The chart needs JavaScript. The table below has the same numbers.</p>
+              <div class="chart-tip" role="status" aria-live="polite"></div>
+            </div>
+            <details class="chart-data">
+              <summary>Show the data as a table</summary>
+              <div class="table-wrap">
+                <table data-trend-table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Subject</th>
+                      <th scope="col" data-tick="Aut 1" data-year="Year 9">Y9 Autumn 1</th>
+                      <th scope="col" data-tick="Aut 2">Y9 Autumn 2</th>
+                      <th scope="col" data-tick="Spr 1">Y9 Spring 1</th>
+                      <th scope="col" data-tick="Spr 2">Y9 Spring 2</th>
+                      <th scope="col" data-tick="Sum 1">Y9 Summer 1</th>
+                      <th scope="col" data-tick="Sum 2">Y9 Summer 2</th>
+                      <th scope="col" data-tick="Aut 1" data-year="Year 10">Y10 Autumn 1</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-series="overall"><th scope="row">Overall average</th><td>76.0</td><td>77.3</td><td>78.3</td><td>79.3</td><td>80.8</td><td>82.0</td><td>85.5</td></tr>
+                    <tr data-series="english"><th scope="row">English Literature</th><td>78</td><td>80</td><td>81</td><td>82</td><td>84</td><td>85</td><td>88</td></tr>
+                    <tr data-series="maths"><th scope="row">Mathematics</th><td>69</td><td>70</td><td>71</td><td>72</td><td>74</td><td>76</td><td>81</td></tr>
+                    <tr data-series="science"><th scope="row">Science</th><td>82</td><td>83</td><td>84</td><td>85</td><td>87</td><td>88</td><td>91</td></tr>
+                    <tr data-series="history"><th scope="row">History</th><td>75</td><td>76</td><td>77</td><td>78</td><td>79</td><td>80</td><td>83</td></tr>
+                    <tr data-series="geography"><th scope="row">Geography</th><td>72</td><td>73</td><td>73</td><td>74</td><td>76</td><td>77</td><td>78</td></tr>
+                    <tr data-series="spanish"><th scope="row">Spanish</th><td>70</td><td>72</td><td>74</td><td>75</td><td>77</td><td>79</td><td>86</td></tr>
+                    <tr data-series="art"><th scope="row">Art &amp; Design</th><td>86</td><td>87</td><td>88</td><td>89</td><td>89</td><td>90</td><td>93</td></tr>
+                    <tr data-series="computing"><th scope="row">Computer Science</th><td>76</td><td>77</td><td>78</td><td>79</td><td>80</td><td>81</td><td>84</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </section>
+        </div>
+      </div>
+
+      <section class="card-hr mt-4" aria-labelledby="report-title">
+        <div class="card-hr-head flex-wrap">
+          <div>
+            <h2 id="report-title">Report by term</h2>
+            <p class="card-hr-sub">Grades, percentages and teacher comments</p>
+          </div>
+          <div class="seg-tabs js-only" role="tablist" aria-label="Choose a term">
+            <button class="seg-tab active" id="term-aut-tab" data-bs-toggle="tab" data-bs-target="#term-aut" type="button" role="tab" aria-controls="term-aut" aria-selected="true">Autumn &middot; Y10</button>
+            <button class="seg-tab" id="term-sum-tab" data-bs-toggle="tab" data-bs-target="#term-sum" type="button" role="tab" aria-controls="term-sum" aria-selected="false" tabindex="-1">Summer &middot; Y9</button>
+            <button class="seg-tab" id="term-spr-tab" data-bs-toggle="tab" data-bs-target="#term-spr" type="button" role="tab" aria-controls="term-spr" aria-selected="false" tabindex="-1">Spring &middot; Y9</button>
+          </div>
+        </div>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="term-aut" role="tabpanel" aria-labelledby="term-aut-tab" tabindex="0">
+              <h3 class="term-title">Autumn term, Year 10</h3>
+              <div class="term-summary">
+                <span class="chip chip-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Average 85.5% &middot; A&minus;</span>
+                <span class="chip chip-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg> Up 3.5 on the term before</span>
+                <span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/></svg> Attendance 96.5%</span>
+                <span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg> 127 merits</span>
+                <span class="chip chip-soft">In progress: week 4 of 14</span>
+              </div>
+              <div class="table-wrap">
+                <table class="report-table">
+                  <thead>
+                    <tr><th scope="col">Subject</th><th scope="col">Grade</th><th scope="col">Percentage</th><th scope="col">Teacher comment</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr class="s-eng">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>English Literature</strong><span>Ms. Harlow</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">A&minus;</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:88%"></span></span>88% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 3</span></div></td>
+                      <td><p class="report-comment">Maya&rsquo;s essay on &ldquo;An Inspector Calls&rdquo; showed real insight into dramatic irony. Next step: embed shorter quotations.</p></td>
+                    </tr>
+                    <tr class="s-maths">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Mathematics</strong><span>Mr. Adeyemi</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B+</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:81%"></span></span>81% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 5</span></div></td>
+                      <td><p class="report-comment">A big improvement in algebra this half-term. Keep practising geometric proof, where marks still slip.</p></td>
+                    </tr>
+                    <tr class="s-sci">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Science</strong><span>Dr. Castellanos</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">A</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:91%"></span></span>91% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 3</span></div></td>
+                      <td><p class="report-comment">Outstanding practical work. Her enzymes write-up was one of the best in the year group.</p></td>
+                    </tr>
+                    <tr class="s-hist">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>History</strong><span>Mr. Brennan</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B+</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:83%"></span></span>83% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 3</span></div></td>
+                      <td><p class="report-comment">Sharp source analysis. Aim to reach a clear judgement earlier in extended answers.</p></td>
+                    </tr>
+                    <tr class="s-geo">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Geography</strong><span>Ms. Ferreira</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:78%"></span></span>78% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 1</span></div></td>
+                      <td><p class="report-comment">Secure case-study knowledge. Quote precise figures when describing trends in data.</p></td>
+                    </tr>
+                    <tr class="s-span">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Spanish</strong><span>Sra. Ruiz</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">A&minus;</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:86%"></span></span>86% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 7</span></div></td>
+                      <td><p class="report-comment">Speaking confidence has grown hugely. &iexcl;Muy bien! Keep working on the preterite and imperfect.</p></td>
+                    </tr>
+                    <tr class="s-art">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Art &amp; Design</strong><span>Ms. Lindqvist</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">A</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:93%"></span></span>93% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 3</span></div></td>
+                      <td><p class="report-comment">Her coastal sketchbook is beautifully developed. Push the final piece in scale.</p></td>
+                    </tr>
+                    <tr class="s-comp">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Computer Science</strong><span>Mr. Patel</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B+</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:84%"></span></span>84% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 3</span></div></td>
+                      <td><p class="report-comment">Clean, well-commented Python. Plan larger problems in pseudocode before coding.</p></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="term-sum" role="tabpanel" aria-labelledby="term-sum-tab" tabindex="0">
+              <h3 class="term-title">Summer term, Year 9</h3>
+              <div class="term-summary">
+                <span class="chip chip-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Average 82% &middot; B+</span>
+                <span class="chip chip-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg> Up 2.8 on the term before</span>
+                <span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/></svg> Attendance 97.8%</span>
+                <span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg> 98 merits</span>
+                <span class="chip chip-soft">Final report issued 17 July</span>
+              </div>
+              <div class="table-wrap">
+                <table class="report-table">
+                  <thead>
+                    <tr><th scope="col">Subject</th><th scope="col">Grade</th><th scope="col">Percentage</th><th scope="col">Teacher comment</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr class="s-eng">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>English Literature</strong><span>Ms. Harlow</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">A&minus;</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:85%"></span></span>85% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 3</span></div></td>
+                      <td><p class="report-comment">Consistently thoughtful. Her poetry comparison was a highlight of the term.</p></td>
+                    </tr>
+                    <tr class="s-maths">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Mathematics</strong><span>Mr. Adeyemi</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:76%"></span></span>76% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 4</span></div></td>
+                      <td><p class="report-comment">Good progress on ratio and proportion. Revise algebraic fractions over the summer.</p></td>
+                    </tr>
+                    <tr class="s-sci">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Science</strong><span>Dr. Castellanos</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">A&minus;</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:88%"></span></span>88% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 3</span></div></td>
+                      <td><p class="report-comment">Careful, accurate practical work and excellent revision habits.</p></td>
+                    </tr>
+                    <tr class="s-hist">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>History</strong><span>Mrs. Dale</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B+</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:80%"></span></span>80% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 2</span></div></td>
+                      <td><p class="report-comment">A strong essay on the causes of the First World War.</p></td>
+                    </tr>
+                    <tr class="s-geo">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Geography</strong><span>Mr. Hughes</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:77%"></span></span>77% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 3</span></div></td>
+                      <td><p class="report-comment">Her fieldwork write-up was well organised and clearly presented.</p></td>
+                    </tr>
+                    <tr class="s-span">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Spanish</strong><span>Sra. Ruiz</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:79%"></span></span>79% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 4</span></div></td>
+                      <td><p class="report-comment">Writing is accurate; now build confidence in speaking.</p></td>
+                    </tr>
+                    <tr class="s-art">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Art &amp; Design</strong><span>Ms. Lindqvist</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">A</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:90%"></span></span>90% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 1</span></div></td>
+                      <td><p class="report-comment">Bold, confident portrait studies. A pleasure to teach.</p></td>
+                    </tr>
+                    <tr class="s-comp">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Computer Science</strong><span>Mr. Patel</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B+</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:81%"></span></span>81% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 2</span></div></td>
+                      <td><p class="report-comment">Solid understanding of algorithms. Practise tracing code by hand.</p></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="term-spr" role="tabpanel" aria-labelledby="term-spr-tab" tabindex="0">
+              <h3 class="term-title">Spring term, Year 9</h3>
+              <div class="term-summary">
+                <span class="chip chip-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Average 79.2% &middot; B</span>
+                <span class="chip chip-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg> Up 2.0 on the term before</span>
+                <span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/></svg> Attendance 95.9%</span>
+                <span class="chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg> 71 merits</span>
+                <span class="chip chip-soft">Report issued 27 March</span>
+              </div>
+              <div class="table-wrap">
+                <table class="report-table">
+                  <thead>
+                    <tr><th scope="col">Subject</th><th scope="col">Grade</th><th scope="col">Percentage</th><th scope="col">Teacher comment</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr class="s-eng">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>English Literature</strong><span>Ms. Harlow</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B+</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:82%"></span></span>82% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 2</span></div></td>
+                      <td><p class="report-comment">An engaged reader with lively ideas. Develop her analysis of structure.</p></td>
+                    </tr>
+                    <tr class="s-maths">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Mathematics</strong><span>Mr. Adeyemi</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B&minus;</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:72%"></span></span>72% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 2</span></div></td>
+                      <td><p class="report-comment">Works hard in class. Show working on multi-step problems.</p></td>
+                    </tr>
+                    <tr class="s-sci">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Science</strong><span>Dr. Castellanos</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">A&minus;</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:85%"></span></span>85% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 2</span></div></td>
+                      <td><p class="report-comment">Asks excellent questions in practicals.</p></td>
+                    </tr>
+                    <tr class="s-hist">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>History</strong><span>Mrs. Dale</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:78%"></span></span>78% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 2</span></div></td>
+                      <td><p class="report-comment">Good recall of key events. Link causes together more explicitly.</p></td>
+                    </tr>
+                    <tr class="s-geo">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Geography</strong><span>Mr. Hughes</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B&minus;</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:74%"></span></span>74% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 1</span></div></td>
+                      <td><p class="report-comment">A keen participant. Learn case-study figures more precisely.</p></td>
+                    </tr>
+                    <tr class="s-span">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Spanish</strong><span>Sra. Ruiz</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:75%"></span></span>75% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 3</span></div></td>
+                      <td><p class="report-comment">Growing vocabulary. Ten minutes of practice a day will help.</p></td>
+                    </tr>
+                    <tr class="s-art">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Art &amp; Design</strong><span>Ms. Lindqvist</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">A&minus;</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:89%"></span></span>89% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 2</span></div></td>
+                      <td><p class="report-comment">Inventive printmaking, with experiments well recorded.</p></td>
+                    </tr>
+                    <tr class="s-comp">
+                      <th scope="row"><div class="report-subj"><span class="subj-bar" aria-hidden="true"></span><div><strong>Computer Science</strong><span>Mr. Patel</span></div></div></th>
+                      <td class="col-grade"><span class="grade-pill">B</span></td>
+                      <td class="col-pct"><div class="report-pct"><span class="bar" aria-hidden="true"><span style="width:79%"></span></span>79% <span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">Up</span> 2</span></div></td>
+                      <td><p class="report-comment">Good logic. Remember to test edge cases.</p></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <p>&copy; Harbourview Academy &middot; Homeroom student and parent portal</p>
+      <p>Portal help: <a href="mailto:help@example.com">help@example.com</a> &middot; <a href="tel:+15555550142">555-0142</a></p>
+      <p class="credit">Template by <a href="https://uicookies.com/">uiCookies</a></p>
+    </div>
+  </footer>
+
+  <nav class="tabbar" aria-label="Primary">
+    <ul>
+        <li><a class="tab-link" href="index.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="tab-label">Home</span></a></li>
+        <li><a class="tab-link" href="assignments.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="tab-label">Tasks</span></a></li>
+        <li><a class="tab-link active" href="grades.html" aria-current="page"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="tab-label">Grades</span></a></li>
+        <li><a class="tab-link" href="timetable.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="tab-label">Timetable</span></a></li>
+        <li><a class="tab-link" href="messages.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="tab-label">Inbox</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="tab-link" href="parent.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="tab-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <script src="js/vendor/bootstrap.bundle.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

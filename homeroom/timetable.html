@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>document.documentElement.classList.add('js')</script>
+  <script>(function(){var t;try{t=localStorage.getItem('homeroom-theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-bs-theme',t)})()</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Timetable — Homeroom Student Portal</title>
+  <meta name="description" content="Weekly timetable in the Homeroom student portal with a day and week view, rooms, teachers, clubs and a live now line.">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%234f46e5'/%3E%3Cpath d='M10.5 21 20 12.5l9.5 8.5M14 19v9h12v-9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='30' cy='10.5' r='4' fill='%23ff7a5c'/%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html" aria-label="Homeroom, Harbourview Academy — home">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect class="bm-bg" width="40" height="40" rx="12"/><path class="bm-line" d="M10.5 21 20 12.5l9.5 8.5"/><path class="bm-line" d="M14 19v9h12v-9"/><path class="bm-line" d="M18 28v-4.5h4V28"/><circle class="bm-sun" cx="30" cy="10.5" r="4"/></svg>
+        <span class="brand-text"><span class="brand-name">Homeroom</span><span class="brand-school">Harbourview Academy</span></span>
+      </a>
+
+      <span class="term-chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Autumn term &middot; Week 4</span>
+
+      <nav class="portal-switch" aria-label="Portal view">
+        <a href="index.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Student</a>
+        <a href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Parent</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <button class="icon-btn theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme">
+          <svg class="ic ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="ic ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+
+        <div class="dropdown">
+          <button class="icon-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Notifications, 3 new">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="icon-btn-dot" aria-hidden="true"></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end notif-menu">
+            <div class="notif-head"><span>Notifications</span><span class="chip chip-primary">3 new</span></div>
+            <ul class="list-unstyled m-0">
+          <li><a class="notif" href="grades.html"><span class="notif-ic tone-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span><strong>Ms. Harlow returned your essay</strong><span class="notif-meta">"An Inspector Calls" &middot; A&minus; &middot; 1h ago</span></span></a></li>
+          <li><a class="notif" href="assignments.html"><span class="notif-ic tone-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span><strong>Spanish quiz prep is due today</strong><span class="notif-meta">Sra. Ruiz &middot; before 15:00</span></span></a></li>
+          <li><a class="notif" href="messages.html"><span class="notif-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span><strong>New message from Coach Whitfield</strong><span class="notif-meta">Netball squad list &middot; 3h ago</span></span></a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button class="account-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Account menu for Maya Okafor">
+            <span class="avatar avatar-sm av-indigo" aria-hidden="true">MO</span>
+            <span class="account-name">Maya</span>
+            <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end account-menu">
+            <li class="account-card"><span class="avatar av-indigo" aria-hidden="true">MO</span><span><strong>Maya Okafor</strong><span>Year 10 &middot; Form 10H</span></span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="grades.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg> My grades</a></li>
+            <li><a class="dropdown-item" href="timetable.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> My timetable</a></li>
+            <li><a class="dropdown-item" href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Switch to parent view</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="rail" aria-label="Primary">
+    <ul>
+        <li><a class="rail-link" href="index.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="rail-label">Home</span></a></li>
+        <li><a class="rail-link" href="assignments.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="rail-label">Assignments</span></a></li>
+        <li><a class="rail-link" href="grades.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="rail-label">Grades</span></a></li>
+        <li><a class="rail-link active" href="timetable.html" aria-current="page"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="rail-label">Timetable</span></a></li>
+        <li><a class="rail-link" href="messages.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="rail-label">Messages</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="rail-link" href="parent.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rail-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <main id="main" class="app-main">
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Week A &middot; 21&ndash;25 September</p>
+          <h1>Timetable</h1>
+          <p class="page-sub">Your lessons, rooms and clubs for the week. Today is highlighted, and the coral line shows the time now.</p>
+        </div>
+        <div class="page-actions">
+          <div class="seg-tabs js-only" role="group" aria-label="Timetable view">
+            <button class="seg-tab" type="button" data-view-btn="day" aria-pressed="false"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18"/></svg> Day</button>
+            <button class="seg-tab" type="button" data-view-btn="week" aria-pressed="true"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg> Week</button>
+          </div>
+          <button class="btn btn-ghost js-only" type="button" data-print><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg> Print</button>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-xl-9">
+          <section class="card-hr tt-card" aria-labelledby="tt-title">
+            <h2 id="tt-title" class="visually-hidden">Lessons this week</h2>
+            <div class="tt-wrap" data-tt data-mode="week">
+              <div class="tt-days-row">
+                <div class="day-picker" role="group" aria-label="Choose a day">
+                <button class="day-btn" type="button" data-day-btn="0" aria-pressed="false" aria-label="Monday 21 September">Mon<small>21</small></button>
+                <button class="day-btn" type="button" data-day-btn="1" aria-pressed="false" aria-label="Tuesday 22 September">Tue<small>22</small></button>
+                <button class="day-btn" type="button" data-day-btn="2" aria-pressed="false" aria-label="Wednesday 23 September">Wed<small>23</small></button>
+                <button class="day-btn" type="button" data-day-btn="3" aria-pressed="true" aria-label="Thursday 24 September">Thu<small>24</small></button>
+                <button class="day-btn" type="button" data-day-btn="4" aria-pressed="false" aria-label="Friday 25 September">Fri<small>25</small></button>
+                </div>
+                <p class="tt-day-label" data-tt-label data-week="Week A &middot; 21&ndash;25 September">Thursday 24 September (today)</p>
+              </div>
+              <div class="tt-scroll">
+                <div class="tt" data-view="week">
+                  <div class="tt-heads">
+                  <div class="tt-head tt-corner" aria-hidden="true"></div>
+                  <div class="tt-head" data-day="0" data-full="Monday 21 September"><span>Mon</span><strong>21</strong></div>
+                  <div class="tt-head" data-day="1" data-full="Tuesday 22 September"><span>Tue</span><strong>22</strong></div>
+                  <div class="tt-head" data-day="2" data-full="Wednesday 23 September"><span>Wed</span><strong>23</strong></div>
+                  <div class="tt-head is-today" data-day="3" data-full="Thursday 24 September (today)"><span>Thu &middot; Today</span><strong>24</strong></div>
+                  <div class="tt-head" data-day="4" data-full="Friday 25 September"><span>Fri</span><strong>25</strong></div>
+                  </div>
+                  <div class="tt-grid">
+                  <div class="tt-axis" aria-hidden="true"><span style="--m:540">09:00</span><span style="--m:600">10:00</span><span style="--m:660">11:00</span><span style="--m:720">12:00</span><span style="--m:780">13:00</span><span style="--m:840">14:00</span><span style="--m:900">15:00</span><span style="--m:960">16:00</span></div>
+                  <div class="tt-col" data-day="0" role="list" aria-label="Monday 21 September">
+                    <div class="tt-band" style="--s:660;--e:680" aria-hidden="true">Break</div>
+                    <div class="tt-band" style="--s:740;--e:785" aria-hidden="true">Lunch</div>
+                    <div class="tt-lesson s-tutor is-short" style="--s:520;--e:540" role="listitem"><strong>Registration</strong> <span>&middot; B12</span></div>
+                    <div class="tt-lesson s-eng" style="--s:540;--e:600" role="listitem"><strong>English Literature</strong><span>09:00&ndash;10:00 &middot; E7</span><span>Ms. Harlow</span><span class="tt-topic">Macbeth: Act 1, scenes 1 and 2</span></div>
+                    <div class="tt-lesson s-maths" style="--s:600;--e:660" role="listitem"><strong>Mathematics</strong><span>10:00&ndash;11:00 &middot; M4</span><span>Mr. Adeyemi</span><span class="tt-topic">Quadratics: factorising</span></div>
+                    <div class="tt-lesson s-hist" style="--s:680;--e:740" role="listitem"><strong>History</strong><span>11:20&ndash;12:20 &middot; H2</span><span>Mr. Brennan</span><span class="tt-topic">The Treaty of Versailles: the terms</span></div>
+                    <div class="tt-lesson s-sci" style="--s:785;--e:845" role="listitem"><strong>Chemistry</strong><span>13:05&ndash;14:05 &middot; S4</span><span>Dr. Castellanos</span><span class="tt-topic">Rates of reaction: write-up</span></div>
+                    <div class="tt-lesson s-pe" style="--s:845;--e:905" role="listitem"><strong>PE</strong><span>14:05&ndash;15:05 &middot; Sports hall</span><span>Coach Whitfield</span><span class="tt-topic">Netball: attacking play</span></div>
+                  </div>
+                  <div class="tt-col" data-day="1" role="list" aria-label="Tuesday 22 September">
+                    <div class="tt-band" style="--s:660;--e:680" aria-hidden="true">Break</div>
+                    <div class="tt-band" style="--s:740;--e:785" aria-hidden="true">Lunch</div>
+                    <div class="tt-lesson s-tutor is-short" style="--s:520;--e:540" role="listitem"><strong>Registration</strong> <span>&middot; B12</span></div>
+                    <div class="tt-lesson s-sci" style="--s:540;--e:600" role="listitem"><strong>Physics</strong><span>09:00&ndash;10:00 &middot; S1</span><span>Mr. Novak</span><span class="tt-topic">Energy stores and transfers</span></div>
+                    <div class="tt-lesson s-span" style="--s:600;--e:660" role="listitem"><strong>Spanish</strong><span>10:00&ndash;11:00 &middot; L3</span><span>Sra. Ruiz</span><span class="tt-topic">Mi rutina diaria: new vocabulary</span></div>
+                    <div class="tt-lesson s-maths" style="--s:680;--e:740" role="listitem"><strong>Mathematics</strong><span>11:20&ndash;12:20 &middot; M4</span><span>Mr. Adeyemi</span><span class="tt-topic">The quadratic formula</span></div>
+                    <div class="tt-lesson s-geo" style="--s:785;--e:845" role="listitem"><strong>Geography</strong><span>13:05&ndash;14:05 &middot; G1</span><span>Ms. Ferreira</span><span class="tt-topic">Coastal erosion processes</span></div>
+                    <div class="tt-lesson s-comp" style="--s:845;--e:905" role="listitem"><strong>Computer Science</strong><span>14:05&ndash;15:05 &middot; C2</span><span>Mr. Patel</span><span class="tt-topic">Nested loops</span></div>
+                    <div class="tt-lesson s-comp is-club" style="--s:920;--e:990" role="listitem"><strong>Robotics club</strong><span>15:20&ndash;16:30 &middot; C2</span><span>Mr. Patel</span><span class="tt-topic">Line-following robots</span></div>
+                  </div>
+                  <div class="tt-col" data-day="2" role="list" aria-label="Wednesday 23 September">
+                    <div class="tt-band" style="--s:660;--e:680" aria-hidden="true">Break</div>
+                    <div class="tt-band" style="--s:740;--e:785" aria-hidden="true">Lunch</div>
+                    <div class="tt-lesson s-tutor is-short" style="--s:520;--e:540" role="listitem"><strong>Registration</strong> <span>&middot; B12</span></div>
+                    <div class="tt-lesson s-eng" style="--s:540;--e:600" role="listitem"><strong>English Literature</strong><span>09:00&ndash;10:00 &middot; E7</span><span>Ms. Harlow</span><span class="tt-topic">Macbeth: the witches</span></div>
+                    <div class="tt-lesson s-art" style="--s:600;--e:660" role="listitem"><strong>Art &amp; Design</strong><span>10:00&ndash;11:00 &middot; A1</span><span>Ms. Lindqvist</span><span class="tt-topic">Coastlines: observational drawing</span></div>
+                    <div class="tt-lesson s-sci" style="--s:680;--e:740" role="listitem"><strong>Biology</strong><span>11:20&ndash;12:20 &middot; S2</span><span>Dr. Castellanos</span><span class="tt-topic">Osmosis: planning the practical</span></div>
+                    <div class="tt-lesson s-hist" style="--s:785;--e:845" role="listitem"><strong>History</strong><span>13:05&ndash;14:05 &middot; H2</span><span>Mr. Brennan</span><span class="tt-topic">German reactions to Versailles</span></div>
+                    <div class="tt-lesson s-music" style="--s:845;--e:905" role="listitem"><strong>Music</strong><span>14:05&ndash;15:05 &middot; MU1</span><span>Mr. Osei</span><span class="tt-topic">Film music: leitmotifs</span></div>
+                  </div>
+                  <div class="tt-col is-today" data-day="3" role="list" aria-label="Thursday 24 September">
+                    <div class="tt-band" style="--s:660;--e:680" aria-hidden="true">Break</div>
+                    <div class="tt-band" style="--s:740;--e:785" aria-hidden="true">Lunch</div>
+                    <div class="tt-lesson s-tutor is-short" style="--s:520;--e:540" role="listitem"><strong>Registration</strong> <span>&middot; B12</span></div>
+                    <div class="tt-lesson s-maths" style="--s:540;--e:600" role="listitem"><strong>Mathematics</strong><span>09:00&ndash;10:00 &middot; M4</span><span>Mr. Adeyemi</span><span class="tt-topic">Quadratics: completing the square</span></div>
+                    <div class="tt-lesson s-eng" style="--s:600;--e:660" role="listitem"><strong>English Literature</strong><span>10:00&ndash;11:00 &middot; E7</span><span>Ms. Harlow</span><span class="tt-topic">Macbeth: Act 1 scene 3, the prophecy</span></div>
+                    <div class="tt-lesson s-sci" style="--s:680;--e:740" role="listitem"><strong>Biology</strong><span>11:20&ndash;12:20 &middot; S2</span><span>Dr. Castellanos</span><span class="tt-topic">Osmosis in potato cells: required practical</span></div>
+                    <div class="tt-lesson s-span" style="--s:785;--e:845" role="listitem"><strong>Spanish</strong><span>13:05&ndash;14:05 &middot; L3</span><span>Sra. Ruiz</span><span class="tt-topic">Mi rutina diaria: reflexive verbs</span></div>
+                    <div class="tt-lesson s-art" style="--s:845;--e:905" role="listitem"><strong>Art &amp; Design</strong><span>14:05&ndash;15:05 &middot; A1</span><span>Ms. Lindqvist</span><span class="tt-topic">Coastlines: ink-wash studies</span></div>
+                    <div class="tt-lesson s-pe is-club" style="--s:920;--e:990" role="listitem"><strong>Netball squad</strong><span>15:20&ndash;16:30 &middot; Sports hall</span><span>Coach Whitfield</span><span class="tt-topic">Match prep for Friday</span></div>
+                  </div>
+                  <div class="tt-col" data-day="4" role="list" aria-label="Friday 25 September">
+                    <div class="tt-band" style="--s:660;--e:680" aria-hidden="true">Break</div>
+                    <div class="tt-band" style="--s:740;--e:785" aria-hidden="true">Lunch</div>
+                    <div class="tt-lesson s-tutor is-short" style="--s:520;--e:540" role="listitem"><strong>Registration</strong> <span>&middot; B12</span></div>
+                    <div class="tt-lesson s-comp" style="--s:540;--e:600" role="listitem"><strong>Computer Science</strong><span>09:00&ndash;10:00 &middot; C2</span><span>Mr. Patel</span><span class="tt-topic">Loops challenge clinic</span></div>
+                    <div class="tt-lesson s-sci" style="--s:600;--e:660" role="listitem"><strong>Chemistry</strong><span>10:00&ndash;11:00 &middot; S1</span><span>Dr. Castellanos</span><span class="tt-topic">Catalysts and rates (room change)</span></div>
+                    <div class="tt-lesson s-maths" style="--s:680;--e:740" role="listitem"><strong>Mathematics</strong><span>11:20&ndash;12:20 &middot; M4</span><span>Mr. Adeyemi</span><span class="tt-topic">Quadratics review quiz</span></div>
+                    <div class="tt-lesson s-tutor" style="--s:785;--e:845" role="listitem"><strong>Tutor time</strong><span>13:05&ndash;14:05 &middot; B12</span><span>Mrs. Fairweather</span><span class="tt-topic">Study skills: planning your week</span></div>
+                    <div class="tt-lesson s-pe" style="--s:845;--e:905" role="listitem"><strong>PE</strong><span>14:05&ndash;15:05 &middot; Sports hall</span><span>Coach Whitfield</span><span class="tt-topic">Fitness testing retakes</span></div>
+                    <div class="tt-lesson s-pe is-club" style="--s:930;--e:1000" role="listitem"><strong>Netball vs Kingsmere</strong><span>15:30&ndash;16:40 &middot; Home courts</span><span>Coach Whitfield</span><span class="tt-topic">Kit check at 15:30</span></div>
+                  </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-xl-3">
+          <div class="row g-4">
+            <div class="col-md-6 col-xl-12">
+              <section class="card-hr h-100" aria-labelledby="notes-title">
+                <div class="card-hr-head"><h2 id="notes-title">This week</h2></div>
+                <ul class="week-notes">
+                  <li>
+                    <span class="news-ic tone-warning"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                    <div><h3>Room change</h3><p>Friday period 2 Chemistry is in Lab S1 while S4 is refitted.</p></div>
+                  </li>
+                  <li>
+                    <span class="news-ic tone-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M3 12h18"/></svg></span>
+                    <div><h3>Netball vs Kingsmere</h3><p>Friday 15:45 on the home courts. Kit check at 15:30.</p></div>
+                  </li>
+                  <li>
+                    <span class="news-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 3v4M17 5h4M5 17v4M3 19h4"/></svg></span>
+                    <div><h3>Clubs</h3><p>Robotics on Tuesday and netball squad on Thursday, both 15:20&ndash;16:30.</p></div>
+                  </li>
+                  <li>
+                    <span class="news-ic tone-teal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></span>
+                    <div><h3>Bring your planner</h3><p>Friday tutor time is about planning the fortnight ahead.</p></div>
+                  </li>
+                </ul>
+              </section>
+            </div>
+            <div class="col-md-6 col-xl-12">
+              <section class="card-hr h-100" aria-labelledby="key-title">
+                <div class="card-hr-head">
+                  <div>
+                    <h2 id="key-title">Lessons per week</h2>
+                    <p class="card-hr-sub">25 periods across 11 subjects</p>
+                  </div>
+                </div>
+                <ul class="subject-key">
+                  <li class="s-sci"><span class="subj-dot" aria-hidden="true"></span><span>Science</span><span>5</span></li>
+                  <li class="s-maths"><span class="subj-dot" aria-hidden="true"></span><span>Maths</span><span>4</span></li>
+                  <li class="s-eng"><span class="subj-dot" aria-hidden="true"></span><span>English</span><span>3</span></li>
+                  <li class="s-hist"><span class="subj-dot" aria-hidden="true"></span><span>History</span><span>2</span></li>
+                  <li class="s-span"><span class="subj-dot" aria-hidden="true"></span><span>Spanish</span><span>2</span></li>
+                  <li class="s-art"><span class="subj-dot" aria-hidden="true"></span><span>Art</span><span>2</span></li>
+                  <li class="s-comp"><span class="subj-dot" aria-hidden="true"></span><span>Computing</span><span>2</span></li>
+                  <li class="s-pe"><span class="subj-dot" aria-hidden="true"></span><span>PE</span><span>2</span></li>
+                  <li class="s-geo"><span class="subj-dot" aria-hidden="true"></span><span>Geography</span><span>1</span></li>
+                  <li class="s-music"><span class="subj-dot" aria-hidden="true"></span><span>Music</span><span>1</span></li>
+                  <li class="s-tutor"><span class="subj-dot" aria-hidden="true"></span><span>Tutor time</span><span>1</span></li>
+                </ul>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <p>&copy; Harbourview Academy &middot; Homeroom student and parent portal</p>
+      <p>Portal help: <a href="mailto:help@example.com">help@example.com</a> &middot; <a href="tel:+15555550142">555-0142</a></p>
+      <p class="credit">Template by <a href="https://uicookies.com/">uiCookies</a></p>
+    </div>
+  </footer>
+
+  <nav class="tabbar" aria-label="Primary">
+    <ul>
+        <li><a class="tab-link" href="index.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="tab-label">Home</span></a></li>
+        <li><a class="tab-link" href="assignments.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="tab-label">Tasks</span></a></li>
+        <li><a class="tab-link" href="grades.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="tab-label">Grades</span></a></li>
+        <li><a class="tab-link active" href="timetable.html" aria-current="page"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="tab-label">Timetable</span></a></li>
+        <li><a class="tab-link" href="messages.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="tab-label">Inbox</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="tab-link" href="parent.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="tab-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <script src="js/vendor/bootstrap.bundle.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

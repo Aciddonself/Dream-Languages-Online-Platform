@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>document.documentElement.classList.add('js')</script>
+  <script>(function(){var t;try{t=localStorage.getItem('homeroom-theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-bs-theme',t)})()</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Homeroom — Free Student Portal Dashboard Template</title>
+  <meta name="description" content="Homeroom is a free Bootstrap 5 student and parent portal dashboard template: today's timetable, assignments, grades, attendance, messages and a parent view. Vanilla JS, no jQuery.">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%234f46e5'/%3E%3Cpath d='M10.5 21 20 12.5l9.5 8.5M14 19v9h12v-9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='30' cy='10.5' r='4' fill='%23ff7a5c'/%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html" aria-label="Homeroom, Harbourview Academy — home">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect class="bm-bg" width="40" height="40" rx="12"/><path class="bm-line" d="M10.5 21 20 12.5l9.5 8.5"/><path class="bm-line" d="M14 19v9h12v-9"/><path class="bm-line" d="M18 28v-4.5h4V28"/><circle class="bm-sun" cx="30" cy="10.5" r="4"/></svg>
+        <span class="brand-text"><span class="brand-name">Homeroom</span><span class="brand-school">Harbourview Academy</span></span>
+      </a>
+
+      <span class="term-chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Autumn term &middot; Week 4</span>
+
+      <nav class="portal-switch" aria-label="Portal view">
+        <a href="index.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Student</a>
+        <a href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Parent</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <button class="icon-btn theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme">
+          <svg class="ic ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="ic ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+
+        <div class="dropdown">
+          <button class="icon-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Notifications, 3 new">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="icon-btn-dot" aria-hidden="true"></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end notif-menu">
+            <div class="notif-head"><span>Notifications</span><span class="chip chip-primary">3 new</span></div>
+            <ul class="list-unstyled m-0">
+          <li><a class="notif" href="grades.html"><span class="notif-ic tone-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span><strong>Ms. Harlow returned your essay</strong><span class="notif-meta">"An Inspector Calls" &middot; A&minus; &middot; 1h ago</span></span></a></li>
+          <li><a class="notif" href="assignments.html"><span class="notif-ic tone-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span><strong>Spanish quiz prep is due today</strong><span class="notif-meta">Sra. Ruiz &middot; before 15:00</span></span></a></li>
+          <li><a class="notif" href="messages.html"><span class="notif-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span><strong>New message from Coach Whitfield</strong><span class="notif-meta">Netball squad list &middot; 3h ago</span></span></a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button class="account-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Account menu for Maya Okafor">
+            <span class="avatar avatar-sm av-indigo" aria-hidden="true">MO</span>
+            <span class="account-name">Maya</span>
+            <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end account-menu">
+            <li class="account-card"><span class="avatar av-indigo" aria-hidden="true">MO</span><span><strong>Maya Okafor</strong><span>Year 10 &middot; Form 10H</span></span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="grades.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg> My grades</a></li>
+            <li><a class="dropdown-item" href="timetable.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> My timetable</a></li>
+            <li><a class="dropdown-item" href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Switch to parent view</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="rail" aria-label="Primary">
+    <ul>
+        <li><a class="rail-link active" href="index.html" aria-current="page"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="rail-label">Home</span></a></li>
+        <li><a class="rail-link" href="assignments.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="rail-label">Assignments</span></a></li>
+        <li><a class="rail-link" href="grades.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="rail-label">Grades</span></a></li>
+        <li><a class="rail-link" href="timetable.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="rail-label">Timetable</span></a></li>
+        <li><a class="rail-link" href="messages.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="rail-label">Messages</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="rail-link" href="parent.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rail-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <main id="main" class="app-main">
+    <div class="page">
+      <div class="row g-4">
+        <div class="col-xl-8">
+          <section class="hello" aria-labelledby="hello-title">
+            <svg class="hello-deco" viewBox="0 0 320 220" aria-hidden="true" focusable="false">
+              <circle class="hd-sun" cx="248" cy="70" r="46"/>
+              <path class="hd-ray" d="M248 6v10M248 124v10M184 70h10M302 70h10M203 25l7 7M286 108l7 7M203 115l7-7M286 32l7-7"/>
+              <path class="hd-wave" d="M120 196c26-18 52-18 78 0s52 18 78 0 52-18 78 0"/>
+              <path class="hd-wave hd-wave-2" d="M150 170c22-14 44-14 66 0s44 14 66 0 44-14 66 0"/>
+              <path class="hd-star" d="m118 44 4.5 10 10.5 1.5-7.6 7.3 1.8 10.4-9.2-4.9-9.2 4.9 1.8-10.4-7.6-7.3 10.5-1.5z"/>
+            </svg>
+            <p class="hello-date"><span data-today-label>Thursday 24 September</span> &middot; Autumn term, week 4</p>
+            <h1 id="hello-title" class="hello-title"><span data-greeting>Good morning</span>, Maya</h1>
+            <p class="hello-lead">You've handed in <strong>12 assignments on time</strong> in a row. Two more and you unlock the Steady Hand badge.</p>
+
+            <div class="hello-stats">
+              <div class="hello-stat">
+                <span class="hs-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Up next</span>
+                <span class="hs-value" data-next-title>Biology</span>
+                <span class="hs-sub" data-next-meta>11:20 &middot; Lab S2</span>
+              </div>
+              <a class="hello-stat hello-stat-link" href="assignments.html">
+                <span class="hs-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg> Due this week</span>
+                <span class="hs-value">4 tasks</span>
+                <span class="hs-sub">1 due today</span>
+              </a>
+              <div class="hello-stat">
+                <span class="hs-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg> Merit points</span>
+                <span class="hs-value">127</span>
+                <span class="hs-meter" role="progressbar" aria-label="Progress to Silver award" aria-valuemin="0" aria-valuemax="150" aria-valuenow="127"><span style="width:84.6%"></span></span>
+                <span class="hs-sub">23 more for Silver</span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-xl-4">
+          <section class="card-hr attend-card h-100" aria-labelledby="att-title">
+            <div class="card-hr-head">
+              <h2 id="att-title">Attendance</h2>
+              <span class="chip chip-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> On track</span>
+            </div>
+            <div class="attend-body">
+              <div class="ring ring-lg" data-ring="96.5" role="img" aria-label="Attendance this term: 96.5 percent">
+                <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+                  <circle class="ring-track" cx="60" cy="60" r="50"/>
+                  <circle class="ring-fill" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="96.5 100"/>
+                  <circle class="ring-target" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="0.8 99.2" stroke-dashoffset="-94.6"/>
+                </svg>
+                <span class="ring-label"><strong>96.5%</strong><span>this term</span></span>
+              </div>
+              <ul class="legend-list">
+                <li><span class="key key-primary" aria-hidden="true"></span><span>Present</span><strong>82 lessons</strong></li>
+                <li><span class="key key-coral" aria-hidden="true"></span><span>Late</span><strong>1</strong></li>
+                <li><span class="key key-muted" aria-hidden="true"></span><span>Missed, authorised</span><strong>3</strong></li>
+              </ul>
+            </div>
+            <p class="attend-note"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 22V4a1 1 0 0 1 1-1h12l-2 4 2 4H5"/></svg> School target: 95%. You're 1.5 points above it.</p>
+          </section>
+        </div>
+      </div>
+
+      <div class="row g-4 mt-0">
+        <div class="col-xl-5">
+          <section class="card-hr h-100" aria-labelledby="today-title">
+            <div class="card-hr-head">
+              <div>
+                <h2 id="today-title">Today's timetable</h2>
+                <p class="card-hr-sub">Thursday &middot; Week A</p>
+              </div>
+              <span class="clock-chip" data-clock-chip><span class="pulse" aria-hidden="true"></span><span data-clock>10:25</span></span>
+            </div>
+
+            <ol class="timeline" data-timeline>
+              <li class="tl-item is-short s-tutor is-done" data-start="08:40" data-end="09:00" data-room="Room B12">
+                <div class="tl-time"><span>08:40</span></div>
+                <div class="tl-card">
+                  <div class="tl-row"><h3 class="tl-title">Registration</h3><span class="tl-status" data-tl-status>Done</span></div>
+                  <p class="tl-meta">Mrs. Fairweather &middot; Room B12</p>
+                </div>
+              </li>
+              <li class="tl-item s-maths is-done" data-start="09:00" data-end="10:00" data-room="Room M4">
+                <div class="tl-time"><span>09:00</span></div>
+                <div class="tl-card">
+                  <div class="tl-row"><h3 class="tl-title">Mathematics</h3><span class="tl-status" data-tl-status>Done</span></div>
+                  <p class="tl-meta">Mr. Adeyemi &middot; Room M4 &middot; Period 1</p>
+                  <p class="tl-topic">Quadratics: completing the square</p>
+                </div>
+              </li>
+              <li class="tl-item s-eng is-now" data-start="10:00" data-end="11:00" data-room="Room E7" aria-current="time">
+                <div class="tl-time"><span>10:00</span></div>
+                <div class="tl-card">
+                  <div class="tl-row"><h3 class="tl-title">English Literature</h3><span class="tl-status" data-tl-status>Now</span></div>
+                  <p class="tl-meta">Ms. Harlow &middot; Room E7 &middot; Period 2</p>
+                  <p class="tl-topic">Macbeth, Act 1 scene 3: the witches' prophecy</p>
+                  <div class="tl-progress" aria-hidden="true"><span style="width:42%"></span></div>
+                  <p class="tl-left" data-tl-left>35 minutes left</p>
+                </div>
+              </li>
+              <li class="tl-item is-short is-break" data-start="11:00" data-end="11:20">
+                <div class="tl-time"><span>11:00</span></div>
+                <div class="tl-card">
+                  <div class="tl-row"><h3 class="tl-title"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v2M10 2v2M14 2v2"/></svg> Break</h3><span class="tl-status" data-tl-status>20 min</span></div>
+                </div>
+              </li>
+              <li class="tl-item s-sci is-next" data-start="11:20" data-end="12:20" data-room="Lab S2">
+                <div class="tl-time"><span>11:20</span></div>
+                <div class="tl-card">
+                  <div class="tl-row"><h3 class="tl-title">Biology</h3><span class="tl-status" data-tl-status>Up next</span></div>
+                  <p class="tl-meta">Dr. Castellanos &middot; Lab S2 &middot; Period 3</p>
+                  <p class="tl-topic">Osmosis in potato cells: required practical</p>
+                </div>
+              </li>
+              <li class="tl-item is-short is-break" data-start="12:20" data-end="13:05">
+                <div class="tl-time"><span>12:20</span></div>
+                <div class="tl-card">
+                  <div class="tl-row"><h3 class="tl-title"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg> Lunch</h3><span class="tl-status" data-tl-status>45 min</span></div>
+                </div>
+              </li>
+              <li class="tl-item s-span" data-start="13:05" data-end="14:05" data-room="Room L3">
+                <div class="tl-time"><span>13:05</span></div>
+                <div class="tl-card">
+                  <div class="tl-row"><h3 class="tl-title">Spanish</h3><span class="tl-status" data-tl-status></span></div>
+                  <p class="tl-meta">Sra. Ruiz &middot; Room L3 &middot; Period 4</p>
+                  <p class="tl-topic">Mi rutina diaria: reflexive verbs</p>
+                </div>
+              </li>
+              <li class="tl-item s-art" data-start="14:05" data-end="15:05" data-room="Studio A1">
+                <div class="tl-time"><span>14:05</span></div>
+                <div class="tl-card">
+                  <div class="tl-row"><h3 class="tl-title">Art &amp; Design</h3><span class="tl-status" data-tl-status></span></div>
+                  <p class="tl-meta">Ms. Lindqvist &middot; Studio A1 &middot; Period 5</p>
+                  <p class="tl-topic">Coastlines: ink-wash studies</p>
+                </div>
+              </li>
+              <li class="tl-item s-pe is-club" data-start="15:20" data-end="16:30" data-room="Sports hall">
+                <div class="tl-time"><span>15:20</span></div>
+                <div class="tl-card">
+                  <div class="tl-row"><h3 class="tl-title">Netball squad</h3><span class="tl-status" data-tl-status>Club</span></div>
+                  <p class="tl-meta">Coach Whitfield &middot; Sports hall</p>
+                  <p class="tl-topic">Match prep for Friday against Kingsmere</p>
+                </div>
+              </li>
+            </ol>
+            <p class="demo-note" data-demo-note hidden><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg><span>Outside school hours the preview runs at 10:25 so you can see a live lesson. Change <code>DEMO_TIME</code> in js/main.js.</span></p>
+            <a class="card-hr-link" href="timetable.html">See the full week <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 5l7 7-7 7"/></svg></a>
+          </section>
+        </div>
+
+        <div class="col-xl-7">
+          <div class="stack">
+            <section class="card-hr" aria-labelledby="due-title">
+              <div class="card-hr-head">
+                <div>
+                  <h2 id="due-title">Due this week</h2>
+                  <p class="card-hr-sub">4 tasks &middot; 70 points on offer</p>
+                </div>
+                <a class="btn btn-soft btn-sm" href="assignments.html">All assignments</a>
+              </div>
+              <ul class="due-list">
+                <li class="due-item s-span">
+                  <span class="subj-bar" aria-hidden="true"></span>
+                  <div class="due-main">
+                    <p class="subj-label">Spanish</p>
+                    <h3 class="due-title"><a href="assignments.html">Mi rutina diaria: vocabulary quiz prep</a></h3>
+                    <p class="due-meta">Sra. Ruiz &middot; 10 points</p>
+                  </div>
+                  <div class="due-side">
+                    <span class="chip chip-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Today, 15:00</span>
+                    <span class="due-state">Not started</span>
+                  </div>
+                </li>
+                <li class="due-item s-maths">
+                  <span class="subj-bar" aria-hidden="true"></span>
+                  <div class="due-main">
+                    <p class="subj-label">Mathematics</p>
+                    <h3 class="due-title"><a href="assignments.html">Quadratics practice set 3</a></h3>
+                    <p class="due-meta">Mr. Adeyemi &middot; 20 points</p>
+                  </div>
+                  <div class="due-side">
+                    <span class="chip">Fri 25 Sep</span>
+                    <span class="mini-progress" role="progressbar" aria-label="Quadratics practice set 3 progress" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"><span style="width:60%"></span></span>
+                  </div>
+                </li>
+                <li class="due-item s-comp">
+                  <span class="subj-bar" aria-hidden="true"></span>
+                  <div class="due-main">
+                    <p class="subj-label">Computer Science</p>
+                    <h3 class="due-title"><a href="assignments.html">Python loops challenge</a></h3>
+                    <p class="due-meta">Mr. Patel &middot; 25 points</p>
+                  </div>
+                  <div class="due-side">
+                    <span class="chip">Fri 25 Sep</span>
+                    <span class="mini-progress" role="progressbar" aria-label="Python loops challenge progress" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"><span style="width:25%"></span></span>
+                  </div>
+                </li>
+                <li class="due-item s-geo">
+                  <span class="subj-bar" aria-hidden="true"></span>
+                  <div class="due-main">
+                    <p class="subj-label">Geography</p>
+                    <h3 class="due-title"><a href="assignments.html">Coastal erosion annotated diagram</a></h3>
+                    <p class="due-meta">Ms. Ferreira &middot; 15 points</p>
+                  </div>
+                  <div class="due-side">
+                    <span class="chip">Fri 25 Sep</span>
+                    <span class="due-state">Not started</span>
+                  </div>
+                </li>
+              </ul>
+            </section>
+
+            <section class="card-hr" aria-labelledby="recent-title">
+              <div class="card-hr-head">
+                <div>
+                  <h2 id="recent-title">Recent grades</h2>
+                  <p class="card-hr-sub">Term average <strong>85.5%</strong> &middot; up 3.5 on last term</p>
+                </div>
+                <a class="btn btn-soft btn-sm" href="grades.html">Report card</a>
+              </div>
+              <ul class="grade-list">
+                <li class="grade-item s-art">
+                  <span class="grade-badge">A</span>
+                  <div class="grade-main">
+                    <h3>Coastal sketchbook review</h3>
+                    <p>Art &amp; Design &middot; Ms. Lindqvist &middot; 22 Sep</p>
+                  </div>
+                  <div class="grade-side"><strong>94%</strong><span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">up</span> 4</span></div>
+                </li>
+                <li class="grade-item s-eng">
+                  <span class="grade-badge">A&minus;</span>
+                  <div class="grade-main">
+                    <h3>"An Inspector Calls" essay</h3>
+                    <p>English Literature &middot; Ms. Harlow &middot; 23 Sep</p>
+                  </div>
+                  <div class="grade-side"><strong>88%</strong><span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">up</span> 3</span></div>
+                </li>
+                <li class="grade-item s-sci">
+                  <span class="grade-badge">A</span>
+                  <div class="grade-main">
+                    <h3>Enzymes practical write-up</h3>
+                    <p>Biology &middot; Dr. Castellanos &middot; 18 Sep</p>
+                  </div>
+                  <div class="grade-side"><strong>92%</strong><span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">up</span> 4</span></div>
+                </li>
+                <li class="grade-item s-maths">
+                  <span class="grade-badge">B+</span>
+                  <div class="grade-main">
+                    <h3>Simultaneous equations test</h3>
+                    <p>Mathematics &middot; Mr. Adeyemi &middot; 16 Sep</p>
+                  </div>
+                  <div class="grade-side"><strong>82%</strong><span class="delta delta-up"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span class="visually-hidden">up</span> 6</span></div>
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4 mt-0">
+        <div class="col-lg-7">
+          <section class="card-hr h-100" aria-labelledby="news-title">
+            <div class="card-hr-head">
+              <h2 id="news-title">Announcements</h2>
+              <span class="chip chip-primary">3 this week</span>
+            </div>
+            <article class="news-feature">
+              <img src="img/library.jpg" alt="Tall shelves of books in a quiet school library" width="480" height="320" loading="lazy">
+              <div>
+                <p class="news-kicker"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg> Library &middot; Yesterday</p>
+                <h3>Longer library hours from Monday</h3>
+                <p>The library now opens at 08:00 and stays open until 17:00, Monday to Thursday. Quiet study room B can be booked at the front desk for groups of up to four.</p>
+              </div>
+            </article>
+            <ul class="news-list">
+              <li>
+                <span class="news-ic tone-teal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9V3"/><path d="M7 15h10"/></svg></span>
+                <div>
+                  <h3>Science fair sign-ups close Friday</h3>
+                  <p>Teams of up to three. Pick up a proposal template from Lab S2 or find it in the Science fair assignment.</p>
+                  <p class="news-meta">Dr. Castellanos &middot; 2 hours ago</p>
+                </div>
+              </li>
+              <li>
+                <span class="news-ic tone-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></span>
+                <div>
+                  <h3>Harvest food drive starts today</h3>
+                  <p>Bring tins and dry goods to your form room before 3 October. The form with the most donations wins a pizza lunch.</p>
+                  <p class="news-meta">Student council &middot; Today</p>
+                </div>
+              </li>
+            </ul>
+          </section>
+        </div>
+
+        <div class="col-lg-5">
+          <section class="card-hr h-100" aria-labelledby="events-title">
+            <div class="card-hr-head">
+              <h2 id="events-title">Coming up</h2>
+              <a class="card-hr-link m-0" href="timetable.html">Calendar <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 5l7 7-7 7"/></svg></a>
+            </div>
+            <ul class="event-list">
+              <li class="event">
+                <span class="event-date"><span>Sep</span><strong>25</strong></span>
+                <div>
+                  <h3>Netball: Harbourview vs Kingsmere</h3>
+                  <p><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 15:45 &middot; <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Home courts</p>
+                </div>
+                <span class="chip chip-soft">Sport</span>
+              </li>
+              <li class="event">
+                <span class="event-date"><span>Oct</span><strong>1</strong></span>
+                <div>
+                  <h3>Year 10 parents' evening</h3>
+                  <p><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 16:30&ndash;19:30 &middot; <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Main hall</p>
+                </div>
+                <span class="chip chip-soft">Family</span>
+              </li>
+              <li class="event">
+                <span class="event-date is-accent"><span>Oct</span><strong>2</strong></span>
+                <div>
+                  <h3>Science fair proposals due</h3>
+                  <p><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> By 15:00 &middot; <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Lab S2</p>
+                </div>
+                <span class="chip chip-coral">Deadline</span>
+              </li>
+              <li class="event">
+                <span class="event-date"><span>Oct</span><strong>9</strong></span>
+                <div>
+                  <h3>Geography field trip: Brighton coast</h3>
+                  <p><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3M8 14.5h.01M16 14.5h.01"/></svg> Coach leaves 08:15 &middot; back 17:00</p>
+                </div>
+                <span class="chip chip-soft">Trip</span>
+              </li>
+              <li class="event">
+                <span class="event-date"><span>Oct</span><strong>21</strong></span>
+                <div>
+                  <h3>Autumn concert</h3>
+                  <p><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 18:30 &middot; <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Harbour Hall</p>
+                </div>
+                <span class="chip chip-soft">Music</span>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <p>&copy; Harbourview Academy &middot; Homeroom student and parent portal</p>
+      <p>Portal help: <a href="mailto:help@example.com">help@example.com</a> &middot; <a href="tel:+15555550142">555-0142</a></p>
+      <p class="credit">Template by <a href="https://uicookies.com/">uiCookies</a></p>
+    </div>
+  </footer>
+
+  <nav class="tabbar" aria-label="Primary">
+    <ul>
+        <li><a class="tab-link active" href="index.html" aria-current="page"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="tab-label">Home</span></a></li>
+        <li><a class="tab-link" href="assignments.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="tab-label">Tasks</span></a></li>
+        <li><a class="tab-link" href="grades.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="tab-label">Grades</span></a></li>
+        <li><a class="tab-link" href="timetable.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="tab-label">Timetable</span></a></li>
+        <li><a class="tab-link" href="messages.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="tab-label">Inbox</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="tab-link" href="parent.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="tab-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <script src="js/vendor/bootstrap.bundle.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

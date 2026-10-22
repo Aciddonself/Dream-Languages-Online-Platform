@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>document.documentElement.classList.add('js')</script>
+  <script>(function(){var t;try{t=localStorage.getItem('homeroom-theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-bs-theme',t)})()</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Messages — Homeroom Student Portal</title>
+  <meta name="description" content="Two-pane messages inbox in the Homeroom student portal: conversations with teachers and the school office, search, filters and a reply box.">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%234f46e5'/%3E%3Cpath d='M10.5 21 20 12.5l9.5 8.5M14 19v9h12v-9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='30' cy='10.5' r='4' fill='%23ff7a5c'/%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html" aria-label="Homeroom, Harbourview Academy — home">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect class="bm-bg" width="40" height="40" rx="12"/><path class="bm-line" d="M10.5 21 20 12.5l9.5 8.5"/><path class="bm-line" d="M14 19v9h12v-9"/><path class="bm-line" d="M18 28v-4.5h4V28"/><circle class="bm-sun" cx="30" cy="10.5" r="4"/></svg>
+        <span class="brand-text"><span class="brand-name">Homeroom</span><span class="brand-school">Harbourview Academy</span></span>
+      </a>
+
+      <span class="term-chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Autumn term &middot; Week 4</span>
+
+      <nav class="portal-switch" aria-label="Portal view">
+        <a href="index.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Student</a>
+        <a href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Parent</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <button class="icon-btn theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme">
+          <svg class="ic ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="ic ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+
+        <div class="dropdown">
+          <button class="icon-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Notifications, 3 new">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="icon-btn-dot" aria-hidden="true"></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end notif-menu">
+            <div class="notif-head"><span>Notifications</span><span class="chip chip-primary">3 new</span></div>
+            <ul class="list-unstyled m-0">
+          <li><a class="notif" href="grades.html"><span class="notif-ic tone-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span><strong>Ms. Harlow returned your essay</strong><span class="notif-meta">"An Inspector Calls" &middot; A&minus; &middot; 1h ago</span></span></a></li>
+          <li><a class="notif" href="assignments.html"><span class="notif-ic tone-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span><strong>Spanish quiz prep is due today</strong><span class="notif-meta">Sra. Ruiz &middot; before 15:00</span></span></a></li>
+          <li><a class="notif" href="messages.html"><span class="notif-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span><strong>New message from Coach Whitfield</strong><span class="notif-meta">Netball squad list &middot; 3h ago</span></span></a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button class="account-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Account menu for Maya Okafor">
+            <span class="avatar avatar-sm av-indigo" aria-hidden="true">MO</span>
+            <span class="account-name">Maya</span>
+            <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end account-menu">
+            <li class="account-card"><span class="avatar av-indigo" aria-hidden="true">MO</span><span><strong>Maya Okafor</strong><span>Year 10 &middot; Form 10H</span></span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="grades.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg> My grades</a></li>
+            <li><a class="dropdown-item" href="timetable.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> My timetable</a></li>
+            <li><a class="dropdown-item" href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Switch to parent view</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="rail" aria-label="Primary">
+    <ul>
+        <li><a class="rail-link" href="index.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="rail-label">Home</span></a></li>
+        <li><a class="rail-link" href="assignments.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="rail-label">Assignments</span></a></li>
+        <li><a class="rail-link" href="grades.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="rail-label">Grades</span></a></li>
+        <li><a class="rail-link" href="timetable.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="rail-label">Timetable</span></a></li>
+        <li><a class="rail-link active" href="messages.html" aria-current="page"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="rail-label">Messages</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="rail-link" href="parent.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rail-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <main id="main" class="app-main">
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Inbox</p>
+          <h1>Messages</h1>
+          <p class="page-sub">Talk to your teachers and the school office. Most replies arrive within a school day.</p>
+        </div>
+        <div class="page-actions">
+          <span class="chip chip-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg> 2 unread</span>
+        </div>
+      </div>
+
+      <div class="inbox is-open" data-inbox>
+        <div class="inbox-list">
+          <div class="inbox-tools">
+            <div class="search-field">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <label class="visually-hidden" for="thread-search">Search messages</label>
+              <input class="form-control" type="search" id="thread-search" placeholder="Search messages" autocomplete="off">
+            </div>
+            <div class="filter-chips js-only" role="group" aria-label="Filter conversations">
+              <button class="filter-chip" type="button" data-filter="all" aria-pressed="true">All</button>
+              <button class="filter-chip" type="button" data-filter="unread" aria-pressed="false">Unread</button>
+              <button class="filter-chip" type="button" data-filter="teacher" aria-pressed="false">Teachers</button>
+              <button class="filter-chip" type="button" data-filter="school" aria-pressed="false">School</button>
+            </div>
+          </div>
+          <ul class="thread-list" aria-label="Conversations">
+            <li data-kind="teacher">
+              <button class="thread" type="button" data-thread="harlow" aria-current="true">
+                <span class="avatar av-coral" aria-hidden="true">EH</span>
+                <span class="thread-body">
+                  <span class="thread-top"><span class="thread-name">Ms. Eleanor Harlow</span><span class="thread-time">08:15</span></span>
+                  <span class="thread-subject">Your &ldquo;Inspector Calls&rdquo; essay</span>
+                  <span class="thread-preview">Of course. Friday lunchtime in E7. Bring Act 1 and a highlighter.</span>
+                </span>
+              </button>
+            </li>
+            <li data-kind="teacher">
+              <button class="thread is-unread" type="button" data-thread="whitfield" aria-current="false">
+                <span class="avatar av-orange" aria-hidden="true">DW</span>
+                <span class="thread-body">
+                  <span class="thread-top"><span class="thread-name">Coach Dana Whitfield</span><span class="thread-time">07:51</span></span>
+                  <span class="thread-subject">Netball squad list</span>
+                  <span class="thread-preview">Kit check at 15:30 in the sports hall. Bring a water bottle and your mouthguard.</span>
+                </span>
+              </button>
+            </li>
+            <li data-kind="school">
+              <button class="thread is-unread" type="button" data-thread="office" aria-current="false">
+                <span class="avatar av-slate" aria-hidden="true">SO</span>
+                <span class="thread-body">
+                  <span class="thread-top"><span class="thread-name">School Office</span><span class="thread-time">Wed</span></span>
+                  <span class="thread-subject">Brighton field trip letter</span>
+                  <span class="thread-preview">The Year 10 Geography field trip to Brighton is on Friday 9 October.</span>
+                </span>
+              </button>
+            </li>
+            <li data-kind="teacher">
+              <button class="thread" type="button" data-thread="castellanos" aria-current="false">
+                <span class="avatar av-teal" aria-hidden="true">SC</span>
+                <span class="thread-body">
+                  <span class="thread-top"><span class="thread-name">Dr. Sofia Castellanos</span><span class="thread-time">Tue</span></span>
+                  <span class="thread-subject">Science fair teams</span>
+                  <span class="thread-preview">Lovely idea. Think about how you&rsquo;ll keep light and temperature the same.</span>
+                </span>
+              </button>
+            </li>
+            <li data-kind="teacher">
+              <button class="thread" type="button" data-thread="adeyemi" aria-current="false">
+                <span class="avatar av-indigo" aria-hidden="true">TA</span>
+                <span class="thread-body">
+                  <span class="thread-top"><span class="thread-name">Mr. Tunde Adeyemi</span><span class="thread-time">Tue</span></span>
+                  <span class="thread-subject">Quadratics set 3, question 12</span>
+                  <span class="thread-preview">You: That makes sense now, thank you.</span>
+                </span>
+              </button>
+            </li>
+            <li data-kind="teacher">
+              <button class="thread" type="button" data-thread="fairweather" aria-current="false">
+                <span class="avatar av-violet" aria-hidden="true">JF</span>
+                <span class="thread-body">
+                  <span class="thread-top"><span class="thread-name">Mrs. Joan Fairweather</span><span class="thread-time">18 Sep</span></span>
+                  <span class="thread-subject">Merit milestone</span>
+                  <span class="thread-preview">You: Thank you, Mrs. Fairweather!</span>
+                </span>
+              </button>
+            </li>
+            <li data-kind="school">
+              <button class="thread" type="button" data-thread="library" aria-current="false">
+                <span class="avatar av-amber" aria-hidden="true">HL</span>
+                <span class="thread-body">
+                  <span class="thread-top"><span class="thread-name">Harbourview Library</span><span class="thread-time">17 Sep</span></span>
+                  <span class="thread-subject">Book due back Monday</span>
+                  <span class="thread-preview">Reminder: your library book is due back on Monday 28 September.</span>
+                </span>
+              </button>
+            </li>
+            <li class="thread-empty" data-thread-empty hidden>No conversations match. Try another filter.</li>
+          </ul>
+        </div>
+
+        <section class="inbox-convo" aria-labelledby="convo-name">
+          <div class="convo-head" data-convo-head>
+            <button class="icon-btn convo-back" type="button" data-convo-back aria-label="Back to conversations"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 12H5M11 19l-7-7 7-7"/></svg></button>
+            <span class="avatar av-coral" aria-hidden="true">EH</span>
+            <div class="convo-who">
+              <h2 id="convo-name" tabindex="-1">Ms. Eleanor Harlow</h2>
+              <p>English Literature</p>
+            </div>
+            <a class="btn btn-soft btn-sm d-none d-sm-inline-flex" href="assignments.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg> Assignments</a>
+          </div>
+          <p class="convo-subject" data-convo-subject><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> <span>Your &ldquo;Inspector Calls&rdquo; essay</span></p>
+          <div class="convo-body" data-convo-body>
+            <p class="day-sep">Yesterday</p>
+            <div class="msg msg-in"><div class="bubble">Hi Maya, I&rsquo;ve marked your essay on &ldquo;An Inspector Calls&rdquo;: an A&minus; and a really perceptive argument about dramatic irony. Well done.</div><span class="msg-meta">16:05</span></div>
+            <div class="msg msg-in"><div class="bubble">One thing to work on: embed shorter quotations. Pick a single word and zoom in on it. There&rsquo;s an example on page 2 of my feedback.</div><span class="msg-attach"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>essay-feedback-maya.pdf</span><span class="msg-meta">16:06</span></div>
+            <div class="msg msg-out"><div class="bubble">Thank you, Ms. Harlow. Could I bring my plan for the Macbeth log to your Friday clinic?</div><span class="msg-meta">19:40 &middot; You</span></div>
+            <p class="day-sep">Today</p>
+            <div class="msg msg-in"><div class="bubble">Of course. Friday lunchtime in E7. Bring Act 1 and a highlighter.</div><span class="msg-meta">08:15</span></div>
+          </div>
+          <p class="composer-error" data-composer-error role="alert">Write a message or attach a file first.</p>
+          <p class="attach-hint" data-attach-hint hidden></p>
+          <form class="composer" data-composer novalidate>
+            <input class="composer-file" type="file" id="composer-file">
+            <label class="btn btn-ghost btn-icon composer-attach" for="composer-file" title="Attach a file"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><span class="visually-hidden">Attach a file</span></label>
+            <label class="visually-hidden" for="composer-text">Write a reply</label>
+            <textarea class="form-control" id="composer-text" rows="1" placeholder="Write a reply&hellip;"></textarea>
+            <button class="btn btn-primary btn-icon" type="submit" aria-label="Send reply"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <p>&copy; Harbourview Academy &middot; Homeroom student and parent portal</p>
+      <p>Portal help: <a href="mailto:help@example.com">help@example.com</a> &middot; <a href="tel:+15555550142">555-0142</a></p>
+      <p class="credit">Template by <a href="https://uicookies.com/">uiCookies</a></p>
+    </div>
+  </footer>
+
+  <nav class="tabbar" aria-label="Primary">
+    <ul>
+        <li><a class="tab-link" href="index.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="tab-label">Home</span></a></li>
+        <li><a class="tab-link" href="assignments.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="tab-label">Tasks</span></a></li>
+        <li><a class="tab-link" href="grades.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="tab-label">Grades</span></a></li>
+        <li><a class="tab-link" href="timetable.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="tab-label">Timetable</span></a></li>
+        <li><a class="tab-link active" href="messages.html" aria-current="page"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="tab-label">Inbox</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="tab-link" href="parent.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="tab-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <script src="js/vendor/bootstrap.bundle.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

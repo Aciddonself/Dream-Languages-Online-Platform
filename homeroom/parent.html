@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>document.documentElement.classList.add('js')</script>
+  <script>(function(){var t;try{t=localStorage.getItem('homeroom-theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-bs-theme',t)})()</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Parent View — Homeroom Student Portal</title>
+  <meta name="description" content="Parent view in the Homeroom portal: switch between children, pay fees, sign permission slips, see attendance alerts and contact teachers.">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%234f46e5'/%3E%3Cpath d='M10.5 21 20 12.5l9.5 8.5M14 19v9h12v-9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='30' cy='10.5' r='4' fill='%23ff7a5c'/%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html" aria-label="Homeroom, Harbourview Academy — home">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect class="bm-bg" width="40" height="40" rx="12"/><path class="bm-line" d="M10.5 21 20 12.5l9.5 8.5"/><path class="bm-line" d="M14 19v9h12v-9"/><path class="bm-line" d="M18 28v-4.5h4V28"/><circle class="bm-sun" cx="30" cy="10.5" r="4"/></svg>
+        <span class="brand-text"><span class="brand-name">Homeroom</span><span class="brand-school">Harbourview Academy</span></span>
+      </a>
+
+      <span class="term-chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Autumn term &middot; Week 4</span>
+
+      <nav class="portal-switch" aria-label="Portal view">
+        <a href="index.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Student</a>
+        <a href="parent.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Parent</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <button class="icon-btn theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme">
+          <svg class="ic ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="ic ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+
+        <div class="dropdown">
+          <button class="icon-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Notifications, 3 new">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="icon-btn-dot" aria-hidden="true"></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end notif-menu">
+            <div class="notif-head"><span>Notifications</span><span class="chip chip-primary">3 new</span></div>
+            <ul class="list-unstyled m-0">
+          <li><a class="notif" href="parent.html#slips"><span class="notif-ic tone-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><span><strong>2 permission slips need signing</strong><span class="notif-meta">Geography field trip &middot; photo consent</span></span></a></li>
+          <li><a class="notif" href="parent.html#fees"><span class="notif-ic tone-warning"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15v14H5a2 2 0 0 1-2-2V5"/><path d="M16 14h.01"/></svg></span><span><strong>Violin lessons invoice is due 30 Sep</strong><span class="notif-meta">Maya &middot; &pound;96.00</span></span></a></li>
+          <li><a class="notif" href="messages.html"><span class="notif-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span><strong>Mr. Duarte replied about Theo</strong><span class="notif-meta">Form 7B &middot; yesterday</span></span></a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button class="account-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false" aria-label="Account menu for Adaeze Okafor">
+            <span class="avatar avatar-sm av-coral" aria-hidden="true">AO</span>
+            <span class="account-name">Adaeze</span>
+            <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end account-menu">
+            <li class="account-card"><span class="avatar av-coral" aria-hidden="true">AO</span><span><strong>Adaeze Okafor</strong><span>Parent &middot; 2 children</span></span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="parent.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Family overview</a></li>
+            <li><a class="dropdown-item" href="messages.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</a></li>
+            <li><a class="dropdown-item" href="index.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg> Switch to student view</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="rail" aria-label="Primary">
+    <ul>
+        <li><a class="rail-link" href="index.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="rail-label">Home</span></a></li>
+        <li><a class="rail-link" href="assignments.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="rail-label">Assignments</span></a></li>
+        <li><a class="rail-link" href="grades.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="rail-label">Grades</span></a></li>
+        <li><a class="rail-link" href="timetable.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="rail-label">Timetable</span></a></li>
+        <li><a class="rail-link" href="messages.html"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="rail-label">Messages</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="rail-link active" href="parent.html" aria-current="page"><span class="rail-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rail-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <main id="main" class="app-main">
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow"><svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Parent view</p>
+          <h1>Hello, Adaeze</h1>
+          <p class="page-sub">Here&rsquo;s what needs your attention this week: two fees due within a week, four slips to sign and one absence to explain.</p>
+        </div>
+        <div class="page-actions">
+          <a class="btn btn-ghost" href="messages.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</a>
+          <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#absenceModal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg> Report an absence</button>
+        </div>
+      </div>
+
+      <div class="child-switch js-only" role="tablist" aria-label="Choose a child">
+          <button class="child-tab active" id="tab-maya" data-bs-toggle="tab" data-bs-target="#child-maya" type="button" role="tab" aria-controls="child-maya" aria-selected="true" data-child="maya" data-child-name="Maya">
+            <span class="avatar av-indigo" aria-hidden="true">MO</span>
+            <span><strong>Maya Okafor</strong><span>Year 10 &middot; Form 10H</span></span>
+            <span class="check" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg></span>
+          </button>
+          <button class="child-tab" id="tab-theo" data-bs-toggle="tab" data-bs-target="#child-theo" type="button" role="tab" aria-controls="child-theo" aria-selected="false" tabindex="-1" data-child="theo" data-child-name="Theo">
+            <span class="avatar av-coral" aria-hidden="true">TO</span>
+            <span><strong>Theo Okafor</strong><span>Year 7 &middot; Form 7B</span></span>
+            <span class="check" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg></span>
+          </button>
+      </div>
+
+      <div class="tab-content">
+          <div class="tab-pane fade show active" id="child-maya" role="tabpanel" aria-labelledby="tab-maya" tabindex="0">
+            <h2 class="pane-title">Maya&rsquo;s overview</h2>
+            <div class="row g-3 g-lg-4 mb-4">
+              <div class="col-6 col-xl-3">
+                <div class="stat-tile overview-tile">
+                  <div class="ring ring-sm" data-ring="96.5" role="img" aria-label="Attendance: 96.5 percent">
+                    <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false"><circle class="ring-track" cx="60" cy="60" r="50"/><circle class="ring-fill" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="96.5 100"/><circle class="ring-target" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="0.8 99.2" stroke-dashoffset="-94.6"/></svg>
+                    <span class="ring-label"><strong>96.5%</strong></span>
+                  </div>
+                  <div>
+                    <span class="stat-label">Attendance</span>
+                    <span class="chip chip-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> On track</span>
+                    <span class="stat-sub d-block mt-1">82 of 85 lessons this term</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-xl-3">
+                <div class="stat-tile">
+                  <span class="stat-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg> Term average</span>
+                  <span class="stat-value">85.5% <small class="stat-grade">A&minus;</small></span>
+                  <span class="stat-sub">Up 3.5 on last term</span>
+                </div>
+              </div>
+              <div class="col-6 col-xl-3">
+                <div class="stat-tile">
+                  <span class="stat-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg> Merit points</span>
+                  <span class="stat-value">127</span>
+                  <span class="stat-sub">Highest in form 10H</span>
+                </div>
+              </div>
+              <div class="col-6 col-xl-3">
+                <div class="stat-tile">
+                  <span class="stat-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg> Due this week</span>
+                  <span class="stat-value">4</span>
+                  <span class="stat-sub">12 handed in on time in a row</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-4">
+              <div class="col-xl-7">
+                  <section class="card-hr h-100" id="fees" aria-labelledby="fees-title">
+                    <div class="card-hr-head">
+                      <div>
+                        <h2 id="fees-title">Fees due</h2>
+                        <p class="card-hr-sub">3 items for Maya</p>
+                      </div>
+                      <span class="chip chip-soft"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Autumn term</span>
+                    </div>
+                    <ul class="fee-list">
+                <li class="fee-item" data-fee="f1" data-amount="24.00">
+                  <span class="news-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3M8 14.5h.01M16 14.5h.01"/></svg></span>
+                  <div><h3>Geography field trip: Brighton coast</h3><p>Due 2 Oct &middot; coach, entry and insurance</p></div>
+                  <div class="fee-amount"><strong>&pound;24.00</strong><span class="chip chip-soft">Due 2 Oct</span></div>
+                </li>
+                <li class="fee-item" data-fee="f2" data-amount="96.00">
+                  <span class="news-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+                  <div><h3>Violin lessons, autumn term</h3><p>Due 30 Sep &middot; 10 lessons with Ms. Varga</p></div>
+                  <div class="fee-amount"><strong>&pound;96.00</strong><span class="chip chip-warning">Due in 6 days</span></div>
+                </li>
+                <li class="fee-item" data-fee="f3" data-amount="6.50">
+                  <span class="news-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9V3"/><path d="M7 15h10"/></svg></span>
+                  <div><h3>Science fair materials</h3><p>Due 2 Oct &middot; seeds, pots and display board</p></div>
+                  <div class="fee-amount"><strong>&pound;6.50</strong><span class="chip chip-soft">Due 2 Oct</span></div>
+                </li>
+                    </ul>
+                    <div class="fee-total">
+                      <div><p>Total due</p><strong data-fee-total>&pound;126.50</strong></div>
+                      <button class="btn btn-coral" type="button" data-bs-toggle="modal" data-bs-target="#payModal" data-child="maya" data-pay-btn><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> Pay now</button>
+                    </div>
+                    <p class="balance-row tone-text-warning"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg><span>Lunch account: <strong>&pound;8.40</strong> left, about 3 days of lunches.</span></p>
+                  </section>
+              </div>
+
+              <div class="col-xl-5">
+                  <section class="card-hr h-100" aria-labelledby="alerts-maya-title">
+                    <div class="card-hr-head">
+                      <div>
+                        <h2 id="alerts-maya-title">Attendance alerts</h2>
+                        <p class="card-hr-sub">From the attendance office</p>
+                      </div>
+                      <button class="btn btn-ghost btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#absenceModal" data-child="maya"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg> Report absence</button>
+                    </div>
+                    <ul class="alert-list">
+                <li class="alert-item ">
+                  <span class="notif-ic tone-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/></svg></span>
+                  <div>
+                    <h3>Above the attendance target</h3>
+                    <p>96.5% this term against a school target of 95%. Thank you for your support.</p>
+                  </div>
+                </li>
+                <li class="alert-item ">
+                  <span class="notif-ic tone-warning"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                  <div>
+                    <h3>Late arrival &middot; Mon 22 Sep</h3>
+                    <p>Arrived at 08:52; registration closes at 08:40. Reason given: bus delay on the 42.</p><div class="alert-foot"><span class="chip chip-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Explained</span></div>
+                  </div>
+                </li>
+                <li class="alert-item ">
+                  <span class="notif-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg></span>
+                  <div>
+                    <h3>Missed periods 4 and 5 &middot; Tue 16 Sep</h3>
+                    <p>Orthodontist appointment, authorised by the attendance office.</p><div class="alert-foot"><span class="chip chip-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Authorised</span></div>
+                  </div>
+                </li>
+                    </ul>
+                  </section>
+              </div>
+            </div>
+
+            <section class="card-hr mt-4" id="slips" aria-labelledby="slips-title">
+              <div class="card-hr-head">
+                <div>
+                  <h2 id="slips-title">Permission slips</h2>
+                  <p class="card-hr-sub">Read, then sign online. No paper needed.</p>
+                </div>
+                <span class="chip chip-coral" data-slip-count>2 to sign</span>
+              </div>
+              <div class="slip-grid">
+                <article class="slip" data-pending>
+                    <div class="slip-top">
+                      <img class="slip-thumb" src="img/coast.jpg" alt="White chalk cliffs along the Sussex coast" width="400" height="280" loading="lazy">
+                      <div>
+                        <p class="subj-label s-tutor">Geography &middot; Ms. Ferreira</p>
+                        <h3>Geography field trip: Brighton coast</h3>
+                        <p>Year 10 geographers will measure beach profiles and longshore drift between Brighton Marina and Saltdean. Students need a packed lunch, waterproofs and sturdy shoes.</p>
+                        <p class="slip-facts"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Fri 9 Oct</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3M8 14.5h.01M16 14.5h.01"/></svg> Coach 08:15&ndash;17:00</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15v14H5a2 2 0 0 1-2-2V5"/><path d="M16 14h.01"/></svg> &pound;24 (see fees)</span></p>
+                      </div>
+                    </div>
+                    <div class="slip-actions">
+                      <span class="chip chip-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Sign by 2 Oct</span>
+                      <button class="btn btn-soft btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#maya-brighton-form" aria-expanded="false" aria-controls="maya-brighton-form"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Review and sign</button>
+                    </div>
+                    <div class="collapse" id="maya-brighton-form">
+                      <form class="slip-form" data-slip-form novalidate>
+                        <div class="form-check mb-3">
+                          <input class="form-check-input" type="checkbox" id="maya-brighton-consent" required>
+                          <label class="form-check-label" for="maya-brighton-consent">I give permission for Maya to take part.</label>
+                          <div class="invalid-feedback">Tick the box to give permission.</div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label" for="maya-brighton-medical">Medical or dietary notes <span class="fw-normal text-body-secondary">(optional)</span></label>
+                          <textarea class="form-control" id="maya-brighton-medical" rows="2" placeholder="Allergies, medication or anything staff should know"></textarea>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label" for="maya-brighton-phone">Emergency contact number on the day</label>
+                          <input class="form-control" type="tel" id="maya-brighton-phone" required pattern="\+?[0-9][0-9 \-]{5,}" placeholder="555-0187" autocomplete="tel">
+                          <div class="invalid-feedback">Enter a phone number we can reach on the day.</div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label" for="maya-brighton-sign">Type your full name to sign</label>
+                          <input class="form-control" type="text" id="maya-brighton-sign" required minlength="3" autocomplete="name" placeholder="Adaeze Okafor">
+                          <div class="invalid-feedback">Type your name to sign the slip.</div>
+                        </div>
+                        <button class="btn btn-primary" type="submit"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Sign slip</button>
+                      </form>
+                    </div>
+                  </article>
+                <article class="slip" data-pending>
+                    <div class="slip-top">
+                      <div class="slip-art s-sci" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                      <div>
+                        <p class="subj-label s-tutor">Science &middot; Dr. Castellanos</p>
+                        <h3>Science fair: photos on the school website</h3>
+                        <p>The science department would like to share photos of projects and teams on the school website and in the newsletter. First names only; surnames are never published.</p>
+                        <p class="slip-facts"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Science fair, Fri 16 Oct</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> Website and newsletter</span></p>
+                      </div>
+                    </div>
+                    <div class="slip-actions">
+                      <span class="chip chip-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Sign by 9 Oct</span>
+                      <button class="btn btn-soft btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#maya-photos-form" aria-expanded="false" aria-controls="maya-photos-form"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Review and sign</button>
+                    </div>
+                    <div class="collapse" id="maya-photos-form">
+                      <form class="slip-form" data-slip-form novalidate>
+                        <fieldset class="mb-3">
+                          <legend class="form-label">Can photos of Maya be published?</legend>
+                          <div class="form-check"><input class="form-check-input" type="radio" name="maya-photos-choice" id="maya-photos-yes" value="yes" required><label class="form-check-label" for="maya-photos-yes">Yes, first name and photo are fine</label></div>
+                          <div class="form-check"><input class="form-check-input" type="radio" name="maya-photos-choice" id="maya-photos-no" value="no" required><label class="form-check-label" for="maya-photos-no">No, please don&rsquo;t publish photos of Maya</label><div class="invalid-feedback">Choose one option.</div></div>
+                        </fieldset>
+                        <div class="mb-3">
+                          <label class="form-label" for="maya-photos-sign">Type your full name to sign</label>
+                          <input class="form-control" type="text" id="maya-photos-sign" required minlength="3" autocomplete="name" placeholder="Adaeze Okafor">
+                          <div class="invalid-feedback">Type your name to sign the slip.</div>
+                        </div>
+                        <button class="btn btn-primary" type="submit"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Sign slip</button>
+                      </form>
+                    </div>
+                  </article>
+                <article class="slip is-signed">
+                    <div class="slip-top">
+                      <div class="slip-art s-art" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 3v4M17 5h4M5 17v4M3 19h4"/></svg></div>
+                      <div>
+                        <p class="subj-label s-tutor">Careers &middot; Mrs. Fairweather</p>
+                        <h3>Year 10 careers fair at Harbourview College</h3>
+                        <p>A morning visit to the college careers fair with talks from local employers.</p>
+                        <p class="slip-facts"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Thu 8 Oct</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 09:30&ndash;12:30</span></p>
+                      </div>
+                    </div>
+                    <div class="slip-actions">
+                      <span class="slip-signed"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Signed by Adaeze Okafor on 15 Sep</span><span class="chip chip-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Signed</span>
+                    </div>
+                  </article>
+              </div>
+            </section>
+
+            <section class="card-hr mt-4" aria-labelledby="teachers-maya-title">
+              <div class="card-hr-head">
+                <div>
+                  <h2 id="teachers-maya-title">Contact Maya&rsquo;s teachers</h2>
+                  <p class="card-hr-sub">Teachers reply within one school day</p>
+                </div>
+              </div>
+              <ul class="teacher-list">
+                <li class="teacher">
+                  <span class="avatar av-violet" aria-hidden="true">JF</span>
+                  <div><strong>Mrs. Joan Fairweather</strong><span>Form tutor, 10H</span></div>
+                  <button class="btn btn-soft btn-icon" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-teacher="Mrs. Joan Fairweather" data-role="Form tutor, 10H" aria-label="Message Mrs. Joan Fairweather" title="Message Mrs. Joan Fairweather"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                </li>
+                <li class="teacher">
+                  <span class="avatar av-coral" aria-hidden="true">EH</span>
+                  <div><strong>Ms. Eleanor Harlow</strong><span>English Literature</span></div>
+                  <button class="btn btn-soft btn-icon" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-teacher="Ms. Eleanor Harlow" data-role="English Literature" aria-label="Message Ms. Eleanor Harlow" title="Message Ms. Eleanor Harlow"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                </li>
+                <li class="teacher">
+                  <span class="avatar av-indigo" aria-hidden="true">TA</span>
+                  <div><strong>Mr. Tunde Adeyemi</strong><span>Mathematics</span></div>
+                  <button class="btn btn-soft btn-icon" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-teacher="Mr. Tunde Adeyemi" data-role="Mathematics" aria-label="Message Mr. Tunde Adeyemi" title="Message Mr. Tunde Adeyemi"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                </li>
+                <li class="teacher">
+                  <span class="avatar av-teal" aria-hidden="true">SC</span>
+                  <div><strong>Dr. Sofia Castellanos</strong><span>Science</span></div>
+                  <button class="btn btn-soft btn-icon" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-teacher="Dr. Sofia Castellanos" data-role="Science" aria-label="Message Dr. Sofia Castellanos" title="Message Dr. Sofia Castellanos"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                </li>
+              </ul>
+            </section>
+          </div>
+
+          <div class="tab-pane fade" id="child-theo" role="tabpanel" aria-labelledby="tab-theo" tabindex="0">
+            <h2 class="pane-title">Theo&rsquo;s overview</h2>
+            <div class="row g-3 g-lg-4 mb-4">
+              <div class="col-6 col-xl-3">
+                <div class="stat-tile overview-tile">
+                  <div class="ring ring-sm ring-coral" data-ring="91.8" role="img" aria-label="Attendance: 91.8 percent">
+                    <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false"><circle class="ring-track" cx="60" cy="60" r="50"/><circle class="ring-fill" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="91.8 100"/><circle class="ring-target" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="0.8 99.2" stroke-dashoffset="-94.6"/></svg>
+                    <span class="ring-label"><strong>91.8%</strong></span>
+                  </div>
+                  <div>
+                    <span class="stat-label">Attendance</span>
+                    <span class="chip chip-warning"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg> Below target</span>
+                    <span class="stat-sub d-block mt-1">78 of 85 lessons this term</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-xl-3">
+                <div class="stat-tile">
+                  <span class="stat-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg> Term average</span>
+                  <span class="stat-value">78.4% <small class="stat-grade">B</small></span>
+                  <span class="stat-sub">Settling in well in Year 7</span>
+                </div>
+              </div>
+              <div class="col-6 col-xl-3">
+                <div class="stat-tile">
+                  <span class="stat-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg> Merit points</span>
+                  <span class="stat-value">64</span>
+                  <span class="stat-sub">Mostly for kindness and effort</span>
+                </div>
+              </div>
+              <div class="col-6 col-xl-3">
+                <div class="stat-tile">
+                  <span class="stat-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg> Due this week</span>
+                  <span class="stat-value">2</span>
+                  <span class="stat-sub">Maths and English homework</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-4">
+              <div class="col-xl-7">
+                  <section class="card-hr h-100" id="fees-theo" aria-labelledby="fees-theo-title">
+                    <div class="card-hr-head">
+                      <div>
+                        <h2 id="fees-theo-title">Fees due</h2>
+                        <p class="card-hr-sub">2 items for Theo</p>
+                      </div>
+                      <span class="chip chip-soft"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Autumn term</span>
+                    </div>
+                    <ul class="fee-list">
+                <li class="fee-item" data-fee="t1" data-amount="85.00">
+                  <span class="news-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3M8 14.5h.01M16 14.5h.01"/></svg></span>
+                  <div><h3>Year 7 residential: Kingswood Centre (balance)</h3><p>Due 30 Sep &middot; deposit of &pound;40 already paid</p></div>
+                  <div class="fee-amount"><strong>&pound;85.00</strong><span class="chip chip-warning">Due in 6 days</span></div>
+                </li>
+                <li class="fee-item" data-fee="t2" data-amount="12.00">
+                  <span class="news-ic tone-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+                  <div><h3>Design &amp; Technology materials</h3><p>Due 9 Oct &middot; wood, acrylic and fixings</p></div>
+                  <div class="fee-amount"><strong>&pound;12.00</strong><span class="chip chip-soft">Due 9 Oct</span></div>
+                </li>
+                    </ul>
+                    <div class="fee-total">
+                      <div><p>Total due</p><strong data-fee-total>&pound;97.00</strong></div>
+                      <button class="btn btn-coral" type="button" data-bs-toggle="modal" data-bs-target="#payModal" data-child="theo" data-pay-btn><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> Pay now</button>
+                    </div>
+                    <p class="balance-row tone-text-danger"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg><span>Lunch account: <strong>&pound;2.10</strong> left. Top up soon so Theo can buy lunch.</span></p>
+                  </section>
+              </div>
+
+              <div class="col-xl-5">
+                  <section class="card-hr h-100" aria-labelledby="alerts-theo-title">
+                    <div class="card-hr-head">
+                      <div>
+                        <h2 id="alerts-theo-title">Attendance alerts</h2>
+                        <p class="card-hr-sub">From the attendance office</p>
+                      </div>
+                      <button class="btn btn-ghost btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#absenceModal" data-child="theo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg> Report absence</button>
+                    </div>
+                    <ul class="alert-list">
+                <li class="alert-item is-urgent">
+                  <span class="notif-ic tone-danger"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+                  <div>
+                    <h3>Unexplained absence &middot; Wed 17 Sep</h3>
+                    <p>Theo was marked absent for the whole day and we haven&rsquo;t received a reason.</p><div class="alert-foot"><button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#absenceModal" data-child="theo" data-date="2026-09-17"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Explain this absence</button></div>
+                  </div>
+                </li>
+                <li class="alert-item ">
+                  <span class="notif-ic tone-warning"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 7 6 6 4-4 8 8"/><path d="M15 17h6v-6"/></svg></span>
+                  <div>
+                    <h3>Attendance 91.8%, below target</h3>
+                    <p>Mr. Duarte, Theo&rsquo;s form tutor, would like a quick chat about how he is settling in.</p><div class="alert-foot"><button class="btn btn-soft btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-teacher="Mr. Luis Duarte" data-role="Form tutor, 7B"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Message Mr. Duarte</button></div>
+                  </div>
+                </li>
+                <li class="alert-item ">
+                  <span class="notif-ic tone-warning"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                  <div>
+                    <h3>Late arrival &middot; Fri 19 Sep</h3>
+                    <p>Arrived at 08:47. Reason given: overslept.</p><div class="alert-foot"><span class="chip chip-success"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Explained</span></div>
+                  </div>
+                </li>
+                    </ul>
+                  </section>
+              </div>
+            </div>
+
+            <section class="card-hr mt-4" id="slips-theo" aria-labelledby="slips-theo-title">
+              <div class="card-hr-head">
+                <div>
+                  <h2 id="slips-theo-title">Permission slips</h2>
+                  <p class="card-hr-sub">Read, then sign online. No paper needed.</p>
+                </div>
+                <span class="chip chip-coral" data-slip-count>2 to sign</span>
+              </div>
+              <div class="slip-grid">
+                <article class="slip" data-pending>
+                    <div class="slip-top">
+                      <div class="slip-art s-geo" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3M8 14.5h.01M16 14.5h.01"/></svg></div>
+                      <div>
+                        <p class="subj-label s-tutor">Year 7 team &middot; Mr. Duarte</p>
+                        <h3>Year 7 residential: consent and medical form</h3>
+                        <p>Two nights at the Kingswood Centre with climbing, orienteering and team challenges. Please confirm consent and any medical or dietary needs.</p>
+                        <p class="slip-facts"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> 7&ndash;9 Oct</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3M8 14.5h.01M16 14.5h.01"/></svg> Coach from school, 08:30</span></p>
+                      </div>
+                    </div>
+                    <div class="slip-actions">
+                      <span class="chip chip-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Sign by 30 Sep</span>
+                      <button class="btn btn-soft btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#theo-residential-form" aria-expanded="false" aria-controls="theo-residential-form"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Review and sign</button>
+                    </div>
+                    <div class="collapse" id="theo-residential-form">
+                      <form class="slip-form" data-slip-form novalidate>
+                        <div class="form-check mb-3">
+                          <input class="form-check-input" type="checkbox" id="theo-residential-consent" required>
+                          <label class="form-check-label" for="theo-residential-consent">I give permission for Theo to take part.</label>
+                          <div class="invalid-feedback">Tick the box to give permission.</div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label" for="theo-residential-medical">Medical or dietary notes <span class="fw-normal text-body-secondary">(optional)</span></label>
+                          <textarea class="form-control" id="theo-residential-medical" rows="2" placeholder="Allergies, medication or anything staff should know"></textarea>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label" for="theo-residential-phone">Emergency contact number on the day</label>
+                          <input class="form-control" type="tel" id="theo-residential-phone" required pattern="\+?[0-9][0-9 \-]{5,}" placeholder="555-0187" autocomplete="tel">
+                          <div class="invalid-feedback">Enter a phone number we can reach on the day.</div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label" for="theo-residential-sign">Type your full name to sign</label>
+                          <input class="form-control" type="text" id="theo-residential-sign" required minlength="3" autocomplete="name" placeholder="Adaeze Okafor">
+                          <div class="invalid-feedback">Type your name to sign the slip.</div>
+                        </div>
+                        <button class="btn btn-primary" type="submit"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Sign slip</button>
+                      </form>
+                    </div>
+                  </article>
+                <article class="slip" data-pending>
+                    <div class="slip-top">
+                      <div class="slip-art s-maths" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 18c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/><path d="M2 14c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/><circle cx="16" cy="6" r="2"/><path d="m6 11 4-4 3 3"/></svg></div>
+                      <div>
+                        <p class="subj-label s-tutor">PE &middot; Coach Whitfield</p>
+                        <h3>Swimming lessons at Harbourview Leisure Centre</h3>
+                        <p>Year 7 PE includes six weeks of swimming on Wednesdays. Students walk to the leisure centre with staff.</p>
+                        <p class="slip-facts"><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Wednesdays from 14 Oct</span><span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Periods 4 and 5</span></p>
+                      </div>
+                    </div>
+                    <div class="slip-actions">
+                      <span class="chip chip-coral"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Sign by 7 Oct</span>
+                      <button class="btn btn-soft btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#theo-swim-form" aria-expanded="false" aria-controls="theo-swim-form"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Review and sign</button>
+                    </div>
+                    <div class="collapse" id="theo-swim-form">
+                      <form class="slip-form" data-slip-form novalidate>
+                        <div class="form-check mb-3">
+                          <input class="form-check-input" type="checkbox" id="theo-swim-consent" required>
+                          <label class="form-check-label" for="theo-swim-consent">I give permission for Theo to take part in swimming lessons.</label>
+                          <div class="invalid-feedback">Tick the box to give permission.</div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label" for="theo-swim-ability">Can Theo swim 25 metres unaided?</label>
+                          <select class="form-select" id="theo-swim-ability" required>
+                            <option value="">Choose one</option>
+                            <option>Yes, confidently</option>
+                            <option>Yes, but not confidently</option>
+                            <option>Not yet</option>
+                          </select>
+                          <div class="invalid-feedback">Choose an answer so staff can plan groups.</div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label" for="theo-swim-sign">Type your full name to sign</label>
+                          <input class="form-control" type="text" id="theo-swim-sign" required minlength="3" autocomplete="name" placeholder="Adaeze Okafor">
+                          <div class="invalid-feedback">Type your name to sign the slip.</div>
+                        </div>
+                        <button class="btn btn-primary" type="submit"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Sign slip</button>
+                      </form>
+                    </div>
+                  </article>
+              </div>
+            </section>
+
+            <section class="card-hr mt-4" aria-labelledby="teachers-theo-title">
+              <div class="card-hr-head">
+                <div>
+                  <h2 id="teachers-theo-title">Contact Theo&rsquo;s teachers</h2>
+                  <p class="card-hr-sub">Teachers reply within one school day</p>
+                </div>
+              </div>
+              <ul class="teacher-list">
+                <li class="teacher">
+                  <span class="avatar av-sky" aria-hidden="true">LD</span>
+                  <div><strong>Mr. Luis Duarte</strong><span>Form tutor, 7B</span></div>
+                  <button class="btn btn-soft btn-icon" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-teacher="Mr. Luis Duarte" data-role="Form tutor, 7B" aria-label="Message Mr. Luis Duarte" title="Message Mr. Luis Duarte"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                </li>
+                <li class="teacher">
+                  <span class="avatar av-amber" aria-hidden="true">IA</span>
+                  <div><strong>Ms. Ingrid Achterberg</strong><span>Mathematics</span></div>
+                  <button class="btn btn-soft btn-icon" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-teacher="Ms. Ingrid Achterberg" data-role="Mathematics" aria-label="Message Ms. Ingrid Achterberg" title="Message Ms. Ingrid Achterberg"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                </li>
+                <li class="teacher">
+                  <span class="avatar av-green" aria-hidden="true">SK</span>
+                  <div><strong>Mr. Sam Kowalski</strong><span>English</span></div>
+                  <button class="btn btn-soft btn-icon" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-teacher="Mr. Sam Kowalski" data-role="English" aria-label="Message Mr. Sam Kowalski" title="Message Mr. Sam Kowalski"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                </li>
+                <li class="teacher">
+                  <span class="avatar av-orange" aria-hidden="true">DW</span>
+                  <div><strong>Coach Dana Whitfield</strong><span>PE</span></div>
+                  <button class="btn btn-soft btn-icon" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-teacher="Coach Dana Whitfield" data-role="PE" aria-label="Message Coach Dana Whitfield" title="Message Coach Dana Whitfield"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                </li>
+              </ul>
+            </section>
+          </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <p>&copy; Harbourview Academy &middot; Homeroom student and parent portal</p>
+      <p>Portal help: <a href="mailto:help@example.com">help@example.com</a> &middot; <a href="tel:+15555550142">555-0142</a></p>
+      <p class="credit">Template by <a href="https://uicookies.com/">uiCookies</a></p>
+    </div>
+  </footer>
+
+  <nav class="tabbar" aria-label="Primary">
+    <ul>
+        <li><a class="tab-link" href="index.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span><span class="tab-label">Home</span></a></li>
+        <li><a class="tab-link" href="assignments.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="tab-label">Tasks</span></a></li>
+        <li><a class="tab-link" href="grades.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="tab-label">Grades</span></a></li>
+        <li><a class="tab-link" href="timetable.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="tab-label">Timetable</span></a></li>
+        <li><a class="tab-link" href="messages.html"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-badge" aria-hidden="true">2</span></span><span class="tab-label">Inbox</span><span class="visually-hidden">, 2 unread</span></a></li>
+        <li><a class="tab-link active" href="parent.html" aria-current="page"><span class="tab-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="tab-label">Parent</span></a></li>
+    </ul>
+  </nav>
+
+  <!-- Pay fees -->
+  <div class="modal fade" id="payModal" tabindex="-1" aria-labelledby="payModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <form class="modal-content" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title" id="payModalTitle">Pay school fees</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div data-fields>
+            <p class="small text-body-secondary mb-2">Choose what to pay for <strong data-child-label>Maya</strong>.</p>
+            <ul class="pay-lines" data-pay-lines></ul>
+            <p class="submit-error" data-pay-error role="alert">Choose at least one item to pay.</p>
+            <fieldset class="mt-3">
+              <legend class="form-label">Payment method</legend>
+              <div class="pay-method">
+                <label for="pm-card"><input class="form-check-input" type="radio" name="method" id="pm-card" value="card" checked required><span>Visa ending 4417<small>Saved card &middot; expires 08/29</small></span></label>
+                <label for="pm-bank"><input class="form-check-input" type="radio" name="method" id="pm-bank" value="bank" required><span>Bank transfer<small>Use the reference HVA-OKAFOR</small></span></label>
+              </div>
+            </fieldset>
+            <div class="pay-summary"><span>Total</span><strong data-pay-total>&pound;0.00</strong></div>
+          </div>
+          <div class="form-success" data-success role="status"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/></svg><span></span></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> <span data-pay-submit>Pay</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contact a teacher -->
+  <div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title" id="contactModalTitle">Message a teacher</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div data-fields>
+            <div class="row g-3 mb-3">
+              <div class="col-sm-7">
+                <label class="form-label" for="contact-to">To</label>
+                <input class="form-control" type="text" id="contact-to" readonly value="Mrs. Joan Fairweather (Form tutor, 10H)">
+              </div>
+              <div class="col-sm-5">
+                <label class="form-label" for="contact-about">About</label>
+                <input class="form-control" type="text" id="contact-about" readonly value="Maya">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="contact-subject">Subject</label>
+              <input class="form-control" type="text" id="contact-subject" required minlength="3" placeholder="For example: Homework this week">
+              <div class="invalid-feedback">Add a short subject.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="contact-message">Message</label>
+              <textarea class="form-control" id="contact-message" rows="4" required minlength="10" placeholder="Write your message"></textarea>
+              <div class="invalid-feedback">Write at least a sentence so the teacher can help.</div>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="contact-call">
+              <label class="form-check-label" for="contact-call">I&rsquo;d prefer a phone call</label>
+            </div>
+          </div>
+          <div class="form-success" data-success role="status"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/></svg><span></span></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg> Send message</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Report an absence -->
+  <div class="modal fade" id="absenceModal" tabindex="-1" aria-labelledby="absenceModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title" id="absenceModalTitle">Report an absence</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div data-fields>
+            <div class="row g-3 mb-3">
+              <div class="col-sm-6">
+                <label class="form-label" for="absence-child">Child</label>
+                <select class="form-select" id="absence-child" required>
+                  <option value="maya">Maya (Year 10)</option>
+                  <option value="theo">Theo (Year 7)</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label" for="absence-date">Date</label>
+                <input class="form-control" type="date" id="absence-date" required>
+                <div class="invalid-feedback">Choose the date of the absence.</div>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="absence-reason">Reason</label>
+              <select class="form-select" id="absence-reason" required>
+                <option value="">Choose a reason</option>
+                <option>Illness</option>
+                <option>Medical or dental appointment</option>
+                <option>Family emergency</option>
+                <option>Religious observance</option>
+                <option>Other</option>
+              </select>
+              <div class="invalid-feedback">Choose a reason.</div>
+            </div>
+            <div class="mb-1">
+              <label class="form-label" for="absence-note">Note for the attendance office <span class="fw-normal text-body-secondary">(optional)</span></label>
+              <textarea class="form-control" id="absence-note" rows="3" placeholder="For example: back on Monday, has a doctor's note"></textarea>
+            </div>
+          </div>
+          <div class="form-success" data-success role="status"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/></svg><span></span></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg> Send to attendance</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/vendor/bootstrap.bundle.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
