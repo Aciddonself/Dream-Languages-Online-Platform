@@ -1,12 +1,12 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { hashPassword } from "@/lib/auth";
 import { createRegistrationNumber } from "@/lib/registration";
 import { isProfilePhotoJpeg } from "@/lib/pdf";
+import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -36,6 +36,8 @@ const photoExtensions: Record<string, string> = {
 const maxPhotoBytes = 5 * 1024 * 1024;
 
 export async function POST(request: Request) {
+  const limited = await rateLimit("register", clientIp(request), 5, "1 h");
+  if (!limited.ok) return tooManyRequests(limited.retryAfter);
   if (!request.headers.get("content-type")?.includes("multipart/form-data")) {
     return NextResponse.json({ error: "User accounts and login credentials are issued by a school administrator." }, { status: 403 });
   }
@@ -86,7 +88,6 @@ export async function POST(request: Request) {
     nextOfKinName, nextOfKinRelationship, nextOfKinPhone, nextOfKinAddress, studyFormat,
     studyDurationMonths, studyMode, isInternational,
   } = parsed.data;
-  const passwordHash = await hashPassword(randomBytes(32).toString("base64url"));
   const avatarStorageKey = photo ? `${randomUUID()}${photoExtensions[photo.type]}` : null;
   const storageRoot = path.join(process.cwd(), "private_uploads");
   if (photo && avatarStorageKey) {
@@ -97,7 +98,6 @@ export async function POST(request: Request) {
   try {
     const [user] = await db.insert(users).values({
       email,
-      passwordHash,
       role: "applicant",
       status: "applicant",
       firstName,

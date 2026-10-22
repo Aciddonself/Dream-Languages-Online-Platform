@@ -106,7 +106,7 @@ export const users = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     email: varchar("email", { length: 255 }).notNull().unique(),
-    passwordHash: text("password_hash").notNull(),
+    authId: uuid("auth_id").unique(),
     role: roleEnum("role").notNull().default("student"),
     status: userStatusEnum("status").notNull().default("registered"),
     displayName: text("display_name"),
@@ -128,8 +128,6 @@ export const users = pgTable(
     isInternational: boolean("is_international").default(false).notNull(),
     registrationNumber: varchar("registration_number", { length: 64 }).unique(),
     departmentId: uuid("department_id"),
-    twoFactorSecret: text("two_factor_secret"),
-    twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
     deletedAt: timestamp("deleted_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -161,18 +159,6 @@ export const teacherApplications = pgTable("teacher_applications", {
   reviewNote: text("review_note"),
   reviewedBy: uuid("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const sessions = pgTable("sessions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  token: text("token").notNull().unique(),
-  expiresAt: timestamp("expires_at").notNull(),
-  userAgent: text("user_agent"),
-  ip: text("ip"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

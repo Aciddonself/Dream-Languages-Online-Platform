@@ -42,7 +42,7 @@ export function AdminOwnPasswordChange() {
   return (
     <form className="grid max-w-xl gap-3" onSubmit={submit}>
       <GlassInput name="currentPassword" type="password" autoComplete="current-password" placeholder="Current password" required />
-      <GlassInput name="newPassword" type="password" autoComplete="new-password" placeholder="New password (12+ characters)" minLength={12} maxLength={256} required />
+      <GlassInput name="newPassword" type="password" autoComplete="new-password" placeholder="New password (10+ characters)" minLength={10} maxLength={256} required />
       <GlassButton className="w-fit" loading={busy} type="submit">{busy ? "Updating…" : "Change password"}</GlassButton>
       {message && <p className="text-sm text-[var(--success)]" role="status">{message}</p>}
       {error && <p className="text-sm text-[var(--danger)]" role="alert">{error}</p>}

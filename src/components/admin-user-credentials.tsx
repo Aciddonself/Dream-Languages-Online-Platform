@@ -43,7 +43,7 @@ export function AdminUserCredentials({ userId }: { userId: string }) {
           aria-label="New user password"
           autoComplete="new-password"
           className="glass min-w-0 flex-1 rounded-lg px-2 py-1 text-xs"
-          minLength={12}
+          minLength={10}
           maxLength={256}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Set password (12+ chars)"

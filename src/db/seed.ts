@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
+import { createClient } from "@supabase/supabase-js";
 import { db, pool } from "@/db";
 import {
   classes,
@@ -18,18 +18,29 @@ import {
   users,
 } from "@/db/schema";
 
+function authAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required to seed demo accounts");
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+}
+
 async function ensureUser(data: typeof users.$inferInsert) {
   const [existing] = await db.select().from(users).where(eq(users.email, data.email!)).limit(1);
   if (existing) return existing;
 
-  const [inserted] = await db.insert(users).values(data).onConflictDoNothing().returning();
+  const password = process.env.SEED_DEMO_PASSWORD;
+  if (!password || password.length < 10) throw new Error("Set SEED_DEMO_PASSWORD (10+ characters) in your local environment to create demo accounts");
+  const { data: created, error } = await authAdmin().auth.admin.createUser({ email: data.email!, password, email_confirm: true });
+  if (error || !created.user) throw new Error(`Could not create Auth identity for ${data.email}`);
+
+  const [inserted] = await db.insert(users).values({ ...data, authId: created.user.id }).onConflictDoNothing().returning();
   if (inserted) return inserted;
 
   const [concurrent] = await db.select().from(users).where(eq(users.email, data.email!)).limit(1);
   if (!concurrent) throw new Error(`Could not create or retrieve demo user ${data.email}`);
   return concurrent;
 }
-
 async function main() {
   if (process.env.NODE_ENV === "production") {
     throw new Error("The demo seed is disabled in production to prevent creating known-password accounts");
@@ -108,10 +119,8 @@ async function main() {
     if (!existing) await db.insert(gradeScales).values(grade);
   }
 
-  const passwordHash = await bcrypt.hash("Password123!", 10);
   await ensureUser({
     email: "admin@dla.ug",
-    passwordHash,
     role: "super_admin",
     firstName: "Admin",
     lastName: "DLA",
@@ -119,7 +128,6 @@ async function main() {
   });
   await ensureUser({
     email: "hoc@teachers.dla.ug",
-    passwordHash,
     role: "head_academics",
     firstName: "Head",
     lastName: "Academics",
@@ -127,7 +135,6 @@ async function main() {
   });
   const teacher = await ensureUser({
     email: "teacher@teachers.dla.ug",
-    passwordHash,
     role: "teacher",
     firstName: "Emma",
     lastName: "Denis",
@@ -135,7 +142,6 @@ async function main() {
   });
   await ensureUser({
     email: "finance@dla.ug",
-    passwordHash,
     role: "finance",
     firstName: "Finance",
     lastName: "Officer",
@@ -151,7 +157,6 @@ async function main() {
     .limit(1);
   const student = await ensureUser({
     email: "student@students.dla.ug",
-    passwordHash,
     role: "student",
     firstName: "Kamoga",
     lastName: "Ronald",
@@ -162,7 +167,6 @@ async function main() {
   });
   await ensureUser({
     email: "applicant@dla.ug",
-    passwordHash,
     role: "applicant",
     firstName: "New",
     lastName: "Applicant",

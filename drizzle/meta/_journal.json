@@ -15,6 +15,27 @@
       "when": 1792070688658,
       "tag": "0001_glamorous_tomas",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792685273856,
+      "tag": "0002_drop_legacy_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792685280169,
+      "tag": "0003_add_auth_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792685324174,
+      "tag": "0004_rls_policies",
+      "breakpoints": true
     }
   ]
 }

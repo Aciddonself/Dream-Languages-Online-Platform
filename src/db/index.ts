@@ -8,15 +8,19 @@ const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   throw new Error(
-    "DATABASE_URL is not configured. Create .env.local in the project root, copy the pooled PostgreSQL URL from Neon into it, then restart the dev server. See .env.example.",
+    "DATABASE_URL is not configured. Copy the Supabase Postgres connection string (pooler, transaction mode) into .env.local. See .env.example.",
   );
 }
 
 if (!databaseUrl.startsWith("postgres://") && !databaseUrl.startsWith("postgresql://")) {
-  throw new Error(
-    "DATABASE_URL must be a PostgreSQL connection URL. Copy the pooled connection string from your Neon project into .env.local.",
-  );
+  throw new Error("DATABASE_URL must be a PostgreSQL connection URL from your Supabase project.");
 }
+
+const isLocalDatabase = /@(localhost|127\.0\.0\.1)[:/]/.test(databaseUrl);
+// TLS is always verified for remote databases. Download the Supabase CA certificate and pass it via DATABASE_CA_CERT if verification fails.
+const ssl = isLocalDatabase
+  ? false
+  : { rejectUnauthorized: true, ...(process.env.DATABASE_CA_CERT ? { ca: process.env.DATABASE_CA_CERT.replace(/\\n/g, "\n") } : {}) };
 
 const globalForDb = globalThis as typeof globalThis & {
   __arenaNextJsPostgresqlPool?: Pool;
@@ -24,7 +28,8 @@ const globalForDb = globalThis as typeof globalThis & {
 
 const existingPool = globalForDb.__arenaNextJsPostgresqlPool;
 export const pool = existingPool ?? new Pool({
-  connectionString: databaseUrl,
+  connectionString: databaseUrl.replace(/[?&]sslmode=[^&]*/g, ""),
+  ssl,
   max: 10,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 10_000,

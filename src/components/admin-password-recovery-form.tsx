@@ -41,7 +41,7 @@ export function AdminPasswordRecoveryForm({ token }: { token?: string }) {
   return (
     <form className="space-y-4" onSubmit={submit}>
       {token ? (
-        <GlassInput name="password" type="password" autoComplete="new-password" placeholder="New password (12+ characters)" minLength={12} maxLength={256} required />
+        <GlassInput name="password" type="password" autoComplete="new-password" placeholder="New password (10+ characters)" minLength={10} maxLength={256} required />
       ) : (
         <GlassInput name="identifier" type="text" autoComplete="username" placeholder="Administrator email or login name" maxLength={255} required />
       )}

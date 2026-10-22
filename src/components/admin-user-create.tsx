@@ -81,7 +81,7 @@ export function AdminUserCreate() {
         placeholder="Temporary password"
         value={form.password}
         onChange={(event) => setForm({ ...form, password: event.target.value })}
-        minLength={12}
+        minLength={10}
         required
       />
       <select

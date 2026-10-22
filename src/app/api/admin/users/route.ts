@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { auditLogs, departments, feeSchedules, sessions, users } from "@/db/schema";
-import { hashPassword } from "@/lib/auth";
-import { getCurrentUser } from "@/lib/auth";
+import { auditLogs, departments, feeSchedules, users } from "@/db/schema";
+import { getCurrentUser, syncAuthBan } from "@/lib/auth";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { validateNewPassword } from "@/lib/password-policy";
+import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { roleHome } from "@/lib/rbac";
 import { createRegistrationNumber } from "@/lib/registration";
 import { createTextPdf, readProfilePhotoJpeg } from "@/lib/pdf";
@@ -13,16 +15,31 @@ import { getCourseTuition } from "@/lib/course-pricing";
 
 const createUserSchema = z.object({
   email: z.string().trim().email().transform((email) => email.toLowerCase()),
-  password: z.string().min(12).max(256),
+  password: z.string().min(10).max(256),
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
   role: z.enum(["super_admin", "head_academics", "teacher", "finance", "student", "applicant"]),
-});
+}).strict();
+
+/** Creates (or updates) the Supabase Auth identity for a profile row. Returns the auth user id. */
+async function upsertAuthIdentity(account: { id: string; email: string; authId: string | null }, password: string) {
+  const admin = createSupabaseAdminClient();
+  if (account.authId) {
+    const { error } = await admin.auth.admin.updateUserById(account.authId, { password });
+    if (error) throw new Error("Could not update credentials");
+    return account.authId;
+  }
+  const { data, error } = await admin.auth.admin.createUser({ email: account.email, password, email_confirm: true });
+  if (error || !data.user) throw new Error("Could not create credentials");
+  return data.user.id;
+}
 
 export async function POST(req: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+  const limited = await rateLimit("admin-users", actor.id, 30, "10 m");
+  if (!limited.ok) return tooManyRequests(limited.retryAfter);
 
   let body: unknown;
   try {
@@ -36,11 +53,17 @@ export async function POST(req: Request) {
   }
 
   const { email, password, firstName, lastName, role } = parsed.data;
+  const passwordProblem = await validateNewPassword(password);
+  if (passwordProblem) return NextResponse.json({ error: passwordProblem }, { status: 400 });
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+  if (existing) return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+
+  const authId = await upsertAuthIdentity({ id: "", email, authId: null }, password);
   const [user] = await db
     .insert(users)
     .values({
       email,
-      passwordHash: await hashPassword(password),
+      authId,
       role,
       status: role === "applicant" ? "applicant" : "registered",
       firstName,
@@ -51,7 +74,18 @@ export async function POST(req: Request) {
     .onConflictDoNothing()
     .returning({ id: users.id, email: users.email, role: users.role, registrationNumber: users.registrationNumber });
 
-  if (!user) return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+  if (!user) {
+    await createSupabaseAdminClient().auth.admin.deleteUser(authId);
+    return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+  }
+  await db.insert(auditLogs).values({
+    actorId: actor.id,
+    action: "create_user",
+    entityType: "user",
+    entityId: user.id,
+    after: { role: user.role },
+    ip: clientIp(req),
+  });
   return NextResponse.json({ ok: true, redirectTo: roleHome(user.role), user }, { status: 201 });
 }
 
@@ -76,7 +110,7 @@ export async function PATCH(req: Request) {
     z.object({
       userId: z.string().uuid(),
       action: z.literal("set_password"),
-      password: z.string().min(12).max(256),
+      password: z.string().min(10).max(256),
     }),
   ]).safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -86,11 +120,13 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Use administrator password recovery to change your own password" }, { status: 403 });
     }
     const { password, userId } = parsed.data;
-    const outcome = await db.transaction(async (tx) => {
-      const [account] = await tx.select().from(users).where(eq(users.id, userId)).limit(1);
-      if (!account || account.deletedAt) return { error: "Account not found", status: 404 as const };
-      await tx.update(users).set({ passwordHash: await hashPassword(password), updatedAt: new Date() }).where(eq(users.id, account.id));
-      await tx.delete(sessions).where(eq(sessions.userId, account.id));
+    const passwordProblem = await validateNewPassword(password);
+    if (passwordProblem) return NextResponse.json({ error: passwordProblem }, { status: 400 });
+    const [account] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!account || account.deletedAt) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    const authId = await upsertAuthIdentity(account, password);
+    await db.transaction(async (tx) => {
+      await tx.update(users).set({ authId, updatedAt: new Date() }).where(eq(users.id, account.id));
       await tx.insert(auditLogs).values({
         actorId: actor.id,
         action: "issue_user_credentials",
@@ -98,9 +134,8 @@ export async function PATCH(req: Request) {
         entityId: account.id,
         after: { role: account.role },
       });
-      return { ok: true };
     });
-    if ("error" in outcome) return NextResponse.json({ error: outcome.error }, { status: outcome.status });
+    await syncAuthBan(authId, account.status);
     return NextResponse.json({ ok: true });
   }
 
@@ -124,12 +159,11 @@ export async function PATCH(req: Request) {
         before: { status: account.status, role: account.role },
         after: { status: updated.status, role: updated.role },
       });
-      if (!["active", "registered", "applicant"].includes(updated.status)) {
-        await tx.delete(sessions).where(eq(sessions.userId, account.id));
-      }
-      return { user: updated };
+      return { user: updated, authId: account.authId };
     });
     if ("error" in outcome) return NextResponse.json({ error: outcome.error }, { status: outcome.status });
+    // Blocked statuses are banned at the Auth server so refresh tokens stop working as well.
+    if (outcome.authId) await syncAuthBan(outcome.authId, outcome.user.status);
     return NextResponse.json({ ok: true, user: outcome.user });
   }
 

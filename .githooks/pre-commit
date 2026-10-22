@@ -1,0 +1,7 @@
+#!/bin/sh
+# Enable with: git config core.hooksPath .githooks
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --config .gitleaks.toml || { echo "gitleaks found a possible secret. Commit blocked."; exit 1; }
+else
+  echo "gitleaks not installed; install it to scan commits (https://github.com/gitleaks/gitleaks)"; exit 1
+fi
