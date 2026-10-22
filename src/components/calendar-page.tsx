@@ -67,7 +67,7 @@ export function CalendarPage({ events }: { events: CalendarEvent[] }) {
     eventTimeFormat: { hour: "2-digit", minute: "2-digit", hour12: false },
     eventDisplay: "block",
     datesSet: ({ view: calendarView }) => setHeading(calendarView.title),
-    eventClassNames: ["calendar-fc-event"],
+    eventClass: "calendar-fc-event",
     eventContent: ({ timeText, event }) => (
       <span className="calendar-fc-event-content">
         {timeText && <span className="calendar-fc-event-time">{timeText}</span>}

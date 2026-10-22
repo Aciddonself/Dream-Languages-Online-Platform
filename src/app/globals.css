@@ -510,7 +510,7 @@ body {
   --portal-surface-soft: #f6f8fb;
   --portal-line: #e9edf3;
   --portal-ink: #202a3b;
-  --portal-muted: #7e899c;
+  --portal-muted: #5b6678;
   --portal-accent: #c99c3b;
   display: flex;
   min-height: 100vh;
@@ -889,4 +889,36 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .portal-sidebar, .portal-main > * { animation: none !important; transition: none !important; }
+}
+
+/* Dasher-style dashboard widgets */
+.greeting-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-bottom: 20px; padding: 24px 28px; border-radius: 14px; color: #fff;
+  background: linear-gradient(120deg, var(--brand-secondary) 0%, var(--brand-secondary-soft) 70%, #805e15 130%);
+}
+.greeting-banner h1 { margin: 0 0 4px; font-size: 1.5rem; font-weight: 750; }
+.greeting-banner p { margin: 0; color: #dbe5f2; font-size: 0.9rem; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.kpi-card, .dash-card {
+  padding: 20px; border: 1px solid var(--portal-line); border-radius: 12px;
+  background: var(--portal-surface); color: var(--portal-ink); box-shadow: 0 2px 8px rgba(23, 40, 65, 0.035);
+}
+.kpi-top { display: flex; align-items: center; justify-content: space-between; }
+.kpi-label { color: var(--portal-muted); font-size: 0.78rem; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; }
+.kpi-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; background: #fbf4df; color: #805e15; }
+.dark .kpi-icon { background: #1d2b44; color: var(--brand-accent); }
+.kpi-value { margin: 10px 0 6px; font-size: 1.9rem; font-weight: 750; line-height: 1.1; }
+.kpi-change { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--portal-muted); }
+.kpi-change.is-up strong { color: #1d6f5c; }
+.kpi-change.is-down strong { color: #b42323; }
+.dark .kpi-change.is-up strong { color: #5fd0b5; }
+.dark .kpi-change.is-down strong { color: #ff8a8a; }
+.dash-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+.dash-card h2 { margin: 0 0 12px; font-size: 1rem; font-weight: 700; }
+.dash-card.span-2 { grid-column: span 2; }
+.chart-skeleton { height: 240px; border-radius: 10px; background: var(--portal-line); opacity: 0.5; }
+@media (max-width: 900px) {
+  .dash-grid { grid-template-columns: 1fr; }
+  .dash-card.span-2 { grid-column: auto; }
 }

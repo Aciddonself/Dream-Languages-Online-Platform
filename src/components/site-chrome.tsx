@@ -7,7 +7,7 @@ import { ContactChooser } from "@/components/contact-chooser";
 import { FatherDla } from "@/components/father-dla";
 import { SiteFooter } from "@/components/site-footer";
 
-const portalRoutes = ["/admin", "/applicant", "/finance", "/hoc", "/student", "/teacher"];
+const portalRoutes = ["/admin", "/applicant", "/finance", "/hoc", "/student", "/teacher", "/preview"];
 
 export function SiteChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();

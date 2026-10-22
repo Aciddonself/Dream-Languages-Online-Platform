@@ -22,7 +22,7 @@ import {
 import { LogoutButton } from "@/components/logout-button";
 import { useTheme } from "@/components/theme-provider";
 
-type NavItem = { href: string; label: string; icon?: string };
+type NavItem = { href: string; label: string; icon?: string; group?: "Apps" | "Pages" };
 type NotificationTab = "All" | "Following" | "Archive";
 
 export function PortalShell({
@@ -70,7 +70,8 @@ export function PortalShell({
   }, []);
 
   const dashboardItems = nav.filter((item) => /dashboard/i.test(item.label));
-  const appItems = nav.filter((item) => !/dashboard/i.test(item.label));
+  const pageItems = nav.filter((item) => item.group === "Pages");
+  const appItems = nav.filter((item) => !/dashboard/i.test(item.label) && item.group !== "Pages");
   const activeLabel = nav.find((item) => pathname === item.href)?.label ?? title;
 
   function renderNavItems(items: NavItem[]) {
@@ -119,6 +120,12 @@ export function PortalShell({
             <section className="portal-nav-group">
               <h2>Apps</h2>
               {renderNavItems(appItems)}
+            </section>
+          )}
+          {pageItems.length > 0 && (
+            <section className="portal-nav-group">
+              <h2>Pages</h2>
+              {renderNavItems(pageItems)}
             </section>
           )}
         </nav>
@@ -242,7 +249,11 @@ export function PortalShell({
                   <strong>{title}</strong>
                   <Link href={nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Home</Link>
                   <Link href={nav.find((item) => /inbox|message/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Inbox</Link>
+                  <Link href={nav.find((item) => /chat|community/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Chat</Link>
+                  <Link href={nav.find((item) => /activity/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Activity</Link>
+                  <Link href={nav.find((item) => /settings|profile/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Account settings</Link>
                   <Link href="/contact" role="menuitem" onClick={() => setMenuOpen(false)}>Help &amp; support</Link>
+                  <div className="portal-menu-logout"><LogoutButton /></div>
                 </div>
               )}
             </div>
