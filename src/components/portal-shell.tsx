@@ -22,12 +22,12 @@ import {
 import { LogoutButton } from "@/components/logout-button";
 import { useTheme } from "@/components/theme-provider";
 
-type NavItem = { href: string; label: string; icon?: string; group?: "Apps" | "Pages" };
+import { navForPath, type NavItem } from "@/lib/portal-nav";
 type NotificationTab = "All" | "Following" | "Archive";
 
 export function PortalShell({
   title,
-  nav,
+  nav: navProp,
   children,
 }: {
   title: string;
@@ -35,6 +35,8 @@ export function PortalShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  // Role menus are defined once in portal-nav so every page shows the same sidebar.
+  const nav = navForPath(pathname) ?? navProp;
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -69,9 +71,14 @@ export function PortalShell({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const dashboardItems = nav.filter((item) => /dashboard/i.test(item.label));
-  const pageItems = nav.filter((item) => item.group === "Pages");
-  const appItems = nav.filter((item) => !/dashboard/i.test(item.label) && item.group !== "Pages");
+  const groups = useMemo(() => {
+    const map = new Map<string, NavItem[]>();
+    for (const item of nav) {
+      const group = item.group ?? (/dashboard/i.test(item.label) ? "Dashboards" : "Apps");
+      map.set(group, [...(map.get(group) ?? []), item]);
+    }
+    return [...map.entries()];
+  }, [nav]);
   const activeLabel = nav.find((item) => pathname === item.href)?.label ?? title;
 
   function renderNavItems(items: NavItem[]) {
@@ -110,24 +117,12 @@ export function PortalShell({
           </span>
         </Link>
         <nav className="portal-sidebar-nav" aria-label={`${title} navigation`}>
-          {dashboardItems.length > 0 && (
-            <section className="portal-nav-group">
-              <h2>Dashboards</h2>
-              {renderNavItems(dashboardItems)}
+          {groups.map(([group, items]) => (
+            <section className="portal-nav-group" key={group}>
+              <h2>{group}</h2>
+              {renderNavItems(items)}
             </section>
-          )}
-          {appItems.length > 0 && (
-            <section className="portal-nav-group">
-              <h2>Apps</h2>
-              {renderNavItems(appItems)}
-            </section>
-          )}
-          {pageItems.length > 0 && (
-            <section className="portal-nav-group">
-              <h2>Pages</h2>
-              {renderNavItems(pageItems)}
-            </section>
-          )}
+          ))}
         </nav>
         <div className="portal-user-card">
           <div className="portal-avatar" aria-hidden="true">{title.slice(0, 1).toUpperCase()}</div>

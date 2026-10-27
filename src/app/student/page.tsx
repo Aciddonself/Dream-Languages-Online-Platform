@@ -2,6 +2,7 @@ import { requireRole } from "@/lib/rbac";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { StudentIdCard } from "@/components/id-card";
+import { ProfilePhotoControl } from "@/components/profile-photo-control";
 import { AttendanceRing } from "@/components/attendance-ring";
 import { db } from "@/db";
 import {
@@ -14,6 +15,7 @@ import {
   feeSchedules,
   holds,
   levels,
+  notifications,
   timetableSessions,
 } from "@/db/schema";
 import { and, count, desc, eq, gt, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
@@ -50,7 +52,7 @@ export default async function StudentDashboard() {
     .where(eq(enrolments.studentId, user.id))
     .limit(1);
 
-  const [attendanceSummary, feeSummary, activeHold, assignmentSummary, announcementRows, completedAttendanceSessions] = await Promise.all([
+  const [attendanceSummary, feeSummary, activeHold, assignmentSummary, announcementRows, completedAttendanceSessions, portalNotifications] = await Promise.all([
     db.select({ total: count() }).from(attendance).where(eq(attendance.studentId, user.id)),
     db.select({
       currency: feeSchedules.currency,
@@ -82,6 +84,13 @@ export default async function StudentDashboard() {
           isNotNull(timetableSessions.liveEndedAt),
         ))
       : Promise.resolve([]),
+    db.select({
+      id: notifications.id,
+      title: notifications.title,
+      body: notifications.body,
+      createdAt: notifications.createdAt,
+    }).from(notifications).where(eq(notifications.userId, user.id))
+      .orderBy(desc(notifications.createdAt)).limit(8),
   ]);
 
   const completedSessionIds = completedAttendanceSessions.map((session) => session.id);
@@ -293,6 +302,16 @@ export default async function StudentDashboard() {
             level={enrollment?.levelName ?? "Not assigned"}
             photoUrl={user.avatarUrl ?? undefined}
           />
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <ProfilePhotoControl />
+            {user.avatarStorageKey && user.documentStampedAt ? (
+              <Link href="/api/portal/documents/id" className="btn-glass btn-glass-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold">Download digital ID</Link>
+            ) : (
+              <p className="text-xs text-[var(--warning)]">
+                {user.avatarStorageKey ? "Your photo is saved. Ask an administrator or the Head of Academics to stamp your ID and report cards." : "Upload a passport photo, then ask an administrator or the Head of Academics to stamp your ID."}
+              </p>
+            )}
+          </div>
         </GlassCard>
       </div>
 
@@ -311,6 +330,18 @@ export default async function StudentDashboard() {
               <div className="mt-1 text-xs opacity-50">{announcement.publishedAt.toLocaleString()}</div>
             </li>
           )) : <li className="glass px-3 py-2 opacity-70">There are no new announcements.</li>}
+        </ul>
+      </GlassCard>
+      <GlassCard className="mt-4 p-6">
+        <div className="font-semibold mb-3">Portal notifications</div>
+        <ul className="space-y-2 text-sm">
+          {portalNotifications.length ? portalNotifications.map((notification) => (
+            <li className="glass px-3 py-2" key={notification.id}>
+              <div className="font-semibold">{notification.title}</div>
+              {notification.body && <div className="mt-1 opacity-75">{notification.body}</div>}
+              <div className="mt-1 text-xs opacity-50">{notification.createdAt.toLocaleString()}</div>
+            </li>
+          )) : <li className="glass px-3 py-2 opacity-70">You have no new portal notifications.</li>}
         </ul>
       </GlassCard>
     </PortalShell>

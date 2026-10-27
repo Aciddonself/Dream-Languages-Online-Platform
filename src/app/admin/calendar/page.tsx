@@ -27,10 +27,10 @@ export default async function AdminCalendar() {
 
   return (
     <PortalShell title="Admin Console" nav={nav}>
-      <CalendarPage events={sessions.map((session) => ({
+      <CalendarPage events={sessions.map((session: { id: string; title: string; startsAt: Date | string; endsAt: Date | string; room: string | null }) => ({
         ...session,
-        startsAt: session.startsAt.toISOString(),
-        endsAt: session.endsAt.toISOString(),
+        startsAt: new Date(session.startsAt).toISOString(),
+        endsAt: new Date(session.endsAt).toISOString(),
       }))} />
     </PortalShell>
   );

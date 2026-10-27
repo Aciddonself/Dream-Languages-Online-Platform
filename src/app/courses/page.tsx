@@ -1,5 +1,6 @@
 import { GlassCard } from "@/components/ui/glass";
 import Link from "next/link";
+import { whatsappContacts } from "@/lib/contacts";
 import { getPublicDepartments } from "@/lib/public-content";
 
 export const revalidate = 60;
@@ -10,6 +11,10 @@ export default async function CoursesPage() {
     <main className="min-h-screen px-6 py-10 max-w-6xl mx-auto">
       <h1 className="display-font text-3xl font-bold mb-2">Courses &amp; Fees</h1>
       <p className="opacity-70 mb-6">Choose a language or practical skills programme and a study format that fits your goals.</p>
+      <div className="courses-portrait">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/site-media/hero-language-class.jpg" alt="Students taking part in a DLA language class" />
+      </div>
       <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
         {depts.map((d) => (
           <GlassCard key={d.id} className="p-5 flex flex-col justify-between hover:border-indigo-400/50 transition-all" strong>
@@ -80,8 +85,9 @@ export default async function CoursesPage() {
             <p className="text-sm opacity-75">Get personal support from a DLA tutor at home or through private one-on-one study. We can tailor lesson times and learning activities to your goals, current level, and preferred language.</p>
           </div>
           <div className="flex flex-col gap-2">
-            <a className="btn-glass btn-glass-primary rounded-xl px-5 py-3 text-center font-semibold" href="https://wa.me/256742259976?text=Hello%20DLA%2C%20I%27m%20inquiring%20about%20one-on-one%20or%20home%20study%20tutoring." target="_blank" rel="noreferrer">WhatsApp DLA about private tutoring</a>
-            <a className="text-center text-sm font-semibold underline" href="https://wa.me/256775566832?text=Hello%20DLA%2C%20I%27m%20inquiring%20about%20one-on-one%20or%20home%20study%20tutoring." target="_blank" rel="noreferrer">Message the second DLA office</a>
+            <a className="btn-glass btn-glass-primary rounded-xl px-5 py-3 text-center font-semibold" href={whatsappContacts[0].tutoringHref} target="_blank" rel="noreferrer">WhatsApp DLA about private tutoring</a>
+            <a className="text-center text-sm font-semibold underline" href={whatsappContacts[1].tutoringHref} target="_blank" rel="noreferrer">Message the second DLA office</a>
+            <Link className="text-center text-sm font-semibold underline" href="/contact">Other ways to contact DLA</Link>
           </div>
         </GlassCard>
       </section>

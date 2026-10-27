@@ -25,7 +25,7 @@ export default async function AdminSmsPage() {
       <GlassCard className="p-5 mb-5"><AdminSmsForm /></GlassCard>
       <GlassCard className="p-5">
         <h2 className="font-semibold mb-3">Recent campaigns</h2>
-        {campaigns.length ? <ul className="space-y-2">{campaigns.map((campaign) => (
+        {campaigns.length ? <ul className="space-y-2">{campaigns.map((campaign: { id: string; message: string; createdAt: Date; status: string; recipientCount: number }) => (
           <li className="rounded-xl border border-white/10 p-3" key={campaign.id}>
             <p className="text-sm">{campaign.message}</p>
             <p className="mt-1 text-xs opacity-65">{campaign.createdAt.toLocaleString()} · {campaign.status} · {campaign.recipientCount} accepted</p>

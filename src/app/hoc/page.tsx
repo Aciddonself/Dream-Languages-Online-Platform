@@ -16,13 +16,11 @@ const nav = [
 
 export default async function HocDashboard() {
   await requireRole(["head_academics", "super_admin"]);
-  const [teacherCount, classCount, approvalCount] = await Promise.all([
+  const [teacherCount, classCount, approvalCount, pendingExams, allDepts, schoolClasses, teachers, applicants, upcomingSessions] = await Promise.all([
     db.select({ total: count() }).from(users).where(eq(users.role, "teacher")),
     db.select({ total: count() }).from(classes),
     db.select({ total: count() }).from(exams).where(eq(exams.published, false)),
-  ]);
-  const pendingExams = await db.select().from(exams).where(eq(exams.published, false)).limit(10);
-  const [allDepts, schoolClasses, teachers, applicants, upcomingSessions] = await Promise.all([
+    db.select().from(exams).where(eq(exams.published, false)).limit(10),
     db
       .select({ id: departments.id, name: departments.name, code: departments.code, flagEmoji: departments.flagEmoji })
       .from(departments)

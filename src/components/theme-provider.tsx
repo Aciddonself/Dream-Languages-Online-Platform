@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 type Theme = "light" | "dark" | "system";
@@ -17,46 +18,43 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: () => {},
 });
 
+// Dark mode exists only inside signed-in dashboards; the public website is always light.
+const PORTAL_ROOTS = ["student", "teacher", "hoc", "finance", "applicant", "admin"];
+function isPortalPath(pathname: string) {
+  const [root, second] = pathname.split("/").filter(Boolean);
+  if (!root || !PORTAL_ROOTS.includes(root)) return false;
+  return !(root === "admin" && second === "login");
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const portal = isPortalPath(pathname);
   const [theme, setThemeState] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  const [systemDark, setSystemDark] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    let preference: Theme = "system";
-    const applyTheme = (preference: Theme) => {
-      const resolved = preference === "system" ? (mediaQuery.matches ? "dark" : "light") : preference;
-      setResolvedTheme(resolved);
-      document.documentElement.classList.toggle("dark", resolved === "dark");
-      document.documentElement.classList.toggle("light", resolved === "light");
-    };
-
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSystemDark(mediaQuery.matches);
     try {
       const stored = localStorage.getItem("dla-theme");
-      preference = stored === "dark" || stored === "light" || stored === "system" ? stored : "system";
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setThemeState(preference);
-      applyTheme(preference);
-    } catch {
-      preference = "system";
-      applyTheme("system");
-    }
-
-    const onSystemThemeChange = () => {
-      if (preference === "system") applyTheme(preference);
-    };
-    mediaQuery.addEventListener("change", onSystemThemeChange);
-    return () => mediaQuery.removeEventListener("change", onSystemThemeChange);
+      if (stored === "dark" || stored === "light" || stored === "system") setThemeState(stored);
+    } catch {}
+    const onChange = () => setSystemDark(mediaQuery.matches);
+    mediaQuery.addEventListener("change", onChange);
+    return () => mediaQuery.removeEventListener("change", onChange);
   }, []);
+
+  const preferred: "light" | "dark" = theme === "system" ? (systemDark ? "dark" : "light") : theme;
+  const resolvedTheme = portal ? preferred : "light";
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", resolvedTheme === "dark");
+    document.documentElement.classList.toggle("light", resolvedTheme === "light");
+  }, [resolvedTheme]);
 
   function setTheme(newTheme: Theme) {
     setThemeState(newTheme);
-    const resolved = newTheme === "system"
-      ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-      : newTheme;
-    setResolvedTheme(resolved);
-    document.documentElement.classList.toggle("dark", resolved === "dark");
-    document.documentElement.classList.toggle("light", resolved === "light");
     try {
       localStorage.setItem("dla-theme", newTheme);
     } catch (error) {

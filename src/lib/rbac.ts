@@ -36,7 +36,7 @@ export async function requireUser() {
 
 export async function requireRole(roles: string[]) {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(roles.length === 1 && roles[0] === "super_admin" ? "/admin/login" : "/login");
   if (!roles.includes(user.role)) redirect(roleHome(user.role));
   return user;
 }

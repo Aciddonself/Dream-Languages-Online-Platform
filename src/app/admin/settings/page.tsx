@@ -17,7 +17,7 @@ export default async function AdminSettings() {
       <p className="mb-4 text-sm opacity-70">School profile, registration format, grading, academic calendar, fee policy, notifications, and integration settings.</p>
       <GlassCard className="p-5" strong>
         <h2 className="font-semibold mb-3">Configured setting keys</h2>
-        {records.length ? <ul className="divide-y divide-[var(--border-strong)]">{records.map((record) => (
+        {records.length ? <ul className="divide-y divide-[var(--border-strong)]">{records.map((record: { key: string; updatedAt: Date }) => (
           <li className="flex items-center justify-between gap-3 py-3" key={record.key}>
             <span className="font-medium">{record.key}</span><span className="text-xs opacity-60">Updated {record.updatedAt.toLocaleDateString()}</span>
           </li>

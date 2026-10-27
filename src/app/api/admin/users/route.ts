@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "@/db";
 import { auditLogs, departments, feeSchedules, users } from "@/db/schema";
@@ -8,8 +9,9 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { validateNewPassword } from "@/lib/password-policy";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { roleHome } from "@/lib/rbac";
-import { createRegistrationNumber } from "@/lib/registration";
-import { createTextPdf, readProfilePhotoJpeg } from "@/lib/pdf";
+import { nextRegistrationNumber } from "@/lib/registration";
+import { createTextPdf, isProfilePhotoJpeg, readProfilePhotoJpeg } from "@/lib/pdf";
+import { deleteStudentPhoto, storeStudentPhoto } from "@/lib/student-photos";
 import { sendEmail } from "@/lib/email";
 import { getCourseTuition } from "@/lib/course-pricing";
 
@@ -41,41 +43,77 @@ export async function POST(req: Request) {
   const limited = await rateLimit("admin-users", actor.id, 30, "10 m");
   if (!limited.ok) return tooManyRequests(limited.retryAfter);
 
-  let body: unknown;
+  let form: FormData;
+  let photo: File | null;
   try {
-    body = await req.json();
+    form = await req.formData();
+    const file = form.get("profilePhoto");
+    photo = file instanceof File ? file : null;
   } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 });
+    return NextResponse.json({ error: "Could not read the new user form" }, { status: 400 });
   }
+  const body = Object.fromEntries(["email", "password", "firstName", "lastName", "role"].map((key) => [key, form.get(key)]));
   const parsed = createUserSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
   const { email, password, firstName, lastName, role } = parsed.data;
+  if (role === "student" && (!photo || photo.size < 1 || photo.size > 5 * 1024 * 1024 || photo.type !== "image/jpeg")) {
+    return NextResponse.json({ error: "Upload a passport photo in JPG format (up to 5 MB) when creating a student." }, { status: 400 });
+  }
+  if (role !== "student" && photo) {
+    return NextResponse.json({ error: "Passport photo upload is available when creating a student account." }, { status: 400 });
+  }
+  if (photo && (photo.size < 1 || photo.size > 5 * 1024 * 1024 || photo.type !== "image/jpeg")) {
+    return NextResponse.json({ error: "Upload a JPG profile photo up to 5 MB." }, { status: 400 });
+  }
+  const photoBytes = photo ? new Uint8Array(await photo.arrayBuffer()) : null;
+  if (photoBytes && !isProfilePhotoJpeg(photoBytes)) {
+    return NextResponse.json({ error: "The profile photo could not be read as a JPEG. Please reselect it and try again." }, { status: 415 });
+  }
   const passwordProblem = await validateNewPassword(password);
   if (passwordProblem) return NextResponse.json({ error: passwordProblem }, { status: 400 });
   const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
   if (existing) return NextResponse.json({ error: "Email already registered" }, { status: 409 });
 
   const authId = await upsertAuthIdentity({ id: "", email, authId: null }, password);
-  const [user] = await db
-    .insert(users)
-    .values({
-      email,
-      authId,
-      role,
-      status: role === "applicant" ? "applicant" : "registered",
-      firstName,
-      lastName,
-      displayName: `${firstName} ${lastName}`,
-      registrationNumber: role === "student" || role === "applicant" ? createRegistrationNumber() : undefined,
-    })
-    .onConflictDoNothing()
-    .returning({ id: users.id, email: users.email, role: users.role, registrationNumber: users.registrationNumber });
-
+  const avatarStorageKey = photoBytes ? `${randomUUID()}.jpg` : null;
+  let user;
+  try {
+    if (avatarStorageKey && photoBytes) await storeStudentPhoto(avatarStorageKey, photoBytes);
+    [user] = await db.transaction(async (tx: any) => tx
+      .insert(users)
+      .values({
+        email,
+        authId,
+        role,
+        status: role === "applicant" ? "applicant" : "registered",
+        firstName,
+        lastName,
+        displayName: `${firstName} ${lastName}`,
+        registrationNumber: role === "student" || role === "applicant" ? await nextRegistrationNumber(tx) : undefined,
+        avatarUrl: avatarStorageKey ? "/api/portal/profile-photo" : null,
+        avatarStorageKey,
+      })
+      .onConflictDoNothing()
+      .returning({ id: users.id, email: users.email, role: users.role, registrationNumber: users.registrationNumber }));
+  } catch (error) {
+    const { error: deleteAuthError } = await createSupabaseAdminClient().auth.admin.deleteUser(authId);
+    if (deleteAuthError) console.error("Could not clean up Auth identity after user creation failed:", deleteAuthError);
+    if (avatarStorageKey) {
+      try {
+        await deleteStudentPhoto(avatarStorageKey);
+      } catch (cleanupError) {
+        console.error("Could not clean up student photo after user creation failed:", cleanupError);
+      }
+    }
+    throw error;
+  }
   if (!user) {
-    await createSupabaseAdminClient().auth.admin.deleteUser(authId);
+    const { error: deleteAuthError } = await createSupabaseAdminClient().auth.admin.deleteUser(authId);
+    if (deleteAuthError) console.error("Could not clean up duplicate Auth identity:", deleteAuthError);
+    if (avatarStorageKey) await deleteStudentPhoto(avatarStorageKey);
     return NextResponse.json({ error: "Email already registered" }, { status: 409 });
   }
   await db.insert(auditLogs).values({
@@ -125,7 +163,7 @@ export async function PATCH(req: Request) {
     const [account] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (!account || account.deletedAt) return NextResponse.json({ error: "Account not found" }, { status: 404 });
     const authId = await upsertAuthIdentity(account, password);
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: any) => {
       await tx.update(users).set({ authId, updatedAt: new Date() }).where(eq(users.id, account.id));
       await tx.insert(auditLogs).values({
         actorId: actor.id,
@@ -144,7 +182,7 @@ export async function PATCH(req: Request) {
     if (parsed.data.userId === actor.id) {
       return NextResponse.json({ error: "Administrators cannot change or disable their own account from user management" }, { status: 403 });
     }
-    const outcome = await db.transaction(async (tx) => {
+    const outcome = await db.transaction(async (tx: any) => {
       const [account] = await tx.select().from(users).where(eq(users.id, parsed.data.userId)).limit(1);
       if (!account) return { error: "Account not found", status: 404 as const };
       const [updated] = await tx.update(users)
@@ -167,16 +205,19 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: true, user: outcome.user });
   }
 
-  const outcome = await db.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx: any) => {
     const [applicant] = await tx.select().from(users).where(eq(users.id, parsed.data.userId)).limit(1);
     if (!applicant || applicant.role !== "applicant") return { error: "Applicant account not found", status: 404 as const };
+    if (!applicant.avatarStorageKey) {
+      return { error: "Upload the applicant's passport photo before admitting them as a student.", status: 409 as const };
+    }
 
     const [student] = await tx
       .update(users)
       .set({
         role: "student",
         status: "registered",
-        registrationNumber: applicant.registrationNumber ?? createRegistrationNumber(),
+        registrationNumber: applicant.registrationNumber ?? await nextRegistrationNumber(tx),
         updatedAt: new Date(),
       })
       .where(and(eq(users.id, applicant.id), eq(users.role, "applicant")))

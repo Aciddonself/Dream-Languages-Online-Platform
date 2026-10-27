@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { LogOut } from "lucide-react";
 import { GlassButton } from "@/components/ui/glass";
 
 export function LogoutButton() {
   const router = useRouter();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(false);
 
   async function logout() {
@@ -17,7 +18,7 @@ export function LogoutButton() {
       const response = await fetch("/api/auth/logout", { method: "POST" });
       if (!response.ok) throw new Error("Sign out failed. Please try again.");
       toast.success("You have been signed out.");
-      router.replace("/login");
+      router.replace(pathname.startsWith("/admin") ? "/admin/login" : "/login");
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to sign out. Check your connection and try again.");

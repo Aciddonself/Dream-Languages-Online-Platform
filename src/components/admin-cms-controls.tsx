@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { GlassButton, GlassInput } from "@/components/ui/glass";
 
-type CmsPage = {
+export type CmsPage = {
   id: string;
   title: string;
   slug: string;

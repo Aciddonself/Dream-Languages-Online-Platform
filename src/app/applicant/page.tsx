@@ -1,7 +1,6 @@
 import { requireRole } from "@/lib/rbac";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard, Badge } from "@/components/ui/glass";
-import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
 import { GlassButton } from "@/components/ui/glass";
 
@@ -12,8 +11,7 @@ const nav = [
 ];
 
 export default async function ApplicantDashboard() {
-  await requireRole(["applicant", "student", "super_admin"]);
-  const user = await getCurrentUser();
+  const user = await requireRole(["applicant", "student", "super_admin"]);
   const steps = ["Submitted", "Documents Review", "Interview/Placement Test", "Approved", "Fees", "Enrolled"];
   return (
     <PortalShell title="Applicant Portal" nav={nav}>

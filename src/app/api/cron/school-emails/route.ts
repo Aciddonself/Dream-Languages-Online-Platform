@@ -36,7 +36,7 @@ export async function GET(request: Request) {
         ? await db.select({ id: users.id, email: users.email, name: users.displayName }).from(enrolments)
             .innerJoin(users, eq(users.id, enrolments.studentId))
             .where(and(eq(enrolments.status, "active"), eq(enrolments.classId, session.classId), eq(users.role, "student")))
-        : [];
+        : [] as Array<{ id: string; email: string; name: string | null }>;
       const teacher = session.teacherId
         ? (await db.select({ id: users.id, email: users.email, name: users.displayName }).from(users).where(eq(users.id, session.teacherId)).limit(1))[0]
         : undefined;
@@ -68,20 +68,23 @@ export async function GET(request: Request) {
       lt(users.createdAt, new Date(now.getTime() - 30 * 24 * 60 * 60_000)),
     ));
     for (const student of eligibleStudents) {
-      const [schedule, verifiedPayments] = await Promise.all([
+      const [schedule, verifiedPayments]: [
+        Array<{ amount: number; paid: number; currency: string | null; dueDate: Date | null }>,
+        Array<{ amount: number; currency: string | null; reference: string | null; createdAt: Date }>,
+      ] = await Promise.all([
         db.select({ amount: feeSchedules.amount, paid: feeSchedules.paid, currency: feeSchedules.currency, dueDate: feeSchedules.dueDate }).from(feeSchedules).where(eq(feeSchedules.studentId, student.id)).orderBy(asc(feeSchedules.dueDate)),
         db.select({ amount: payments.amount, currency: payments.currency, reference: payments.reference, createdAt: payments.createdAt }).from(payments).where(and(eq(payments.studentId, student.id), eq(payments.status, "verified"))).orderBy(asc(payments.createdAt)),
       ]);
-      const currencies = [...new Set([...schedule.map((item) => item.currency), ...verifiedPayments.map((payment) => payment.currency)])];
+      const currencies = [...new Set([...schedule.map((item: { currency: string | null }) => item.currency), ...verifiedPayments.map((payment: { currency: string | null }) => payment.currency)])].filter((currency): currency is string => Boolean(currency));
       const balances = currencies.map((currency) => {
-        const currencySchedule = schedule.filter((item) => item.currency === currency);
-        const currencyPayments = verifiedPayments.filter((payment) => payment.currency === currency);
+        const currencySchedule = schedule.filter((item: { currency: string | null }) => item.currency === currency);
+        const currencyPayments = verifiedPayments.filter((payment: { currency: string | null }) => payment.currency === currency);
         return {
           currency,
-          due: currencySchedule.reduce((sum, item) => sum + item.amount, 0),
-          paid: currencySchedule.reduce((sum, item) => sum + item.paid, 0),
-          balance: currencySchedule.reduce((sum, item) => sum + Math.max(0, item.amount - item.paid), 0),
-          verifiedPayments: currencyPayments.reduce((sum, payment) => sum + payment.amount, 0),
+          due: currencySchedule.reduce((sum: number, item: { amount: number }) => sum + item.amount, 0),
+          paid: currencySchedule.reduce((sum: number, item: { paid: number }) => sum + item.paid, 0),
+          balance: currencySchedule.reduce((sum: number, item: { amount: number; paid: number }) => sum + Math.max(0, item.amount - item.paid), 0),
+          verifiedPayments: currencyPayments.reduce((sum: number, payment: { amount: number }) => sum + payment.amount, 0),
         };
       });
       const lines = [
@@ -93,9 +96,9 @@ export async function GET(request: Request) {
         "Fee schedule:",
         ...(schedule.length ? schedule.map((item) => `Due ${item.dueDate ?? "date pending"} | ${item.currency} ${item.amount.toLocaleString()} | Paid credit ${item.currency} ${item.paid.toLocaleString()} | Remaining ${item.currency} ${Math.max(0, item.amount - item.paid).toLocaleString()}`) : ["No fee schedule is recorded. Contact the finance office to confirm your fees."]),
         "",
-        ...balances.map((item) => `${item.currency} fees: ${item.due.toLocaleString()} | scheduled credits: ${item.paid.toLocaleString()} | verified payments: ${item.verifiedPayments.toLocaleString()} | balance: ${item.balance.toLocaleString()}`),
+        ...balances.map((item: { currency: string | null; due: number; paid: number; verifiedPayments: number; balance: number }) => `${item.currency ?? "USD"} fees: ${item.due.toLocaleString()} | scheduled credits: ${item.paid.toLocaleString()} | verified payments: ${item.verifiedPayments.toLocaleString()} | balance: ${item.balance.toLocaleString()}`),
         "Verified payment history:",
-        ...verifiedPayments.map((payment) => `${payment.createdAt.toISOString().slice(0, 10)} | ${payment.currency} ${payment.amount.toLocaleString()}${payment.reference ? ` | Ref ${payment.reference}` : ""}`),
+        ...verifiedPayments.map((payment: { createdAt: Date; currency: string | null; amount: number; reference: string | null }) => `${payment.createdAt.toISOString().slice(0, 10)} | ${payment.currency ?? "USD"} ${payment.amount.toLocaleString()}${payment.reference ? ` | Ref ${payment.reference}` : ""}`),
         "",
         "For questions about your account, contact the school finance office.",
       ];

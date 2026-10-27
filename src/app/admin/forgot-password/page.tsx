@@ -18,7 +18,7 @@ export default async function AdminForgotPasswordPage({
           Recovery is available only for school administrator accounts. Links expire after 30 minutes and work once.
         </p>
         <AdminPasswordRecoveryForm token={token} />
-        <p className="mt-5 text-sm"><Link href="/login" className="text-[var(--brand-primary)]">Back to sign in</Link></p>
+        <p className="mt-5 text-sm"><Link href="/admin/login" className="text-[var(--brand-primary)]">Back to administrator sign in</Link></p>
       </GlassCard>
     </main>
   );

@@ -5,7 +5,7 @@ import { AdminSessionCreate } from "@/components/admin-session-create";
 import Link from "next/link";
 import { db } from "@/db";
 import { classes, enrolments, exams, timetableSessions } from "@/db/schema";
-import { and, count, eq, gt, inArray } from "drizzle-orm";
+import { and, count, eq, gt } from "drizzle-orm";
 
 const nav = [
   { href: "/teacher", label: "Dashboard", icon: "🏠" },
@@ -20,12 +20,12 @@ const nav = [
 
 export default async function TeacherDashboard() {
   const user = await requireRole(["teacher", "head_academics", "super_admin"]);
-  const teacherClasses = await db.select().from(classes).where(eq(classes.teacherId, user.id));
-  const classIds = teacherClasses.map((schoolClass) => schoolClass.id);
-  const [studentCount, pendingExams, upcomingSessions] = await Promise.all([
-    classIds.length
-      ? db.select({ total: count() }).from(enrolments).where(inArray(enrolments.classId, classIds))
-      : Promise.resolve([{ total: 0 }]),
+  const [teacherClasses, studentCount, pendingExams, upcomingSessions] = await Promise.all([
+    db.select().from(classes).where(eq(classes.teacherId, user.id)),
+    db.select({ total: count() })
+      .from(enrolments)
+      .innerJoin(classes, eq(enrolments.classId, classes.id))
+      .where(eq(classes.teacherId, user.id)),
     db.select({ total: count() }).from(exams).where(and(eq(exams.teacherId, user.id), eq(exams.published, false))),
     db.select().from(timetableSessions).where(and(eq(timetableSessions.teacherId, user.id), gt(timetableSessions.startsAt, new Date()))).orderBy(timetableSessions.startsAt).limit(5),
   ]);

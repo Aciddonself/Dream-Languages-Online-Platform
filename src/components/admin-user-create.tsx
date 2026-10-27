@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { GlassButton, GlassInput } from "@/components/ui/glass";
+import { prepareProfilePhoto } from "@/lib/prepare-profile-photo";
 
 export function AdminUserCreate() {
   const router = useRouter();
+  const photoInput = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -23,29 +26,35 @@ export function AdminUserCreate() {
     setSuccess("");
     setLoading(true);
     try {
+      const payload = new FormData();
+      for (const [key, value] of Object.entries(form)) payload.set(key, value);
+      const photo = photoInput.current?.files?.[0];
+      if (photo) payload.set("profilePhoto", await prepareProfilePhoto(photo));
       const response = await fetch("/api/admin/users", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: payload,
       });
       const result = await response.json();
       if (!response.ok) {
-        setError(
-          typeof result.error === "string"
-            ? result.error
-            : "Check the account details and try again.",
-        );
+        const text = typeof result.error === "string" ? result.error : "Check the account details and try again.";
+        setError(text);
+        toast.error(text);
         return;
       }
-      setSuccess(
-        result.user?.registrationNumber
-          ? `Student created. Registration number: ${result.user.registrationNumber}`
-          : "Account created.",
-      );
+      const roleLabel = ({ student: "Student", applicant: "Applicant", teacher: "Teacher", finance: "Finance officer", head_academics: "Head of Academics", super_admin: "Administrator" } as Record<string, string>)[form.role] ?? "User";
+      const name = `${form.firstName} ${form.lastName}`.trim();
+      const message = result.user?.registrationNumber
+        ? `${roleLabel} ${name} created. Registration number: ${result.user.registrationNumber}`
+        : `${roleLabel} ${name} created successfully.`;
+      setSuccess(message);
+      toast.success(message);
       setForm({ email: "", password: "", firstName: "", lastName: "", role: "student" });
+      if (photoInput.current) photoInput.current.value = "";
       router.refresh();
-    } catch {
-      setError("Unable to create account. Check your connection and try again.");
+    } catch (createError) {
+      const text = createError instanceof Error ? createError.message : "Unable to create account. Check your connection and try again.";
+      setError(text);
+      toast.error(text);
     } finally {
       setLoading(false);
     }
@@ -96,10 +105,16 @@ export function AdminUserCreate() {
         <option value="head_academics">Head of Academics</option>
         <option value="super_admin">Administrator</option>
       </select>
-      <GlassButton type="submit" className="md:col-span-1" disabled={loading}>
+      {form.role === "student" && (
+        <label className="grid gap-1 text-xs md:col-span-2">
+          <span>Passport-sized student photo (required)</span>
+          <input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp" required />
+        </label>
+      )}
+      <GlassButton type="submit" className="md:col-span-2" disabled={loading}>
         {loading ? "Creating..." : "Create user"}
       </GlassButton>
-      {error && <p className="text-sm text-[var(--danger)] md:col-span-6">{String(error)}</p>}
+      {error && <p className="text-sm text-[var(--danger)] md:col-span-6" role="alert">{String(error)}</p>}
       {success && <p className="text-sm text-[var(--success)] md:col-span-6" role="status">{success}</p>}
     </form>
   );

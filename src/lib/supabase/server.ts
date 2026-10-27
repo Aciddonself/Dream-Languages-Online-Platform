@@ -6,8 +6,8 @@ import { publicEnv, serverEnv } from "@/lib/env";
 
 /** Cookie-bound client acting as the signed-in user (RLS applies). */
 export async function createSupabaseServerClient() {
-  const env = publicEnv();
   const cookieStore = await cookies();
+  const env = publicEnv();
   return createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
       getAll: () => cookieStore.getAll(),

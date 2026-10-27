@@ -27,11 +27,11 @@ export default async function AdminAcademic() {
           <h2 className="font-semibold mb-3">Scheduled sessions</h2>
           {sessions.length ? (
             <ul className="divide-y divide-[var(--border-strong)]">
-              {sessions.map((session) => (
+              {sessions.map((session: { id: string; title: string; startsAt: Date | string; endsAt: Date | string; meetUrl?: string | null }) => (
                 <li key={session.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div>
                     <div className="font-medium">{session.title}</div>
-                    <div className="text-sm opacity-65">{session.startsAt.toLocaleString()} – {session.endsAt.toLocaleString()}</div>
+                    <div className="text-sm opacity-65">{new Date(session.startsAt).toLocaleString()} – {new Date(session.endsAt).toLocaleString()}</div>
                   </div>
                   {session.meetUrl ? (
                     <a className="text-sm font-semibold text-[var(--brand-secondary-soft)] underline-offset-4 hover:underline" href={session.meetUrl} target="_blank" rel="noreferrer">Open Google Meet</a>

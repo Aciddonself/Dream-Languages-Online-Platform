@@ -42,8 +42,8 @@ async function ensureUser(data: typeof users.$inferInsert) {
   return concurrent;
 }
 async function main() {
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("The demo seed is disabled in production to prevent creating known-password accounts");
+  if (process.env.NODE_ENV === "production" || process.env.ALLOW_DEMO_SEED !== "1") {
+    throw new Error("Demo seeding is disabled. Use `npm run admin:reset` to create the super admin (set ALLOW_DEMO_SEED=1 only for isolated local testing).");
   }
 
   const roleSeeds = [
@@ -258,7 +258,7 @@ async function main() {
     })
     .onConflictDoNothing();
 
-  console.log("Seed complete. Demo accounts use password Password123!:");
+  console.log("Seed complete. Demo account password is the value configured in SEED_DEMO_PASSWORD:");
   console.log("  admin@dla.ug (super_admin)");
   console.log("  hoc@teachers.dla.ug (head_academics)");
   console.log("  teacher@teachers.dla.ug (teacher)");

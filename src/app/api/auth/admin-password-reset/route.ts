@@ -7,6 +7,7 @@ import { auditLogs, users } from "@/db/schema";
 import { destroyAllSessions, getCurrentUser } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 import { serverEnv } from "@/lib/env";
+import { adminOrigin } from "@/lib/admin-host";
 import { validateNewPassword } from "@/lib/password-policy";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
       if (error || !data.properties?.hashed_token) {
         console.error("Administrator recovery link could not be generated");
       } else {
-        const resetUrl = new URL("/admin/forgot-password", serverEnv().APP_URL);
+        const resetUrl = new URL("/admin/forgot-password", adminOrigin(serverEnv().APP_URL));
         resetUrl.searchParams.set("token", data.properties.hashed_token);
         const result = await sendEmail({
           to: admin.email,

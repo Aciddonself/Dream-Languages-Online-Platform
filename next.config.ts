@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   poweredByHeader: false,
+  experimental: { agentUpgrade: "security" },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "dreamlanguagesug.com" },

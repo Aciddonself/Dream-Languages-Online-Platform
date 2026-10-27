@@ -41,7 +41,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       .select({ id: timetableSessions.id, startsAt: timetableSessions.startsAt, endsAt: timetableSessions.endsAt })
       .from(timetableSessions)
       .where(and(eq(timetableSessions.classId, session.classId), isNotNull(timetableSessions.liveEndedAt)));
-    const completedIds = completedSessions.map((item) => item.id);
+    const completedIds = completedSessions.map((item: { id: string }) => item.id);
     const history = completedIds.length
       ? await db.select({
           sessionId: attendance.sessionId,
@@ -99,7 +99,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
         .from(timetableSessions)
         .where(and(eq(timetableSessions.classId, session.classId), isNotNull(timetableSessions.liveEndedAt)))
     : [];
-  const completedIds = completedSessions.map((item) => item.id);
+  const completedIds = completedSessions.map((item: { id: string }) => item.id);
   const history = completedIds.length
     ? await db.select({
         sessionId: attendance.sessionId,
@@ -111,7 +111,18 @@ export async function GET(_request: Request, { params }: RouteContext) {
     : [];
   return NextResponse.json({
     session,
-    roster: roster.map((student) => ({
+    roster: roster.map((student: {
+      studentId: string;
+      name: string | null;
+      firstName: string | null;
+      lastName: string | null;
+      avatarUrl: string | null;
+      attendanceId: string | null;
+      status: string | null;
+      checkInAt: Date | string | null;
+      checkOutAt: Date | string | null;
+      confirmedAt: Date | string | null;
+    }) => ({
       ...student,
       name: student.name ?? ([student.firstName, student.lastName].filter(Boolean).join(" ") || "Student"),
       avatarUrl: student.avatarUrl ? `/api/portal/profile-photo?userId=${student.studentId}&classId=${session.classId}` : null,
@@ -153,7 +164,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     if (!manager) return NextResponse.json({ error: "Only the assigned teacher or academic administrator can end class" }, { status: 403 });
     if (!session.liveStartedAt || session.liveEndedAt) return NextResponse.json({ error: "This class is not currently live" }, { status: 409 });
     const lastAttendanceMinute = new Date(Math.min(now.getTime(), session.endsAt.getTime()));
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: any) => {
       await tx.update(timetableSessions).set({ liveEndedAt: now, teacherCheckOutAt: now }).where(eq(timetableSessions.id, session.id));
       await tx.update(attendance)
         .set({ checkOutAt: lastAttendanceMinute })

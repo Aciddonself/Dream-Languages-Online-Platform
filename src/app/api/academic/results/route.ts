@@ -40,7 +40,7 @@ export async function PATCH(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { examId, studentId, score, grade, comments, reason } = parsed.data;
-  const outcome = await db.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx: any) => {
     const [existing] = await tx.select().from(results).where(and(eq(results.examId, examId), eq(results.studentId, studentId))).limit(1);
     if (!existing?.published) return { error: "Published result not found" as const, status: 404 as const };
     if (existing.promotionStatus === "promoted") {
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
   )).limit(1);
   if (!enrollment) return NextResponse.json({ error: "Student is not actively enrolled in this assessment class" }, { status: 409 });
 
-  const outcome = await db.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx: any) => {
     const [existing] = await tx.select().from(results).where(and(eq(results.studentId, student.id), eq(results.examId, exam.id))).limit(1);
     if (existing?.published) return { error: "This result has already been published. Contact the Head of Academics for a correction.", status: 409 as const };
 
@@ -179,7 +179,7 @@ export async function POST(request: Request) {
                 .groupBy(classes.id)
                 .orderBy(asc(classes.name))
             : [];
-          const targetClass = nextClasses.find((candidate) => candidate.capacity === null || candidate.studentCount < candidate.capacity);
+          const targetClass = nextClasses.find((candidate: { capacity: number | null; studentCount: number | bigint }) => candidate.capacity === null || Number(candidate.studentCount) < candidate.capacity);
           if (targetClass) {
             nextClassId = targetClass.id;
             promotionStatus = "promoted";

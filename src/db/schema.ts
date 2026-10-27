@@ -128,6 +128,10 @@ export const users = pgTable(
     isInternational: boolean("is_international").default(false).notNull(),
     registrationNumber: varchar("registration_number", { length: 64 }).unique(),
     departmentId: uuid("department_id"),
+    documentStampedAt: timestamp("document_stamped_at"),
+    documentStampedBy: uuid("document_stamped_by"),
+    documentStamperName: text("document_stamper_name"),
+    documentStamperTitle: varchar("document_stamper_title", { length: 64 }),
     deletedAt: timestamp("deleted_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -565,6 +569,16 @@ export const testimonials = pgTable("testimonials", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const teacherRatings = pgTable("teacher_ratings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  teacherId: uuid("teacher_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  studentId: uuid("student_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  published: boolean("published").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [uniqueIndex("teacher_rating_unique").on(t.teacherId, t.studentId)]);
+
 export const faqs = pgTable("faqs", {
   id: uuid("id").defaultRandom().primaryKey(),
   question: text("question").notNull(),
@@ -593,6 +607,27 @@ export const announcements = pgTable("announcements", {
   publishedAt: timestamp("published_at").defaultNow().notNull(),
   createdBy: uuid("created_by").references(() => users.id),
 });
+
+export const schoolHolidays = pgTable(
+  "school_holidays",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: text("title").notNull(),
+    category: varchar("category", { length: 32 }).notNull(),
+    startsOn: date("starts_on").notNull(),
+    endsOn: date("ends_on"),
+    details: text("details"),
+    status: varchar("status", { length: 24 }).notNull().default("pending"),
+    createdBy: uuid("created_by").notNull().references(() => users.id),
+    approvedBy: uuid("approved_by").references(() => users.id),
+    approvedAt: timestamp("approved_at"),
+    publishedAt: timestamp("published_at"),
+    reminderSentAt: timestamp("reminder_sent_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("school_holidays_status_start_idx").on(t.status, t.startsOn)],
+);
 
 export const emailTemplates = pgTable("email_templates", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -763,3 +798,44 @@ export const settings = pgTable("settings", {
   value: jsonb("value"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+// ---------- Father-DLA assistant ----------
+export const fatherDlaProfiles = pgTable("father_dla_profiles", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  cefrLevel: varchar("cefr_level", { length: 2 }).default("A1").notNull(),
+  targetLanguage: varchar("target_language", { length: 40 }),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const fatherDlaMessages = pgTable("father_dla_messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: varchar("role", { length: 12 }).notNull(),
+  content: text("content").notNull(),
+  sources: jsonb("sources"),
+  model: varchar("model", { length: 64 }),
+  flagged: boolean("flagged").default(false).notNull(),
+  flagReason: varchar("flag_reason", { length: 64 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [index("father_dla_messages_user_idx").on(t.userId, t.createdAt)]);
+
+export const fatherDlaUsage = pgTable("father_dla_usage", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  role: varchar("role", { length: 24 }),
+  model: varchar("model", { length: 64 }).notNull(),
+  inputTokens: integer("input_tokens").default(0).notNull(),
+  outputTokens: integer("output_tokens").default(0).notNull(),
+  searches: integer("searches").default(0).notNull(),
+  costMicroUsd: integer("cost_micro_usd").default(0).notNull(),
+  question: text("question"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [index("father_dla_usage_created_idx").on(t.createdAt)]);
+
+export const fatherDlaFeedback = pgTable("father_dla_feedback", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  messageId: uuid("message_id").notNull().references(() => fatherDlaMessages.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  rating: integer("rating").notNull(),
+  report: text("report"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [uniqueIndex("father_dla_feedback_unique").on(t.messageId, t.userId)]);

@@ -21,6 +21,10 @@ async function main() {
   if (!email || !password || !url || !key) throw new Error("FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD, NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
   if (password.length < 10) throw new Error("Password must be at least 10 characters");
 
+  if (!pool) {
+    throw new Error("DATABASE_URL is not configured. Add your Supabase Postgres URL to .env.local before creating the first admin.");
+  }
+
   const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.role, "super_admin")).limit(1);
   if (existing) throw new Error("An administrator already exists. This script only runs once.");
 

@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { createRegistrationNumber } from "@/lib/registration";
+import { nextRegistrationNumber } from "@/lib/registration";
 import { isProfilePhotoJpeg } from "@/lib/pdf";
+import { deleteStudentPhoto, storeStudentPhoto } from "@/lib/student-photos";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -79,7 +78,8 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json({ error: "Complete all student and next-of-kin details and upload a JPG, PNG, or WebP profile photo up to 5 MB" }, { status: 400 });
   }
-  if (photo && !isProfilePhotoJpeg(new Uint8Array(await photo.arrayBuffer()))) {
+  const photoBytes = photo ? new Uint8Array(await photo.arrayBuffer()) : null;
+  if (!photoBytes || !isProfilePhotoJpeg(photoBytes)) {
     return NextResponse.json({ error: "The profile photo could not be read as a JPEG. Please reselect the image and try again." }, { status: 415 });
   }
 
@@ -88,15 +88,11 @@ export async function POST(request: Request) {
     nextOfKinName, nextOfKinRelationship, nextOfKinPhone, nextOfKinAddress, studyFormat,
     studyDurationMonths, studyMode, isInternational,
   } = parsed.data;
-  const avatarStorageKey = photo ? `${randomUUID()}${photoExtensions[photo.type]}` : null;
-  const storageRoot = path.join(process.cwd(), "private_uploads");
-  if (photo && avatarStorageKey) {
-    await mkdir(storageRoot, { recursive: true, mode: 0o700 });
-    await writeFile(path.join(storageRoot, avatarStorageKey), Buffer.from(await photo.arrayBuffer()), { flag: "wx", mode: 0o600 });
-  }
+  const avatarStorageKey = `${randomUUID()}${photoExtensions[photo.type]}`;
+  await storeStudentPhoto(avatarStorageKey, photoBytes);
 
   try {
-    const [user] = await db.insert(users).values({
+    const [user] = await db.transaction(async (tx: any) => tx.insert(users).values({
       email,
       role: "applicant",
       status: "applicant",
@@ -105,7 +101,7 @@ export async function POST(request: Request) {
       phone,
       departmentId: departmentId || null,
       displayName: `${firstName} ${lastName}`,
-      registrationNumber: createRegistrationNumber(),
+      registrationNumber: await nextRegistrationNumber(tx),
       address: address || null,
       dateOfBirth: dateOfBirth || null,
       nationality: nationality || null,
@@ -119,10 +115,14 @@ export async function POST(request: Request) {
       isInternational: isInternational ?? false,
       avatarUrl: avatarStorageKey ? "/api/portal/profile-photo" : null,
       avatarStorageKey,
-    }).onConflictDoNothing().returning();
+    }).onConflictDoNothing().returning());
 
     if (!user) {
-      if (avatarStorageKey) await unlink(path.join(storageRoot, avatarStorageKey));
+      try {
+        await deleteStudentPhoto(avatarStorageKey);
+      } catch (cleanupError) {
+        console.error("Could not clean up duplicate applicant photo:", cleanupError);
+      }
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
     return NextResponse.json({
@@ -130,12 +130,10 @@ export async function POST(request: Request) {
       message: "Application received. The administrator will review it and provide login credentials if accepted.",
     }, { status: 201 });
   } catch (error) {
-    if (avatarStorageKey) {
-      try {
-        await unlink(path.join(storageRoot, avatarStorageKey));
-      } catch (cleanupError) {
-        console.error("Could not clean up failed applicant profile photo:", cleanupError);
-      }
+    try {
+      await deleteStudentPhoto(avatarStorageKey);
+    } catch (cleanupError) {
+      console.error("Could not clean up failed applicant profile photo:", cleanupError);
     }
     throw error;
   }

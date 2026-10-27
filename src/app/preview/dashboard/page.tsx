@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { Users, GraduationCap, Wallet, CalendarCheck } from "lucide-react";
 import { PortalShell } from "@/components/portal-shell";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -13,8 +13,6 @@ const nav: { href: string; label: string; icon: string; group?: "Apps" | "Pages"
   { href: "/preview/dashboard#inbox", label: "Inbox", icon: "📥", group: "Apps" },
   { href: "/preview/dashboard#invoices", label: "Invoices", icon: "🧾", group: "Apps" },
   { href: "/preview/dashboard#blog", label: "News (CMS)", icon: "📰", group: "Apps" },
-  { href: "/maintenance", label: "Maintenance", icon: "🛠️", group: "Pages" },
-  { href: "/not-found-demo", label: "404", icon: "🚫", group: "Pages" },
   { href: "/login", label: "Sign in", icon: "🔐", group: "Pages" },
 ];
 

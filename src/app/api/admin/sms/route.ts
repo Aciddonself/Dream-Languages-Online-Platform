@@ -50,7 +50,9 @@ export async function POST(request: Request) {
     isNotNull(users.phone),
     isNull(users.deletedAt),
   ));
-  const phoneNumbers = recipients.map((recipient) => recipient.phone ? toE164(recipient.phone) : null).filter((number): number is string => Boolean(number));
+  const phoneNumbers = recipients
+    .map((recipient: { phone: string | null }) => recipient.phone ? toE164(recipient.phone) : null)
+    .filter((number: string | null): number is string => Boolean(number));
   const skippedCount = recipients.length - phoneNumbers.length;
   if (!phoneNumbers.length) return NextResponse.json({ error: "No eligible student mobile numbers are on file." }, { status: 409 });
 

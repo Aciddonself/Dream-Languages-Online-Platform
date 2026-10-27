@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { departments, examAttempts, exams, results, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { createTextPdf, readProfilePhotoJpeg } from "@/lib/pdf";
+import { createTextPdf, readDlaLogoJpeg, readProfilePhotoJpeg, type PdfStamp } from "@/lib/pdf";
 
 export async function GET(
   _request: Request,
@@ -46,6 +46,9 @@ export async function GET(
   } else if (["results", "test-report", "final-report"].includes(document)) {
     if (user.role !== "student") {
       return NextResponse.json({ error: "Results are available after student enrolment" }, { status: 403 });
+    }
+    if (!user.documentStampedAt || !user.documentStamperName || !user.documentStamperTitle) {
+      return NextResponse.json({ error: "Your report cards are waiting for an official administrator or Head of Academics stamp." }, { status: 409 });
     }
     title = document === "test-report"
       ? "Dream Languages Uganda Test Report Card"
@@ -104,9 +107,19 @@ export async function GET(
     return NextResponse.json({ error: "Document not found" }, { status: 404 });
   }
 
-  const [profile] = await db.select({ avatarStorageKey: users.avatarStorageKey }).from(users).where(eq(users.id, user.id)).limit(1);
-  const portrait = await readProfilePhotoJpeg(profile?.avatarStorageKey);
-  const pdf = createTextPdf(title, lines, portrait);
+  const portrait = await readProfilePhotoJpeg(user.avatarStorageKey);
+  if (["results", "test-report", "final-report"].includes(document) && !portrait) {
+    return NextResponse.json({ error: "Upload a passport photo before downloading your report card." }, { status: 409 });
+  }
+  const stamp: PdfStamp | undefined = user.documentStampedAt && user.documentStamperName && user.documentStamperTitle
+    ? {
+        stamperName: user.documentStamperName,
+        stamperTitle: user.documentStamperTitle,
+        date: new Intl.DateTimeFormat("en-UG", { day: "2-digit", month: "long", year: "numeric", timeZone: "Africa/Kampala" }).format(user.documentStampedAt),
+        logoJpeg: await readDlaLogoJpeg(),
+      }
+    : undefined;
+  const pdf = createTextPdf(title, lines, portrait, stamp);
   return new Response(pdf, {
     headers: {
       "Content-Type": "application/pdf",

@@ -23,11 +23,13 @@ const nav = [
 
 export default async function AdminDashboard() {
   await requireRole(["super_admin"]);
-  const [studentCount] = await db.select({ c: count() }).from(users).where(eq(users.role, "student"));
-  const [teacherCount] = await db.select({ c: count() }).from(users).where(eq(users.role, "teacher"));
-  const [applicantCount] = await db.select({ c: count() }).from(users).where(eq(users.role, "applicant"));
-  const [financeCount] = await db.select({ c: count() }).from(users).where(eq(users.role, "finance"));
-  const depts = await db.select().from(departments);
+  const [[studentCount], [teacherCount], [applicantCount], [financeCount], depts] = await Promise.all([
+    db.select({ c: count() }).from(users).where(eq(users.role, "student")),
+    db.select({ c: count() }).from(users).where(eq(users.role, "teacher")),
+    db.select({ c: count() }).from(users).where(eq(users.role, "applicant")),
+    db.select({ c: count() }).from(users).where(eq(users.role, "finance")),
+    db.select().from(departments),
+  ]);
 
   const stats = [
     { label: "Total Students", value: studentCount.c, color: "var(--brand-primary)", trend: "+12%" },
@@ -112,7 +114,7 @@ export default async function AdminDashboard() {
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {depts.map((d) => (
+          {depts.map((d: { id: string; code: string; flagEmoji?: string | null; name: string }) => (
             <a key={d.id} href={`/departments/${d.code.toLowerCase()}`} className="glass p-3 text-center block hover:opacity-80 transition-opacity">
               <div className="text-2xl">{d.flagEmoji ?? "🌐"}</div>
               <div className="text-xs font-medium mt-1">{d.name}</div>

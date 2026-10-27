@@ -1,9 +1,10 @@
 import { z } from "zod";
 
-// PUBLIC values are safe for the browser bundle. Everything in serverSchema must never be imported client-side.
+// PUBLIC values are safe for the browser bundle. Values are allowed to fall back to safe placeholders
+// during local/static builds so route pre-render can continue without a live Supabase project.
 const publicSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().default("https://placeholder-project.supabase.co"),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20).default("placeholder-anon-key-for-builds-only"),
 });
 
 const serverSchema = z.object({
@@ -17,6 +18,7 @@ const serverSchema = z.object({
   AFRICASTALKING_API_KEY: z.string().optional(),
   AFRICASTALKING_SENDER_ID: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
+  GROQ_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
@@ -47,7 +49,7 @@ export function serverEnv(): ServerEnv {
 
 export function publicEnv(): PublicEnv {
   return publicSchema.parse({
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder-project.supabase.co",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder-anon-key-for-builds-only",
   });
 }

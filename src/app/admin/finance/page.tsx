@@ -21,7 +21,7 @@ export default async function AdminFinance() {
       <div className="grid gap-4 sm:grid-cols-3">
         <GlassCard className="p-5"><div className="text-sm opacity-65">Recorded payments</div><div className="mt-2 text-3xl font-bold">{paymentsCount[0]?.total ?? 0}</div></GlassCard>
         <GlassCard className="p-5"><div className="text-sm opacity-65">Active holds</div><div className="mt-2 text-3xl font-bold">{holdCount[0]?.total ?? 0}</div></GlassCard>
-        <GlassCard className="p-5"><div className="text-sm opacity-65">Outstanding fees</div><div className="mt-2 space-y-1 text-lg font-bold">{balances.length ? balances.map((balance) => <div key={balance.currency}>{balance.currency} {Number(balance.total).toLocaleString()}</div>) : <div>None</div>}</div></GlassCard>
+        <GlassCard className="p-5"><div className="text-sm opacity-65">Outstanding fees</div><div className="mt-2 space-y-1 text-lg font-bold">{balances.length ? balances.map((balance: { currency: string; total: number | string | null }) => <div key={balance.currency}>{balance.currency} {Number(balance.total ?? 0).toLocaleString()}</div>) : <div>None</div>}</div></GlassCard>
       </div>
       <GlassCard className="mt-4 p-5"><p className="text-sm opacity-70">Use the Finance portal to review payment records, holds, and collection reports.</p></GlassCard>
     </PortalShell>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { GlassButton, GlassInput } from "@/components/ui/glass";
 import { prepareProfilePhoto } from "@/lib/prepare-profile-photo";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ export function ApplyForm({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [photoName, setPhotoName] = useState("");
+  const photoInput = useRef<HTMLInputElement>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -129,10 +131,14 @@ export function ApplyForm({
         <GlassInput name="nextOfKinPhone" type="tel" placeholder="Working phone number" required maxLength={32} />
         <GlassInput name="nextOfKinAddress" placeholder="Address" required maxLength={500} />
       </fieldset>
-      <label className="grid gap-2 text-sm">
-        Profile photo (JPG, PNG, or WebP; max 5 MB)
-        <input name="profilePhoto" type="file" required accept="image/jpeg,image/png,image/webp" />
-      </label>
+      <div className="grid gap-2 text-sm">
+        <span>Passport-sized photo (JPG, PNG, or WebP; max 5 MB)</span>
+        <div className="file-upload">
+          <input ref={photoInput} id="profilePhoto" name="profilePhoto" type="file" required accept="image/jpeg,image/png,image/webp" onChange={(e) => setPhotoName(e.target.files?.[0]?.name ?? "")} />
+          <GlassButton type="button" onClick={() => photoInput.current?.click()}>{photoName ? "Change photo" : "Upload photo"}</GlassButton>
+          <span className="opacity-70">{photoName || "No file chosen"}</span>
+        </div>
+      </div>
       <p className="text-xs opacity-60">
         The administrator reviews your complete application before confirming admission and issuing your login credentials. Online language classes require a computer or laptop, stable internet, and a quiet place to study.
       </p>

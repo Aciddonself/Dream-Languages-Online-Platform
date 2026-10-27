@@ -6,16 +6,20 @@ export async function prepareProfilePhoto(file: File) {
     throw new Error("Choose a JPG, PNG, or WebP photo no larger than 5 MB.");
   }
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
+  const aspectRatio = 7 / 9;
+  const cropWidth = bitmap.width / bitmap.height > aspectRatio ? bitmap.height * aspectRatio : bitmap.width;
+  const cropHeight = bitmap.width / bitmap.height > aspectRatio ? bitmap.height : bitmap.width / aspectRatio;
+  const cropX = (bitmap.width - cropWidth) / 2;
+  const cropY = (bitmap.height - cropHeight) / 2;
   const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.width = 840;
+  canvas.height = 1080;
   const context = canvas.getContext("2d");
   if (!context) {
     bitmap.close();
     throw new Error("Your browser could not prepare the profile photo.");
   }
-  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  context.drawImage(bitmap, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   const jpeg = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Your browser could not convert the profile photo.")), "image/jpeg", 0.88);

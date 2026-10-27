@@ -26,6 +26,9 @@ export async function POST(request: Request) {
   }
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (/\bholidays?\b/i.test(`${parsed.data.title} ${parsed.data.body}`)) {
+    return NextResponse.json({ error: "Holiday announcements must be submitted as a draft for administrator or Head of Academics approval." }, { status: 400 });
+  }
   if (detectPhoneOrHandle(`${parsed.data.title} ${parsed.data.body}`).blocked) {
     return NextResponse.json({ error: "Announcements cannot contain personal phone numbers or contact handles." }, { status: 400 });
   }

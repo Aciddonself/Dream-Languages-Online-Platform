@@ -41,6 +41,24 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
+  // Admin-host isolation: /admin lives only on ADMIN_HOST, and that host serves nothing else.
+  const adminHost = (process.env.ADMIN_HOST ?? "").trim().toLowerCase();
+  if (adminHost) {
+    const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "").split(",")[0].trim().toLowerCase();
+    const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
+    if (host === adminHost) {
+      const allowed = isAdminPath || pathname.startsWith("/api/") || pathname.startsWith("/_next/");
+      if (!allowed) {
+        const url = req.nextUrl.clone();
+        url.pathname = "/admin/login";
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
+    } else if (isAdminPath) {
+      return new NextResponse("Not found", { status: 404 });
+    }
+  }
+
   const nonce = btoa(crypto.randomUUID());
   const csp = buildCsp(nonce);
   const requestHeaders = new Headers(req.headers);
@@ -51,9 +69,31 @@ export async function proxy(req: NextRequest) {
   response.headers.set("Content-Security-Policy", csp);
 
   const protectedArea = PROTECTED.find((p) => pathname === p || pathname.startsWith(`${p}/`));
-  if (!protectedArea) return response;
+  const adminPublicPage = pathname === "/admin/login" || pathname.startsWith("/admin/forgot-password");
+  if (!protectedArea || adminPublicPage) return response;
 
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const loginPath = protectedArea === "/admin" ? "/admin/login" : "/login";
+
+  const loginRedirect = () => {
+    const url = req.nextUrl.clone();
+    url.pathname = loginPath;
+    url.search = "";
+    url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
+  };
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    const url = req.nextUrl.clone();
+    url.pathname = loginPath;
+    url.search = "";
+    url.searchParams.set("next", pathname);
+    url.searchParams.set("error", "auth_not_configured");
+    return NextResponse.redirect(url);
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll: () => req.cookies.getAll(),
       setAll(items) {
@@ -66,14 +106,6 @@ export async function proxy(req: NextRequest) {
       },
     },
   });
-
-  const loginRedirect = () => {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    url.search = "";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  };
 
   const { data } = await supabase.auth.getUser();
   if (!data.user) return loginRedirect();

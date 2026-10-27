@@ -3,6 +3,10 @@ import { departments, levels, terms, classes, users } from "../src/db/schema";
 import { eq, and } from "drizzle-orm";
 
 async function run() {
+  if (!pool) {
+    throw new Error("DATABASE_URL is not configured. Add the live Supabase Postgres URL to .env.local before running sync scripts.");
+  }
+
   console.log("Applying column updates to timetable_sessions...");
   await pool.query(`
     ALTER TABLE "timetable_sessions" ADD COLUMN IF NOT EXISTS "live_started_at" timestamp;
@@ -42,7 +46,7 @@ async function run() {
 
   // Check levels
   const levelCodes = ["A1", "A2", "B1", "B2", "C1", "C2"];
-  for (const dept of allDepts.filter((d) => d.isLanguage)) {
+  for (const dept of allDepts.filter((d: { isLanguage: boolean }) => d.isLanguage)) {
     for (let order = 0; order < levelCodes.length; order++) {
       const code = levelCodes[order];
       const [existing] = await db
@@ -86,7 +90,7 @@ async function run() {
     ];
 
     for (const c of defaultClasses) {
-      const dept = allDepts.find((d) => d.code === c.deptCode);
+      const dept = allDepts.find((d: { code: string }) => d.code === c.deptCode);
       if (!dept) continue;
       const [lvl] = await db.select().from(levels).where(and(eq(levels.departmentId, dept.id), eq(levels.code, c.levelCode))).limit(1);
       await db.insert(classes).values({

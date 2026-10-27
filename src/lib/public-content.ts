@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { departments, faqs, newsPosts, partners, testimonials } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { departments, faqs, newsPosts, partners, teacherRatings, testimonials, users } from "@/db/schema";
+import { eq, asc, desc, sql } from "drizzle-orm";
 
 export const DEFAULT_DEPARTMENTS = [
   { id: "1", code: "FRE", name: "French", flagEmoji: "🇫🇷", accentColor: "#086abd", description: "Learn French from beginner (A1) to advanced (B2/C1) for study, DELF exams, and travel.", isLanguage: true },
@@ -88,16 +88,45 @@ export async function getPublishedFaqs() {
 
 export async function getPublishedPartners() {
   try {
-    const list = await db.select().from(partners).where(eq(partners.published, true));
-    if (list.length > 0) return list;
+    return await db.select().from(partners).where(eq(partners.published, true)).orderBy(asc(partners.order), asc(partners.name));
   } catch (err) {
     console.warn("Partners DB fetch error:", err);
   }
   return [
-    { id: "demo-p1", name: "Goethe-Institut Partner Network", logoUrl: null, website: null, published: true },
-    { id: "demo-p2", name: "Alliance Française Cultural Network", logoUrl: null, website: null, published: true },
+    { id: "demo-p2", name: "Alliance Française Cultural Network", logoUrl: null, website: null, order: 0, published: true },
   ];
 }
+
+export async function getTeacherRatingSummaries() {
+  try {
+    const rows = await db
+      .select({
+        teacherId: teacherRatings.teacherId,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        displayName: users.displayName,
+        average: sql<number>`round(avg(${teacherRatings.rating})::numeric, 1)::float`,
+        count: sql<number>`count(*)::int`,
+        latest: sql<string | null>`(array_agg(${teacherRatings.comment} order by ${teacherRatings.createdAt} desc) filter (where ${teacherRatings.comment} is not null))[1]`,
+      })
+      .from(teacherRatings)
+      .innerJoin(users, eq(users.id, teacherRatings.teacherId))
+      .where(eq(teacherRatings.published, true))
+      .groupBy(teacherRatings.teacherId, users.firstName, users.lastName, users.displayName)
+      .orderBy(desc(sql`avg(${teacherRatings.rating})`));
+    return rows.map((r) => ({
+      teacherId: r.teacherId,
+      name: r.displayName ?? ([r.firstName, r.lastName].filter(Boolean).join(" ") || "DLA teacher"),
+      average: Number(r.average),
+      count: Number(r.count),
+      latest: r.latest,
+    }));
+  } catch (err) {
+    console.warn("Teacher ratings DB fetch error:", err);
+    return [];
+  }
+}
+
 
 export async function getPublishedNews() {
   try {

@@ -7,6 +7,7 @@ import { ACTIVE_STATUSES, MFA_REQUIRED_ROLES } from "@/lib/auth";
 import { roleHome } from "@/lib/rbac";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { adminHostAllowed } from "@/lib/admin-host";
 
 const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("enroll") }).strict(),
@@ -26,6 +27,10 @@ export async function POST(req: Request) {
   if (!auth.user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   const [user] = await db.select().from(users).where(eq(users.authId, auth.user.id)).limit(1);
   if (!user || user.deletedAt || !ACTIVE_STATUSES.includes(user.status as (typeof ACTIVE_STATUSES)[number]) || !MFA_REQUIRED_ROLES.includes(user.role)) {
+    return NextResponse.json({ error: "Not permitted" }, { status: 403 });
+  }
+  if (user.role === "super_admin" && !adminHostAllowed(req)) {
+    await supabase.auth.signOut({ scope: "local" });
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
 

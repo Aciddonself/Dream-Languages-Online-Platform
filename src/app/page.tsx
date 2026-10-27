@@ -25,6 +25,7 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="px-6 pt-10 pb-16 max-w-6xl mx-auto">
         <GlassCard className="source-hero p-8 md:p-12" strong>
+          <div className="hero-split">
           <div className="max-w-3xl">
             <Badge tone="primary">Dream Languages Uganda</Badge>
             <h1 className="hero-heading mt-4">
@@ -33,11 +34,26 @@ export default async function HomePage() {
             <p className="mt-4 text-lg opacity-80 max-w-xl">
               We are a premier language and adult education school offering high-quality education in languages and practical skills to students of all ages and backgrounds.
             </p>
+            <p className="mt-3 opacity-80 max-w-xl">
+              Learn French, German, Chinese, Spanish, English and more from certified tutors, live online or in class. Study at your own pace with small groups, real conversation practice, exam preparation and our Father DLA AI tutor guiding you between lessons.
+            </p>
+            <ul className="mt-4 grid gap-2 max-w-xl text-sm opacity-90">
+              <li>✓ Flexible morning, evening and weekend classes</li>
+              <li>✓ Placement test so you start at exactly the right level</li>
+              <li>✓ Certificates and exam support for study, work and travel abroad</li>
+              <li>✓ A friendly community of learners from every age and background</li>
+            </ul>
+            <p className="mt-4 font-semibold max-w-xl">Join hundreds of students already building their future with DLA. Your first lesson could be this week.</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/apply"><GlassButton>Apply Now</GlassButton></Link>
               <Link href="/courses"><GlassButton variant="glass">Explore Courses</GlassButton></Link>
               <Link href="/login"><GlassButton variant="ghost">Login</GlassButton></Link>
             </div>
+          </div>
+          <div className="hero-image">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/gallery-5.jpg" alt="DLA students and tutors" style={{ objectPosition: "center top" }} />
+          </div>
           </div>
         </GlassCard>
       </section>
@@ -81,9 +97,9 @@ export default async function HomePage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {depts.map((d) => (
             <Link key={d.id} href={`/departments/${d.code.toLowerCase()}`} className="group block">
-              <GlassCard className="p-4 text-center h-full transition-all duration-200 group-hover:scale-105 group-hover:border-indigo-400/50 group-hover:shadow-lg group-hover:shadow-indigo-500/10 cursor-pointer">
+              <GlassCard className="dept-tile p-4 text-center h-full cursor-pointer">
                 <div className="text-3xl mb-1.5 transition-transform group-hover:scale-110">{d.flagEmoji ?? "🌐"}</div>
-                <div className="font-semibold text-xs text-white group-hover:text-indigo-300">{d.name}</div>
+                <div className="font-semibold text-xs">{d.name}</div>
                 <div className="text-[10px] opacity-60 mt-0.5 font-mono">{d.code}</div>
               </GlassCard>
             </Link>
@@ -121,12 +137,15 @@ export default async function HomePage() {
 
       {/* Testimonials */}
       <section className="px-6 max-w-6xl mx-auto mb-12">
-        <h2 className="display-font text-3xl font-bold mb-4">Reviews From Students</h2>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <h2 className="display-font text-3xl font-bold">Reviews From Students</h2>
+          <Link href="/testimonials" className="liquid-link rounded-full border border-transparent px-4 py-1.5 text-sm font-semibold">Read all reviews →</Link>
+        </div>
         <div className="grid md:grid-cols-3 gap-4">
           {tests.map((t) => (
-            <GlassCard key={t.id} className="p-5">
+            <GlassCard key={t.id} className="review-card p-5">
               <div className="text-[var(--brand-primary)] mb-2">{"★".repeat(t.rating ?? 5)}</div>
-              <p className="text-sm opacity-80 italic">“{t.quote}”</p>
+              <p className="review-quote opacity-90">“{t.quote}”</p>
               <div className="mt-3 font-semibold text-sm">{t.authorName}</div>
             </GlassCard>
           ))}

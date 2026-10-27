@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTheme } from "@/components/theme-provider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, Menu, Moon, Sun, X } from "lucide-react";
+import { ArrowUpRight, Menu, X } from "lucide-react";
 
 const links = [
   { href: "/", label: "Home", detail: "Back to the learning hub" },
@@ -15,14 +14,15 @@ const links = [
   { href: "/faqs", label: "FAQs", detail: "Answers for learners and families" },
   { href: "/blog", label: "News & stories", detail: "Read updates from our learning community" },
   { href: "/timetable", label: "Timetable", detail: "See upcoming classes and schedules" },
+  { href: "/classes-2027", label: "Classes 2027", detail: "2027 intakes, class times and exam dates" },
+  { href: "/testimonials", label: "Reviews", detail: "What our students say about DLA" },
   { href: "/contact", label: "Contact", detail: "Talk with our team" },
   { href: "/apply", label: "Apply for admission", detail: "Start your DLA journey" },
-  { href: "/login", label: "Student & staff login", detail: "Open your learning portal" },
+  { href: "/login", label: "Sign in", detail: "Student, teacher, HOC, finance & applicant sign in" },
 ];
 
 export function PublicNav() {
   const pathname = usePathname();
-  const { resolvedTheme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -57,15 +57,6 @@ export function PublicNav() {
             </span>
           </Link>
           <div className="site-nav-actions">
-            <button
-              className="site-icon-button site-theme-button"
-              type="button"
-              aria-label="Toggle color theme"
-              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            >
-              <Sun className="theme-icon-light" size={19} />
-              <Moon className="theme-icon-dark" size={19} />
-            </button>
             <button
               className={`site-icon-button site-menu-button${open ? " is-open" : ""}`}
               type="button"

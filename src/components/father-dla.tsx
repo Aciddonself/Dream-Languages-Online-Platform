@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, type FormEvent } from "react";
 
@@ -24,7 +24,7 @@ export function FatherDla() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [agentStatus, setAgentStatus] = useState<{ status: string; activeProvider: string } | null>(null);
+  const [agentStatus, setAgentStatus] = useState<{ configured: boolean } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Check agent status on mount
@@ -51,47 +51,47 @@ export function FatherDla() {
     setBusy(true);
     setError("");
 
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: question }];
-    setMessages(nextMessages);
+    setMessages((current) => [...current, { role: "user", content: question }, { role: "assistant", content: "" }]);
     setInput("");
+    const patchLast = (fn: (m: ChatMessage) => ChatMessage) => setMessages((current) => current.map((m, i) => (i === current.length - 1 ? fn(m) : m)));
 
     try {
       const response = await fetch("/api/father-dla", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: nextMessages.slice(-14).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-        }),
+        body: JSON.stringify({ message: question }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        setError(typeof data.error === "string" ? data.error : "Father-DLA could not answer right now.");
-        setMessages((current) => current.slice(0, -1));
+      if (!response.ok || !response.body) {
+        const data = await response.json().catch(() => ({}));
+        setError(response.status === 429 ? "Too many questions for now. Please try again later or sign in." : typeof data.error === "string" ? data.error : "Father-DLA could not answer right now.");
+        setMessages((current) => current.slice(0, -2));
         setInput(question);
         return;
       }
-
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          content: data.answer,
-          provider: data.provider,
-        },
-      ]);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buffer.indexOf("\n")) >= 0) {
+          const line = buffer.slice(0, nl).trim();
+          buffer = buffer.slice(nl + 1);
+          if (!line) continue;
+          const event = JSON.parse(line) as { type: string; text?: string; error?: string };
+          if (event.type === "delta") patchLast((m) => ({ ...m, content: m.content + (event.text ?? "") }));
+          else if (event.type === "replace") patchLast((m) => ({ ...m, content: event.text ?? "" }));
+          else if (event.type === "error") setError(event.error ?? "Father-DLA could not answer right now.");
+        }
+      }
     } catch {
       setError("Unable to reach Father-DLA. Please check your connection and try again.");
-      setMessages((current) => current.slice(0, -1));
-      setInput(question);
     } finally {
       setBusy(false);
     }
   }
-
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     handleSend();
@@ -102,12 +102,7 @@ export function FatherDla() {
     setError("");
   }
 
-  const providerLabel =
-    agentStatus?.activeProvider === "gemini"
-      ? "Google Gemini AI"
-      : agentStatus?.activeProvider === "openai"
-      ? "OpenAI GPT"
-      : "DLA Intelligence Engine";
+  const providerLabel = agentStatus?.configured === false ? "Not configured" : "AI powered";
 
   return (
     <div className="fixed bottom-5 right-5 z-[80]">

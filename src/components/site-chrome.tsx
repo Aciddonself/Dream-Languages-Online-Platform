@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { PublicNav } from "@/components/public-nav";
 import { ContactChooser } from "@/components/contact-chooser";
 import { FatherDla } from "@/components/father-dla";
@@ -14,8 +14,20 @@ export function SiteChrome({ children }: { children: ReactNode }) {
   const isPortal = portalRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
   const isAdminRecovery = pathname.startsWith("/admin/forgot-password");
   const hideNavigation = isPortal || pathname === "/login" || pathname === "/register" || isAdminRecovery;
-  // Enable Father-DLA across the entire learning hub and public website (except admin recovery)
-  const allowFatherDla = !isAdminRecovery;
+  // Father-DLA is only available inside signed-in dashboards, never on the public website
+  const allowFatherDla = isPortal && !isAdminRecovery;
+
+  useEffect(() => {
+    function track(event: PointerEvent) {
+      const link = (event.target as Element | null)?.closest?.<HTMLElement>(".liquid-link, .site-menu-link, .site-footer a");
+      if (!link) return;
+      const box = link.getBoundingClientRect();
+      link.style.setProperty("--lx", `${event.clientX - box.left}px`);
+      link.style.setProperty("--ly", `${event.clientY - box.top}px`);
+    }
+    document.addEventListener("pointermove", track, { passive: true });
+    return () => document.removeEventListener("pointermove", track);
+  }, []);
 
   return (
     <>

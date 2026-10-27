@@ -25,7 +25,7 @@ export default async function DepartmentsPage() {
             className="group block"
           >
             <GlassCard
-              className="h-full p-6 transition-all duration-200 group-hover:scale-[1.02] group-hover:border-indigo-400/50 group-hover:shadow-lg group-hover:shadow-indigo-500/10 flex flex-col justify-between"
+              className="dept-tile h-full p-6 flex flex-col justify-between"
               strong
             >
               <div>
@@ -38,7 +38,7 @@ export default async function DepartmentsPage() {
                   </span>
                 </div>
 
-                <h2 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors">
+                <h2 className="text-xl font-bold transition-colors">
                   {d.name}
                 </h2>
 

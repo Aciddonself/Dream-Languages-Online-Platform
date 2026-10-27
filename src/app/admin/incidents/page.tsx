@@ -15,9 +15,9 @@ export default async function AdminIncidents() {
       <h1 className="display-font text-2xl font-bold mb-4">Incident Centre</h1>
       <p className="mb-4 text-sm opacity-70">Review moderation incidents. This list only displays masked incident details.</p>
       <GlassCard className="p-5" strong>
-        {records.length ? <ul className="divide-y divide-[var(--border-strong)]">{records.map((incident) => (
+        {records.length ? <ul className="divide-y divide-[var(--border-strong)]">{records.map((incident: { id: string; type: string; maskedContent?: string | null; createdAt: Date | string; status: string }) => (
           <li key={incident.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-            <div><div className="font-semibold">{incident.type}</div><div className="text-sm opacity-65">{incident.maskedContent ?? "No masked details"} · {incident.createdAt.toLocaleString()}</div></div>
+            <div><div className="font-semibold">{incident.type}</div><div className="text-sm opacity-65">{incident.maskedContent ?? "No masked details"} · {new Date(incident.createdAt).toLocaleString()}</div></div>
             <span className="text-xs font-semibold uppercase">{incident.status}</span>
           </li>
         ))}</ul> : <p className="text-sm opacity-65">No incidents have been reported.</p>}
