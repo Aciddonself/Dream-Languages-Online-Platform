@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Crimson_Text, Playball, Romanesco } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SiteChrome } from "@/components/site-chrome";
 import { AppToaster } from "@/components/app-toaster";
+import { CookieConsent } from "@/components/cookie-consent";
+import { SiteChrome } from "@/components/site-chrome";
 
 const romanesco = Romanesco({ subsets: ["latin"], weight: "400", variable: "--font-romanesco", display: "swap" });
 const playball = Playball({ subsets: ["latin"], weight: "400", variable: "--font-playball", display: "swap" });
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <SiteChrome>{children}</SiteChrome>
           <AppToaster />
+          <CookieConsent />
         </ThemeProvider>
       </body>
     </html>

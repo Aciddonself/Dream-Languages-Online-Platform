@@ -2,10 +2,14 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { PublicNav } from "@/components/public-nav";
-import { ContactChooser } from "@/components/contact-chooser";
-import { FatherDla } from "@/components/father-dla";
 import { SiteFooter } from "@/components/site-footer";
+
+// These optional widgets belong to different route groups. Keep their code out
+// of the shared shell bundle so public pages do not download the portal tutor.
+const ContactChooser = dynamic(() => import("@/components/contact-chooser").then((mod) => mod.ContactChooser));
+const FatherDla = dynamic(() => import("@/components/father-dla").then((mod) => mod.FatherDla));
 
 const portalRoutes = ["/admin", "/applicant", "/finance", "/hoc", "/student", "/teacher", "/preview"];
 
