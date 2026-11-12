@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { classes, timetableSessions } from "@/db/schema";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
+import { formatSchoolDateTime, formatSchoolTime } from "@/lib/school-time";
 
 const nav = [
   { href: "/teacher", label: "Dashboard", icon: "🏠" },
@@ -34,7 +35,7 @@ export default async function TeacherTimetablePage() {
       <div className="grid gap-3">
         {sessions.length ? sessions.map((session) => (
           <GlassCard key={session.id} className="flex flex-wrap items-center justify-between gap-4 p-5">
-            <div><h2 className="font-semibold">{session.title}</h2><p className="text-sm opacity-70">{session.className ?? "School session"} · {session.startsAt.toLocaleString()} – {session.endsAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}{session.room ? ` · ${session.room}` : ""}</p></div>
+            <div><h2 className="font-semibold">{session.title}</h2><p className="text-sm opacity-70">{session.className ?? "School session"} · {formatSchoolDateTime(session.startsAt)} – {formatSchoolTime(session.endsAt)}{session.room ? ` · ${session.room}` : ""}</p></div>
             {session.hasMeeting ? <a href={`/api/portal/sessions/${session.id}/join`} className="btn-glass btn-glass-primary rounded-xl px-4 py-2 font-semibold">Join class</a> : <span className="text-sm opacity-60">Meeting not yet available</span>}
           </GlassCard>
         )) : <GlassCard className="p-5 text-sm opacity-70">No upcoming sessions are assigned to you.</GlassCard>}

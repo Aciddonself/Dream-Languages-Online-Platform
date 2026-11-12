@@ -49,7 +49,7 @@ Use demo accounts only for local testing. Do not seed demo accounts into product
 
 ### Recover administrator access
 
-First use the dedicated sign-in page: `/admin/login`. An administrator signing in through `/login` is intentionally rejected. Production additionally requires the request to use the exact hostname configured in `ADMIN_HOST`.
+Use **Staff sign in** in the public site's navigation, or open `/admin-login`. That link redirects to `/admin/login` on the hostname configured in `ADMIN_HOST`. An administrator signing in through `/login` is intentionally rejected. Production additionally requires the request to use the exact hostname configured in `ADMIN_HOST`.
 
 If the password is unknown and administrator recovery email is not configured, reset the existing account without removing other users:
 
@@ -85,6 +85,20 @@ Run this only from a trusted machine with the correct Supabase service-role key 
 
 The public sign-in URL is `https://www.example.com/login`. The separate administrator sign-in URL is `https://admin.example.com/admin/login`. `ADMIN_HOST` enforces that admin pages and admin authentication are only available on the configured hostname; `/admin` on the public hostname returns 404. Vercel deployments require the real Supabase and database environment values and the configured admin hostname before production sign-in will succeed.
 
+## Deploy to Namecheap cPanel
+
+This is a server-rendered Next.js application, so deploy it as a Node.js app through **cPanel → Setup Node.js App**. Do not upload it as a static React site. Namecheap's cPanel workflow uses the included `server.js` startup file, which starts Next on the port assigned by cPanel. Use a Node.js version supported by the hosting account and compatible with this Next.js release (Node.js 22 or newer is recommended), set the app mode to **Production**, and keep the application root outside `public_html`.
+
+1. Confirm the hosting plan exposes **Setup Node.js App**, enough memory/process capacity for a Next.js server, and SSH or cPanel Terminal. Build the production app with `npm ci` and `npm run build`, then deploy the project files including `.next`, `public`, `server.js`, `package.json`, and the lockfile. In cPanel, configure `server.js` as the startup file and install production dependencies with the cPanel Node.js app environment.
+2. Add the production environment variables in cPanel's Node.js app settings. At minimum configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `APP_URL`, `ADMIN_HOST`, and a strong `CRON_SECRET`. Add only the integrations the school will use. Keep secrets out of Git and the public web root.
+3. Use Supabase for PostgreSQL and student-photo storage as configured by the app. Apply reviewed database migrations from a trusted machine with the production `DATABASE_URL` before opening the site. Create the first administrator once using the documented bootstrap script and production credentials; never seed demo users in production.
+4. The `private_uploads/` directory holds teacher materials and teacher-application documents. Confirm the deployed app has writable, persistent storage and that this directory is outside the public web root. Back it up and check account disk limits. If the hosting plan does not provide dependable persistent storage, move these uploads to durable object storage before accepting them.
+5. Point the public and administrator DNS hostnames to the cPanel account, enable HTTPS, and verify both login hostnames. Configure the Supabase authentication URLs and `APP_URL` to match the final HTTPS domains.
+6. Configure scheduled endpoints with cPanel Cron Jobs or an external scheduler and send `Authorization: Bearer <CRON_SECRET>`. Namecheap shared hosting does not allow cron intervals shorter than five minutes, while the school-email endpoint is designed for a one-minute cadence. Use an external scheduler that supports one-minute jobs, or use a hosting plan that does; do not silently run it every five minutes because reminders and timed statements may be late. The daily holiday reminder can run daily. Confirm your chosen plan's cron limits before deployment.
+7. After starting the app, check `/api/health`, sign in with the production administrator, and exercise a student login, upload/download flow, email delivery, and scheduled endpoint. Watch cPanel application logs and resource usage during this check.
+
+Shared hosting resources are limited, so measure response time and cPanel CPU/memory limits under realistic concurrent use. If pages remain slow after the client-side bundle reduction, inspect database query time and hosting resource throttling before changing frameworks or increasing client-side complexity. A Namecheap VPS offers more control when the shared plan cannot meet the app's runtime, cron, or storage requirements.
+
 ## Student photos, digital IDs, and report-card stamps
 
 Student applications require a passport-style photo. The application form and admin-created student form prepare it as a centered, portrait 7:9 JPEG, then save it in the private `student-photos` Supabase Storage bucket. Students can upload or replace their own photo from the digital ID section of their dashboard, and a super administrator can add or replace a photo for an existing student or applicant in **Admin → Users**. Only signed-in staff with the appropriate role can retrieve another student's private photo.
@@ -105,7 +119,7 @@ Apply the checked-in Drizzle migrations with `npm run db:migrate` before using h
 
 The auth endpoints, seeded academic/public records, courses, homepage, payment details, admin user management/statistics, student attendance/fee/assignment/session data, and health check use PostgreSQL through Drizzle. Server-rendered portal entry pages enforce roles; the Next.js proxy redirects unauthenticated requests, while database-backed sessions allow logout/revocation and expiry checks.
 
-This repository is a functional starting point, not a complete production LMS. Several dashboard widgets and actions still use static sample values or are presentation-only (including attendance, exams, results, payment processing, timetable management, document upload, CMS editing, and many admin actions). Do not rely on those for real school operations until their APIs, authorization, persistence, validation, and tests are implemented.
+This repository has working role-based portals and database-backed school workflows, but it still needs further completion and live validation before production use. Student payment reporting and Finance verification support manual transfers; payment-provider checkout and proof uploads are not included. Online multiple-choice assessments support authoring, timed student attempts, auto-grading and teacher review/publication; free-response questions and proctoring are not included. Teachers can create assignments, students can submit written work or private files, and authorized staff can grade with feedback. Assignment attachments currently use local private server storage, so confirm persistent disk on the selected host or move uploads to object storage before production. CMS pages and news can both be edited and published. Scheduling uses Google Meet links entered by staff rather than creating rooms through Google's API. See [PROJECT_AUDIT.md](PROJECT_AUDIT.md) for the current findings and repair order. Validate workflows against real school accounts and policies before relying on them for school operations.
 
 Useful checks:
 

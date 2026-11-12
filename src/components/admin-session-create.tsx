@@ -28,14 +28,6 @@ interface AdminSessionCreateProps {
   onSuccess?: () => void;
 }
 
-// Function to generate a realistic Google Meet URL (format: meet.google.com/xxx-yyyy-zzz)
-function generateGoogleMeetUrl(): string {
-  const letters = "abcdefghijklmnopqrstuvwxyz";
-  const randomPart = (length: number) =>
-    Array.from({ length }, () => letters[Math.floor(Math.random() * letters.length)]).join("");
-  return `https://meet.google.com/${randomPart(3)}-${randomPart(4)}-${randomPart(3)}`;
-}
-
 export function AdminSessionCreate({
   departments = [],
   classes,
@@ -52,6 +44,7 @@ export function AdminSessionCreate({
   const [room, setRoom] = useState("Google Meet Online Room");
   const [meetUrl, setMeetUrl] = useState("");
   const [recurring, setRecurring] = useState(false);
+  const [recurrenceCount, setRecurrenceCount] = useState(8);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -70,15 +63,6 @@ export function AdminSessionCreate({
     const dept = departments.find((d) => d.id === deptId);
     if (dept && !title) {
       setTitle(`${dept.flagEmoji ?? ""} ${dept.name} Live Class`.trim());
-    }
-  }
-
-  // Quick auto-generator for Google Meet
-  function handleGenerateMeet() {
-    const newMeet = generateGoogleMeetUrl();
-    setMeetUrl(newMeet);
-    if (!room || room === "Room or location (optional)") {
-      setRoom("Google Meet (Live Video)");
     }
   }
 
@@ -115,6 +99,7 @@ export function AdminSessionCreate({
           room,
           meetUrl: meetUrl || undefined,
           recurring,
+          recurrenceCount,
         }),
       });
 
@@ -124,7 +109,9 @@ export function AdminSessionCreate({
         return;
       }
 
-      setSuccess("Live class successfully scheduled with Google Meet!");
+      setSuccess(data.createdCount > 1
+        ? `${data.createdCount} weekly class sessions successfully scheduled.`
+        : "Live class successfully scheduled.");
 
       // Generate Google Calendar Link
       const calendar = new URL("https://calendar.google.com/calendar/render");
@@ -284,7 +271,7 @@ export function AdminSessionCreate({
         />
       </div>
 
-      {/* Google Meet Link with One-Click Generator */}
+      {/* Google Meet Link */}
       <div className="md:col-span-2 rounded-2xl border border-white/15 bg-white/5 p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -294,18 +281,19 @@ export function AdminSessionCreate({
             <div>
               <h4 className="text-sm font-semibold text-white">Google Meet Connection</h4>
               <p className="text-xs opacity-70">
-                Generate an official Google Meet room or enter your existing meeting URL
+                Create a real meeting in your Google account, then paste its link here. This form cannot create meeting rooms automatically.
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleGenerateMeet}
+          <a
+            href="https://meet.google.com/new"
+            target="_blank"
+            rel="noreferrer"
             className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:opacity-90 transition-opacity"
           >
-            <span>⚡</span>
-            <span>Generate Google Meet Link</span>
-          </button>
+            <span>↗</span>
+            <span>Create a real Meet room</span>
+          </a>
         </div>
 
         <GlassInput
@@ -317,15 +305,7 @@ export function AdminSessionCreate({
         />
 
         <div className="flex flex-wrap items-center justify-between text-xs opacity-75">
-          <span>Format: https://meet.google.com/[code]</span>
-          <a
-            href="https://meet.google.com/new"
-            target="_blank"
-            rel="noreferrer"
-            className="font-medium text-indigo-400 underline hover:text-indigo-300"
-          >
-            Open meet.google.com/new in new window ↗
-          </a>
+          <span>Paste the meeting URL from your Google Meet account.</span>
         </div>
       </div>
 
@@ -339,9 +319,25 @@ export function AdminSessionCreate({
           className="h-4 w-4 rounded border-white/20 bg-transparent text-indigo-600 focus:ring-indigo-500"
         />
         <label htmlFor={`${formId}-recurring`} className="cursor-pointer">
-          Recurring weekly live session
+          Repeat this session every week
         </label>
       </div>
+      {recurring && (
+        <div className="md:col-span-2 grid max-w-xs gap-1.5">
+          <label htmlFor={`${formId}-recurrence-count`} className="text-xs font-semibold opacity-80">
+            Number of weekly sessions (2–52)
+          </label>
+          <GlassInput
+            id={`${formId}-recurrence-count`}
+            type="number"
+            min={2}
+            max={52}
+            required
+            value={recurrenceCount}
+            onChange={(event) => setRecurrenceCount(Number(event.target.value))}
+          />
+        </div>
+      )}
 
       {/* Submit Buttons */}
       <div className="md:col-span-2 flex flex-wrap items-center gap-3 pt-2">
@@ -370,7 +366,7 @@ export function AdminSessionCreate({
               target="_blank"
               rel="noreferrer"
             >
-              📅 Add this Live Class to Google Calendar ↗
+              📅 Add the first class to Google Calendar ↗
             </a>
           )}
         </div>

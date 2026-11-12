@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { cmsPages, newsPosts, partners, teacherRatings, testimonials, users } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 import { PartnerAdd, PartnerRemove, TeacherRatingDecision } from "@/components/content-controls";
-import { AdminCmsPageCreate, AdminCmsPageEditor, AdminNewsCreate, AdminReviewDecision } from "@/components/admin-cms-controls";
+import { AdminCmsPageCreate, AdminCmsPageEditor, AdminNewsCreate, AdminNewsEditor, AdminReviewDecision } from "@/components/admin-cms-controls";
 import { AnnouncementCreate } from "@/components/announcement-create";
 import { classes } from "@/db/schema";
 import { isNull } from "drizzle-orm";
@@ -55,11 +55,9 @@ export default async function AdminCms() {
         </GlassCard>
         <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">News and stories ({posts.length})</h2>
-          {posts.length ? <ul className="space-y-2 text-sm">{posts.map((post: { id: string; title: string; status: string }) => (
-            <li className="glass flex items-center justify-between gap-3 px-3 py-2" key={post.id}>
-              <span>{post.title}</span><span className="text-xs opacity-65">{post.status}</span>
-            </li>
-          ))}</ul> : <p className="text-sm opacity-65">No news posts have been added yet.</p>}
+          {posts.length ? <div className="space-y-3">{posts.map((post: { id: string; title: string; slug: string; excerpt: string | null; body: string | null; status: string }) => (
+            <AdminNewsEditor key={post.id} post={post} />
+          ))}</div> : <p className="text-sm opacity-65">No news posts have been added yet.</p>}
         </GlassCard>
         <GlassCard className="p-5 lg:col-span-2" strong>
           <h2 className="font-semibold mb-3">Student reviews/comments awaiting approval ({reviews.filter((review: { published: boolean | null }) => !review.published).length})</h2>

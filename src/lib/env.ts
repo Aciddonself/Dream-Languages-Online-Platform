@@ -11,6 +11,7 @@ const serverSchema = z.object({
   DATABASE_URL: z.string().min(10),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   APP_URL: z.string().url(),
+  CPANEL_WEBMAIL_URL: z.preprocess((value) => value === "" ? undefined : value, z.string().url().optional()),
   CRON_SECRET: z.string().min(32).optional(),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().optional(),

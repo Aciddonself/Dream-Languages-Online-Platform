@@ -1,4 +1,4 @@
-import { asc, desc, eq, gt, or, isNotNull, and } from "drizzle-orm";
+import { asc, desc, eq, gt, inArray, isNotNull, isNull, or, and } from "drizzle-orm";
 import { requireRole } from "@/lib/rbac";
 import { db } from "@/db";
 import { classes, departments, timetableSessions, users } from "@/db/schema";
@@ -46,7 +46,11 @@ export default async function HocLiveClassesPage() {
         name: users.displayName,
       })
       .from(users)
-      .where(or(eq(users.role, "teacher"), eq(users.role, "head_academics")))
+      .where(and(
+        or(eq(users.role, "teacher"), eq(users.role, "head_academics")),
+        inArray(users.status, ["active", "registered"]),
+        isNull(users.deletedAt),
+      ))
       .orderBy(asc(users.displayName)),
     db
       .select({

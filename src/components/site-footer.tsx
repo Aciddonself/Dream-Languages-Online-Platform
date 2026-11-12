@@ -18,6 +18,14 @@ const community = [
   { href: "/login", label: "Sign in" },
 ];
 
+const legal = [
+  { href: "/terms-of-service", label: "Terms of Service" },
+  { href: "/refund-policy", label: "Refund Policy" },
+  { href: "/cookie-policy", label: "Cookie Policy" },
+  { href: "/privacy-policy", label: "Privacy Policy" },
+  { href: "/data-deletion", label: "Data Deletion Request" },
+];
+
 export function SiteFooter() {
   return (
     <footer className="site-footer">
@@ -58,9 +66,17 @@ export function SiteFooter() {
             ))}
           </nav>
         </div>
+        <div className="site-footer-col">
+          <h3>Legal</h3>
+          <nav aria-label="Footer legal">
+            {legal.map((link) => (
+              <Link key={link.href} href={link.href}>{link.label}</Link>
+            ))}
+          </nav>
+        </div>
         <div className="site-footer-bottom">
           <span>© Dream Languages And Adult Literacy Uganda Limited. All rights reserved.</span>
-          <span>Kampala, Uganda</span>
+          <span>Kampala, Uganda · info@dreamlanguagesug.com · Reg. No. DLA-UG-001</span>
         </div>
       </div>
     </footer>

@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { enrolments, feeSchedules, payments, timetableSessions, users } from "@/db/schema";
 import { createTextPdf } from "@/lib/pdf";
 import { sendEmail } from "@/lib/email";
+import { formatSchoolDateTime } from "@/lib/school-time";
 
 export const runtime = "nodejs";
 
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
         const result = await sendEmail({
           to: recipient.email,
           subject: `Class reminder: ${session.title} begins in ${minutes} minutes`,
-          html: `<p>Hello ${recipient.name ?? "there"},</p><p>This is a reminder that <strong>${session.title}</strong> begins in ${minutes} minutes at ${session.startsAt.toLocaleString()}.</p><p>${session.room ? `Location: ${session.room}. ` : ""}Sign in to your Dream Languages Uganda portal and open your timetable to join the class.</p>`,
+          html: `<p>Hello ${recipient.name ?? "there"},</p><p>This is a reminder that <strong>${session.title}</strong> begins in ${minutes} minutes at ${formatSchoolDateTime(session.startsAt)} (East Africa Time).</p><p>${session.room ? `Location: ${session.room}. ` : ""}Sign in to your Dream Languages Uganda portal and open your timetable to join the class.</p>`,
           dedupeKey: `class-reminder:${session.id}:${recipient.id}:${minutes}`,
         });
         if (result.sent) sentCount++;

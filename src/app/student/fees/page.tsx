@@ -5,6 +5,7 @@ import { GlassCard } from "@/components/ui/glass";
 import { db } from "@/db";
 import { feeSchedules, payments } from "@/db/schema";
 import { requireRole } from "@/lib/rbac";
+import { StudentPaymentReport } from "@/components/student-payment-report";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,11 @@ export default async function StudentFeesPage() {
           </div>
         ))}</div> : <p className="text-sm opacity-65">No fee schedule has been assigned yet. Contact the finance office to confirm your programme charges.</p>}
       </GlassCard>
+      {schedules.some((fee) => fee.amount > fee.paid) && <GlassCard className="p-5 mb-5">
+        <h2 className="font-semibold mb-2">Report a payment</h2>
+        <p className="mb-4 text-sm opacity-65">Pay using the official instructions, then submit the amount and transaction reference here. Your balance changes only after Finance verifies the transfer.</p>
+        <StudentPaymentReport currencies={Array.from(new Set<string>(schedules.filter((fee) => fee.amount > fee.paid).map((fee) => fee.currency)))} />
+      </GlassCard>}
       <GlassCard className="p-5">
         <h2 className="font-semibold mb-3">Payment history</h2>
         {paymentRows.length ? <div className="space-y-2">{paymentRows.map((payment) => (

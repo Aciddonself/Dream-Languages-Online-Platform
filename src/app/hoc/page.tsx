@@ -4,8 +4,10 @@ import { GlassCard, GlassButton } from "@/components/ui/glass";
 import { AdminSessionCreate } from "@/components/admin-session-create";
 import { db } from "@/db";
 import { classes, departments, exams, timetableSessions, users } from "@/db/schema";
-import { asc, count, eq, gt, or } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray, isNull, or } from "drizzle-orm";
 import Link from "next/link";
+import { formatSchoolDateTime } from "@/lib/school-time";
+import { MailAccessCard } from "@/components/mail-access-card";
 
 const nav = [
   { href: "/hoc", label: "Dashboard", icon: "🏠" },
@@ -27,7 +29,11 @@ export default async function HocDashboard() {
       .where(eq(departments.isLanguage, true))
       .orderBy(asc(departments.name)),
     db.select({ id: classes.id, name: classes.name, departmentId: classes.departmentId }).from(classes).orderBy(asc(classes.name)),
-    db.select({ id: users.id, name: users.displayName }).from(users).where(or(eq(users.role, "teacher"), eq(users.role, "head_academics"))),
+    db.select({ id: users.id, name: users.displayName }).from(users).where(and(
+      or(eq(users.role, "teacher"), eq(users.role, "head_academics")),
+      inArray(users.status, ["active", "registered"]),
+      isNull(users.deletedAt),
+    )),
     db.select({
       id: users.id,
       name: users.displayName,
@@ -56,6 +62,7 @@ export default async function HocDashboard() {
 
   return (
     <PortalShell title="Head of Academics & Languages" nav={nav}>
+      <MailAccessCard />
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="display-font text-3xl font-bold">Head of Languages & Academics</h1>
@@ -134,7 +141,7 @@ export default async function HocDashboard() {
                       <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" title="Live Now" />
                     )}
                     <span>
-                      {session.startsAt.toLocaleString()} · <strong>{session.title}</strong>
+                      {formatSchoolDateTime(session.startsAt)} · <strong>{session.title}</strong>
                     </span>
                   </div>
                   <div className="flex items-center gap-2">

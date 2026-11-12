@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { GlassButton, GlassInput } from "@/components/ui/glass";
 import { prepareProfilePhoto } from "@/lib/prepare-profile-photo";
 import { toast } from "sonner";
@@ -142,7 +143,23 @@ export function ApplyForm({
       <p className="text-xs opacity-60">
         The administrator reviews your complete application before confirming admission and issuing your login credentials. Online language classes require a computer or laptop, stable internet, and a quiet place to study.
       </p>
-      {error && <div className="text-sm text-[var(--danger)]" role="alert">{String(error)}</div>}
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="ageConfirmed" required className="mt-1" />
+        <span>I confirm I am 18 years or older, or have parental/guardian consent to apply.</span>
+      </label>
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="termsAccepted" required className="mt-1" />
+        <span>
+          I have read and agree to the{" "}
+          <a href="/terms-of-service" target="_blank" rel="noreferrer" className="underline text-[var(--brand-primary)]">
+            Terms and Conditions
+          </a>
+          , including the school policies and student code of conduct.
+        </span>
+      </label>
+      <p className="text-xs opacity-60">
+        <Link href="/services" className="underline text-[var(--brand-primary)]">View our services</Link>
+      </p>
       {success && <div className="text-sm text-[var(--success)]" role="status">{success}</div>}
       <GlassButton type="submit" className="w-full" loading={loading}>
         {loading ? "Submitting application..." : "Submit application"}

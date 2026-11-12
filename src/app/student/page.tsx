@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/rbac";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
+import { formatSchoolDateTime } from "@/lib/school-time";
 import { StudentIdCard } from "@/components/id-card";
 import { ProfilePhotoControl } from "@/components/profile-photo-control";
 import { AttendanceRing } from "@/components/attendance-ring";
@@ -24,6 +25,7 @@ import Link from "next/link";
 
 const nav = [
   { href: "/student", label: "Dashboard", icon: "🏠" },
+  { href: "/student/assignments", label: "Assignments", icon: "🗂️" },
   { href: "/student/ai-tutor", label: "AI Tutor", icon: "🎓" },
   { href: "/student/timetable", label: "Timetable", icon: "🗓️" },
   { href: "/student/fees", label: "Fees", icon: "💰" },
@@ -255,7 +257,7 @@ export default async function StudentDashboard() {
               <div className="font-semibold">{upcomingSessions[0]?.title ?? enrollment?.className ?? "No class assigned"}</div>
               <div className="text-sm opacity-60">
                 {upcomingSessions[0]
-                  ? `${new Date(upcomingSessions[0].startsAt).toLocaleString()}${upcomingSessions[0].room ? ` · ${upcomingSessions[0].room}` : ""}`
+                  ? `${formatSchoolDateTime(upcomingSessions[0].startsAt)}${upcomingSessions[0].room ? ` · ${upcomingSessions[0].room}` : ""}`
                   : "No upcoming session scheduled"}
               </div>
             </div>
@@ -277,7 +279,7 @@ export default async function StudentDashboard() {
             <ul className="space-y-2 text-sm">
               {upcomingSessions.length ? upcomingSessions.map((session) => (
                 <li key={session.id} className="glass flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-                  <span>{new Date(session.startsAt).toLocaleString()} · {session.title}</span>
+                  <span>{formatSchoolDateTime(session.startsAt)} · {session.title}</span>
                   {session.meetUrl && (
                     <a
                       className="font-semibold text-emerald-400 underline hover:text-emerald-300"

@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { GlassButton, GlassInput } from "@/components/ui/glass";
+import { ExamQuestionEditor } from "@/components/exam-question-editor";
 
 type ClassOption = { id: string; name: string };
 type ExamOption = { id: string; title: string; assessmentType: string; classId: string | null };
@@ -152,6 +153,8 @@ export function AssessmentManager({
         <GlassInput name="description" placeholder="Instructions or description (optional)" maxLength={2000} />
         <GlassButton type="submit" disabled={busy || !classes.length}>{busy ? "Saving..." : "Create and publish assessment"}</GlassButton>
       </form>
+
+      <ExamQuestionEditor exams={exams} />
 
       <div className="border-t border-white/10 pt-5">
         <h3 className="font-semibold mb-3">Publish assessment result</h3>
