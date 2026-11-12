@@ -1,6 +1,5 @@
 "use client";
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { GlassCard, GlassButton, GlassInput } from "@/components/ui/glass";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -23,17 +22,13 @@ const roleOptions = [
 ];
 
 export function LoginForm({ mode = "public" }: { mode?: "public" | "admin" }) {
-  return (
-    <Suspense fallback={null}>
-      <LoginPanel mode={mode} />
-    </Suspense>
-  );
+  return <LoginPanel mode={mode} />;
 }
 
 function LoginPanel({ mode }: { mode: "public" | "admin" }) {
   const isAdmin = mode === "admin";
-  const router = useRouter();
-  const search = useSearchParams();
+  const [searchString, setSearchString] = useState("");
+  const search = new URLSearchParams(searchString);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [signInAs, setSignInAs] = useState("student");
@@ -44,6 +39,10 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
   const [captcha, setCaptcha] = useState("");
   const widget = useRef<HTMLDivElement>(null);
   const authNotConfigured = search.get("error") === "auth_not_configured";
+
+  useEffect(() => {
+    setSearchString(window.location.search);
+  }, []);
 
   // Deep link only if it stays inside the role's own portal; otherwise use the server-chosen home.
   function destination(home?: string) {
@@ -90,13 +89,13 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
           return setStep({ kind: "enroll", factorId: enrol.data.factorId, qrCode: enrol.data.qrCode, secret: enrol.data.secret });
         }
         toast.success("Signed in successfully.");
-        router.replace(destination(data.redirectTo));
+        window.location.replace(destination(data.redirectTo));
         return;
       }
       const { res, data } = await post("/api/auth/mfa", { action: "verify", factorId: step.factorId, code });
       if (!res.ok) return fail(data.error || "Invalid code");
       toast.success("Signed in successfully.");
-      router.replace(destination(data.redirectTo));
+      window.location.replace(destination(data.redirectTo));
     } catch {
       fail("Unable to reach the sign-in service. Check your connection and try again.");
     } finally {

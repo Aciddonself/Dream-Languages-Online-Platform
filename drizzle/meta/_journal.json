@@ -64,6 +64,13 @@
       "when": 1793101072975,
       "tag": "0008_bored_rachel_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794464388497,
+      "tag": "0009_durable_assignment_storage",
+      "breakpoints": true
     }
   ]
 }

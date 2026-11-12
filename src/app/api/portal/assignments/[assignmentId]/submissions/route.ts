@@ -1,12 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { assignments, auditLogs, classes, enrolments, submissions, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { deleteAssignmentFile, storeAssignmentFile } from "@/lib/assignment-storage";
 
 export const runtime = "nodejs";
 
@@ -91,17 +90,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ ass
   const [student] = await db.select({ id: users.id }).from(users).where(eq(users.id, actor.id)).limit(1);
   if (!student) return NextResponse.json({ error: "Student account not found" }, { status: 404 });
   let storageKey: string | undefined;
-  let newStoragePath: string | undefined;
-  if (file && extension) {
-    const id = randomUUID();
-    storageKey = id;
-    const storageRoot = path.join(process.cwd(), "private_uploads");
-    newStoragePath = path.join(storageRoot, `assignment-${id}${extension}`);
-    await mkdir(storageRoot, { recursive: true, mode: 0o700 });
-    await writeFile(newStoragePath, Buffer.from(await file.arrayBuffer()), { flag: "wx", mode: 0o600 });
-  }
-
   try {
+    if (file && extension) {
+      storageKey = randomUUID();
+      await storeAssignmentFile(storageKey, extension, file.type, new Uint8Array(await file.arrayBuffer()));
+    }
+
     const result = await db.transaction(async (tx: any) => {
       await tx.select({ id: assignments.id }).from(assignments).where(eq(assignments.id, assignmentId)).for("update").limit(1);
       const [currentAssignment] = await tx.select({ dueAt: assignments.dueAt }).from(assignments).where(eq(assignments.id, assignmentId)).limit(1);
@@ -119,17 +113,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ ass
       return { id: saved.id, existingFileUrl };
     });
     if ("error" in result) {
-      if (newStoragePath) await unlink(newStoragePath).catch(() => undefined);
+      if (storageKey && extension) await deleteAssignmentFile(storageKey, extension).catch(() => undefined);
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
     if (result.existingFileUrl && file) {
       const oldExtension = result.existingFileUrl.match(/[?&]ext=(\.[a-z0-9]+)/i)?.[1];
       const oldKey = result.existingFileUrl.match(/[?&]key=([0-9a-f-]{36})/i)?.[1];
-      if (oldExtension && oldKey && (oldExtension !== extension || oldKey !== storageKey)) await unlink(path.join(process.cwd(), "private_uploads", `assignment-${oldKey}${oldExtension}`)).catch(() => undefined);
+      if (oldExtension && oldKey && (oldExtension !== extension || oldKey !== storageKey)) await deleteAssignmentFile(oldKey, oldExtension).catch(() => undefined);
     }
     return NextResponse.json({ ok: true, submission: { id: result.id } });
   } catch (error) {
-    if (newStoragePath) await unlink(newStoragePath).catch(() => undefined);
+    if (storageKey && extension) await deleteAssignmentFile(storageKey, extension).catch(() => undefined);
     throw error;
   }
 }

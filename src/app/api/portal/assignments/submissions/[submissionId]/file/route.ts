@@ -1,10 +1,9 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { assignments, classes, enrolments, submissions } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { readAssignmentFile } from "@/lib/assignment-storage";
 
 export const runtime = "nodejs";
 
@@ -39,9 +38,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sub
   const extension = row.fileUrl.match(/[?&]ext=(\.[a-z0-9]+)/i)?.[1]?.toLowerCase();
   const key = row.fileUrl.match(/[?&]key=([0-9a-f-]{36})/i)?.[1];
   if (!extension || !mimeByExtension[extension] || !key) return NextResponse.json({ error: "Submission file is unavailable" }, { status: 404 });
-  let content: Buffer;
-  try { content = await readFile(path.join(process.cwd(), "private_uploads", `assignment-${key}${extension}`)); }
-  catch { return NextResponse.json({ error: "Submission file is not available on this server" }, { status: 404 }); }
+  let content: Uint8Array;
+  try { content = await readAssignmentFile(key, extension); }
+  catch { return NextResponse.json({ error: "Submission file is not available" }, { status: 404 }); }
   return new Response(new Uint8Array(content), { headers: {
     "Content-Type": mimeByExtension[extension],
     "Content-Disposition": `attachment; filename="assignment-submission${extension}"`,
