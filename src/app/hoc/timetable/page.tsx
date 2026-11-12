@@ -74,7 +74,7 @@ export default async function HocTimetablePage() {
       <GlassCard className="mb-5 p-6" strong>
         <h2 className="mb-2 font-semibold">Schedule a Live Class with Google Meet</h2>
         <p className="mb-4 text-sm opacity-70">
-          Filter by language department, pick a class, generate or enter a Google Meet URL, and sync to Google Calendar.
+          Filter by language department, pick a class, create a meeting in Google Meet, then paste its URL here. You can add the session to Google Calendar after saving.
         </p>
         <AdminSessionCreate
           departments={allDepts}

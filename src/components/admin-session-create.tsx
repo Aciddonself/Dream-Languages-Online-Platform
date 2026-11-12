@@ -93,6 +93,7 @@ export function AdminSessionCreate({
         body: JSON.stringify({
           title,
           classId: selectedClassId || undefined,
+          departmentId: selectedDeptId || undefined,
           teacherId: selectedTeacherId || undefined,
           startsAt: startsAt ? new Date(startsAt).toISOString() : "",
           endsAt: endsAt ? new Date(endsAt).toISOString() : "",
@@ -177,21 +178,29 @@ export function AdminSessionCreate({
       {/* Class Selector */}
       <div className="grid gap-1.5">
         <label htmlFor={`${formId}-class`} className="text-xs font-semibold opacity-80">
-          Target Class (or Department-wide)
+          Target Class
         </label>
         <select
           id={`${formId}-class`}
           className="glass w-full rounded-xl px-3.5 py-2.5 text-sm bg-[var(--surface)] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           value={selectedClassId}
           onChange={(e) => setSelectedClassId(e.target.value)}
+          required={Boolean(selectedDeptId)}
         >
-          <option value="">Department-Wide / All Enrolled Students</option>
+          <option value="">
+            {selectedDeptId ? "Choose a class in this department" : "Entire school — all enrolled students"}
+          </option>
           {filteredClasses.map((schoolClass) => (
             <option key={schoolClass.id} value={schoolClass.id}>
               {schoolClass.name}
             </option>
           ))}
         </select>
+        <p className="text-xs opacity-60">
+          {selectedDeptId
+            ? "Choose a class so the session is limited to the selected department."
+            : "Leave the department filter clear and this class unselected to schedule for the whole school."}
+        </p>
       </div>
 
       {/* Session Title */}

@@ -155,7 +155,7 @@ export default async function HocLiveClassesPage() {
           <h2 className="text-lg font-bold text-white">Schedule New Live Class</h2>
         </div>
         <p className="mb-5 text-sm opacity-70">
-          Select a language department and class, click <strong>Generate Google Meet Link</strong> to create an instant meeting room, and publish it to the student timetable.
+          Select a language department and class, create a meeting in Google Meet, then paste its link below to publish the session to the student timetable.
         </p>
 
         <AdminSessionCreate

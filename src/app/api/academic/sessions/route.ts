@@ -8,6 +8,7 @@ import { and, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
 const schema = z.object({
   title: z.string().trim().min(1).max(160),
   classId: z.string().uuid().optional().or(z.literal("")),
+  departmentId: z.string().uuid().optional().or(z.literal("")),
   teacherId: z.string().uuid().optional().or(z.literal("")),
   startsAt: z.coerce.date(),
   endsAt: z.coerce.date(),
@@ -39,7 +40,10 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { title, classId, teacherId, startsAt, endsAt, room, meetUrl, recurring, recurrenceCount } = parsed.data;
+  const { title, classId, departmentId, teacherId, startsAt, endsAt, room, meetUrl, recurring, recurrenceCount } = parsed.data;
+  if (departmentId && !classId) {
+    return NextResponse.json({ error: "Choose a class in the selected department, or clear the department filter for a school-wide session" }, { status: 400 });
+  }
   if (startsAt <= new Date()) {
     return NextResponse.json({ error: "Choose a future start time for the class" }, { status: 400 });
   }
@@ -47,11 +51,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "A class session cannot be longer than 12 hours" }, { status: 400 });
   }
 
-  let schoolClass: { id: string; teacherId: string | null } | undefined;
+  let schoolClass: { id: string; teacherId: string | null; departmentId: string | null } | undefined;
   if (classId) {
-    [schoolClass] = await db.select({ id: classes.id, teacherId: classes.teacherId })
+    [schoolClass] = await db.select({ id: classes.id, teacherId: classes.teacherId, departmentId: classes.departmentId })
       .from(classes).where(eq(classes.id, classId)).limit(1);
     if (!schoolClass) return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    if (departmentId && schoolClass.departmentId !== departmentId) {
+      return NextResponse.json({ error: "Choose a class within the selected department" }, { status: 400 });
+    }
   }
 
   let sessionTeacherId: string | null = null;
