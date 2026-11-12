@@ -4,7 +4,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { db } from "@/db";
 import { auditLogs, users, departments } from "@/db/schema";
-import { and, count, desc, eq, gte } from "drizzle-orm";
+import { and, count, desc, eq, gte, sql } from "drizzle-orm";
 import { formatSchoolDateTime } from "@/lib/school-time";
 import { MailAccessCard } from "@/components/mail-access-card";
 
@@ -26,13 +26,16 @@ const nav = [
 export default async function AdminDashboard() {
   await requireRole(["super_admin"]);
   const monthWindowStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 11, 1));
-  const [[studentCount], [teacherCount], [applicantCount], [financeCount], depts, recentStudents, recentActivity] = await Promise.all([
+  const [[studentCount], [teacherCount], [applicantCount], [financeCount], depts, monthlyStudentRows, recentActivity] = await Promise.all([
     db.select({ c: count() }).from(users).where(eq(users.role, "student")),
     db.select({ c: count() }).from(users).where(eq(users.role, "teacher")),
     db.select({ c: count() }).from(users).where(eq(users.role, "applicant")),
     db.select({ c: count() }).from(users).where(eq(users.role, "finance")),
     db.select().from(departments),
-    db.select({ createdAt: users.createdAt }).from(users).where(and(eq(users.role, "student"), gte(users.createdAt, monthWindowStart))),
+    db.select({ month: sql<string>`to_char(${users.createdAt}, 'YYYY-MM')`, total: count() })
+      .from(users)
+      .where(and(eq(users.role, "student"), gte(users.createdAt, monthWindowStart)))
+      .groupBy(sql`to_char(${users.createdAt}, 'YYYY-MM')`),
     db.select({ action: auditLogs.action, entityType: auditLogs.entityType, createdAt: auditLogs.createdAt, actorName: users.displayName })
       .from(auditLogs)
       .leftJoin(users, eq(auditLogs.actorId, users.id))
@@ -40,11 +43,13 @@ export default async function AdminDashboard() {
       .limit(5),
   ]);
 
+  const monthlyStudentCounts = new Map(monthlyStudentRows.map(({ month, total }) => [month, total]));
   const monthlyStudentAccounts = Array.from({ length: 12 }, (_, index) => {
     const date = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 11 + index, 1));
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth();
-    const total = recentStudents.filter(({ createdAt }) => createdAt.getUTCFullYear() === year && createdAt.getUTCMonth() === month).length;
+    const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+    const total = monthlyStudentCounts.get(monthKey) ?? 0;
     return { label: new Intl.DateTimeFormat("en-UG", { month: "short", timeZone: "Africa/Kampala" }).format(date), total };
   });
   const peakMonthlyAccounts = Math.max(1, ...monthlyStudentAccounts.map((item) => item.total));
