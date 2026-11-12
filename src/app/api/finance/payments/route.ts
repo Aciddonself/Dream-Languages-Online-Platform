@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { and, asc, desc, eq, gt, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { auditLogs, feeSchedules, payments, receipts, users } from "@/db/schema";
+import { auditLogs, feeSchedules, payments, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
 const submitSchema = z.object({
@@ -30,33 +30,52 @@ export async function POST(request: Request) {
   const parsed = submitSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const [schedule] = await db.select({ id: feeSchedules.id })
-    .from(feeSchedules)
-    .where(and(eq(feeSchedules.studentId, actor.id), eq(feeSchedules.currency, parsed.data.currency), gt(feeSchedules.amount, feeSchedules.paid)))
-    .limit(1);
-  if (!schedule) return NextResponse.json({ error: `No outstanding ${parsed.data.currency} fee schedule was found. Contact Finance if this is incorrect.` }, { status: 409 });
-  const [balance] = await db.select({ amount: sql<number>`coalesce(sum(${feeSchedules.amount} - ${feeSchedules.paid}), 0)::int` })
-    .from(feeSchedules).where(and(eq(feeSchedules.studentId, actor.id), eq(feeSchedules.currency, parsed.data.currency)));
-  if (parsed.data.amount > Number(balance?.amount ?? 0)) {
-    return NextResponse.json({ error: `Amount is greater than the outstanding balance (${parsed.data.currency} ${Number(balance?.amount ?? 0).toLocaleString()})` }, { status: 400 });
-  }
+  const result = await db.transaction(async (tx: any) => {
+    // Use the same student-first lock order as Finance review to serialize concurrent reports.
+    const [lockedStudent] = await tx.select({ id: users.id }).from(users)
+      .where(eq(users.id, actor.id)).for("update").limit(1);
+    if (!lockedStudent) return { error: "Student account not found", status: 404 as const };
 
-  const [payment] = await db.insert(payments).values({
-    studentId: actor.id,
-    amount: parsed.data.amount,
-    currency: parsed.data.currency,
-    method: parsed.data.method,
-    reference: parsed.data.reference,
-    status: "pending",
-  }).returning({ id: payments.id, amount: payments.amount, currency: payments.currency, status: payments.status, createdAt: payments.createdAt });
-  await db.insert(auditLogs).values({
-    actorId: actor.id,
-    action: "submit_payment_for_verification",
-    entityType: "payment",
-    entityId: payment.id,
-    after: { amount: payment.amount, currency: payment.currency, method: parsed.data.method, reference: parsed.data.reference },
+    const [duplicate] = await tx.select({ id: payments.id }).from(payments).where(and(
+      eq(payments.studentId, actor.id),
+      eq(payments.currency, parsed.data.currency),
+      sql`lower(trim(${payments.reference})) = ${parsed.data.reference.toLowerCase()}`,
+    )).limit(1);
+    if (duplicate) {
+      return { error: "This transaction reference has already been reported. Contact Finance if you need help correcting it.", status: 409 as const };
+    }
+
+    const schedules = await tx.select({ amount: feeSchedules.amount, paid: feeSchedules.paid })
+      .from(feeSchedules)
+      .where(and(eq(feeSchedules.studentId, actor.id), eq(feeSchedules.currency, parsed.data.currency)))
+      .for("update");
+    const balance = schedules.reduce((sum: number, row: { amount: number; paid: number }) => sum + Math.max(row.amount - row.paid, 0), 0);
+    if (balance <= 0) {
+      return { error: `No outstanding ${parsed.data.currency} fee schedule was found. Contact Finance if this is incorrect.`, status: 409 as const };
+    }
+    if (parsed.data.amount > balance) {
+      return { error: `Amount is greater than the outstanding balance (${parsed.data.currency} ${balance.toLocaleString()})`, status: 400 as const };
+    }
+
+    const [payment] = await tx.insert(payments).values({
+      studentId: actor.id,
+      amount: parsed.data.amount,
+      currency: parsed.data.currency,
+      method: parsed.data.method,
+      reference: parsed.data.reference,
+      status: "pending",
+    }).returning({ id: payments.id, amount: payments.amount, currency: payments.currency, status: payments.status, createdAt: payments.createdAt });
+    await tx.insert(auditLogs).values({
+      actorId: actor.id,
+      action: "submit_payment_for_verification",
+      entityType: "payment",
+      entityId: payment.id,
+      after: { amount: payment.amount, currency: payment.currency, method: parsed.data.method, reference: parsed.data.reference },
+    });
+    return { payment };
   });
-  return NextResponse.json({ ok: true, payment }, { status: 201 });
+  if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
+  return NextResponse.json({ ok: true, payment: result.payment }, { status: 201 });
 }
 
 export async function PATCH(request: Request) {
@@ -82,7 +101,6 @@ export async function PATCH(request: Request) {
     if (parsed.data.action === "reject") {
       const [updated] = await tx.update(payments).set({ status: "rejected", verifiedBy: actor.id, verifiedAt: new Date() })
         .where(and(eq(payments.id, payment.id), eq(payments.status, "pending"))).returning({ id: payments.id });
-      if (!updated) return { error: "This payment has already been reviewed", status: 409 as const };
       if (!updated) return { error: "This payment has already been reviewed", status: 409 as const };
       await tx.insert(auditLogs).values({ actorId: actor.id, action: "reject_payment", entityType: "payment", entityId: payment.id,
         before: { status: payment.status }, after: { status: "rejected", reason: parsed.data.reason } });
