@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { classes, departments, enrolments, timetableSessions } from "@/db/schema";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
+import { formatSchoolDate, formatSchoolTime } from "@/lib/school-time";
 
 const nav = [
   { href: "/student", label: "Dashboard", icon: "🏠" },
@@ -88,9 +89,7 @@ export default async function StudentTimetablePage() {
                   <h2 className="font-semibold text-lg">{session.title}</h2>
                   <p className="text-sm opacity-70">
                     {session.className ?? "Open Language Session"} ·{" "}
-                    {session.startsAt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} ·{" "}
-                    {session.startsAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} –{" "}
-                    {session.endsAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {formatSchoolDate(session.startsAt)} · {formatSchoolTime(session.startsAt)} – {formatSchoolTime(session.endsAt)}
                     {session.room ? ` · ${session.room}` : ""}
                   </p>
                 </div>

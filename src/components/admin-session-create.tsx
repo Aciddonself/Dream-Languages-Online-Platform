@@ -45,7 +45,7 @@ export function AdminSessionCreate({
   const [meetUrl, setMeetUrl] = useState("");
   const [generateMeet, setGenerateMeet] = useState(false);
   const [recurring, setRecurring] = useState(false);
-  const [recurrenceUntil, setRecurrenceUntil] = useState("");
+  const [recurrenceCount, setRecurrenceCount] = useState(8);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -94,41 +94,30 @@ export function AdminSessionCreate({
         body: JSON.stringify({
           title,
           classId: selectedClassId || undefined,
+          departmentId: selectedDeptId || undefined,
           teacherId: selectedTeacherId || undefined,
           startsAt: startsAt ? new Date(startsAt).toISOString() : "",
           endsAt: endsAt ? new Date(endsAt).toISOString() : "",
           room,
           meetUrl: meetUrl || undefined,
-          generateMeet: generateMeet && !meetUrl,
+          generateMeet,
           recurring,
-          recurrenceUntil: recurring && recurrenceUntil ? recurrenceUntil : undefined,
+          recurrenceCount,
         }),
       });
 
-      const data = await response.json() as { error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[]> }; session?: { meetUrl?: string | null }; sessions?: Array<{ id: string }>; calendarEventUrl?: string | null };
+      const data = await response.json();
       if (!response.ok) {
-        const message = typeof data.error === "string" ? data.error : data.error?.formErrors?.[0] ?? Object.values(data.error?.fieldErrors ?? {}).flat()[0];
-        setError(message ?? "Could not create the live class session.");
+        setError(data.error?.formErrors?.[0] ?? data.error ?? "Could not create the live class session.");
         return;
       }
 
-      const actualMeetUrl = data.session?.meetUrl ?? meetUrl;
-      const sessionCount = data.sessions?.length ?? 1;
-      setSuccess(actualMeetUrl
-        ? `Successfully scheduled ${sessionCount > 1 ? `${sessionCount} weekly class sessions` : "the live class"} with a working Google Meet link.`
-        : `Successfully scheduled ${sessionCount > 1 ? `${sessionCount} weekly class sessions` : "the class session"}.`);
+      setSuccess(data.createdCount > 1
+        ? `${data.createdCount} weekly class sessions successfully scheduled.`
+        : "Live class successfully scheduled.");
 
-      if (data.calendarEventUrl) {
-        setCalendarUrl(data.calendarEventUrl);
-      } else {
-        const calendar = new URL("https://calendar.google.com/calendar/render");
-        calendar.searchParams.set("action", "TEMPLATE");
-        calendar.searchParams.set("text", title);
-        calendar.searchParams.set("dates", `${new Date(startsAt).toISOString().replaceAll(/[-:]/g, "").replace(/\.\d{3}/, "")}/${new Date(endsAt).toISOString().replaceAll(/[-:]/g, "").replace(/\.\d{3}/, "")}`);
-        calendar.searchParams.set("details", [`Live Class for Dream Languages Uganda`, actualMeetUrl ? `Join Google Meet: ${actualMeetUrl}` : "", room ? `Location: ${room}` : ""].filter(Boolean).join("\n\n"));
-        calendar.searchParams.set("location", actualMeetUrl || room || "Google Meet");
-        setCalendarUrl(calendar.toString());
-      }
+      setCalendarUrl(data.calendarEventUrl ?? "");
+      if (data.session?.meetUrl) setMeetUrl(data.session.meetUrl);
 
       // Reset
       setTitle("");
@@ -136,9 +125,6 @@ export function AdminSessionCreate({
       setStartsAt("");
       setEndsAt("");
       setMeetUrl("");
-      setGenerateMeet(false);
-      setRecurring(false);
-      setRecurrenceUntil("");
 
       if (onSuccess) onSuccess();
     } catch {
@@ -176,21 +162,29 @@ export function AdminSessionCreate({
       {/* Class Selector */}
       <div className="grid gap-1.5">
         <label htmlFor={`${formId}-class`} className="text-xs font-semibold opacity-80">
-          Target Class (or Department-wide)
+          Target Class
         </label>
         <select
           id={`${formId}-class`}
           className="glass w-full rounded-xl px-3.5 py-2.5 text-sm bg-[var(--surface)] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           value={selectedClassId}
           onChange={(e) => setSelectedClassId(e.target.value)}
+          required={Boolean(selectedDeptId)}
         >
-          <option value="">Department-Wide / All Enrolled Students</option>
+          <option value="">
+            {selectedDeptId ? "Choose a class in this department" : "Entire school — all enrolled students"}
+          </option>
           {filteredClasses.map((schoolClass) => (
             <option key={schoolClass.id} value={schoolClass.id}>
               {schoolClass.name}
             </option>
           ))}
         </select>
+        <p className="text-xs opacity-60">
+          {selectedDeptId
+            ? "Choose a class so the session is limited to the selected department."
+            : "Leave the department filter clear and this class unselected to schedule for the whole school."}
+        </p>
       </div>
 
       {/* Session Title */}
@@ -270,42 +264,36 @@ export function AdminSessionCreate({
         />
       </div>
 
-      {/* Google Meet link */}
+      {/* Google Meet Link */}
       <div className="md:col-span-2 rounded-2xl border border-white/15 bg-white/5 p-4 space-y-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-sm">
               🎥
             </span>
             <div>
               <h4 className="text-sm font-semibold text-white">Google Meet Connection</h4>
               <p className="text-xs opacity-70">
-                Create a meeting through the connected school calendar or paste a real Meet URL.
+                Create a meeting from the school Calendar connection, or paste an existing Google Meet link.
               </p>
             </div>
           </div>
-
-        <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" checked={generateMeet} onChange={(event) => setGenerateMeet(event.target.checked)} disabled={Boolean(meetUrl)} className="mt-1 h-4 w-4 rounded border-white/20 bg-transparent text-indigo-600 focus:ring-indigo-500" />
-          <span>Create a real Google Meet link and Calendar event when scheduling. Requires Google Calendar to be connected under Admin → Academic.</span>
-        </label>
+          <label
+            htmlFor={`${formId}-generate-meet`}
+            className="flex items-center gap-2 text-xs font-semibold"
+          ><input id={`${formId}-generate-meet`} type="checkbox" checked={generateMeet} onChange={(event) => setGenerateMeet(event.target.checked)} /> Create Google Meet automatically</label>
+        </div>
 
         <GlassInput
           type="url"
           value={meetUrl}
-          onChange={(e) => { setMeetUrl(e.target.value); if (e.target.value) setGenerateMeet(false); }}
+          onChange={(e) => setMeetUrl(e.target.value)}
           placeholder="https://meet.google.com/xxx-yyyy-zzz"
+          required={!generateMeet}
         />
 
         <div className="flex flex-wrap items-center justify-between text-xs opacity-75">
-          <span>Format: https://meet.google.com/[code]</span>
-          <a
-            href="https://meet.google.com/new"
-            target="_blank"
-            rel="noreferrer"
-            className="font-medium text-indigo-400 underline hover:text-indigo-300"
-          >
-            Open meet.google.com/new in new window ↗
-          </a>
+          <span>Enable automatic creation above or paste an existing Meet link.</span>
         </div>
       </div>
 
@@ -319,14 +307,23 @@ export function AdminSessionCreate({
           className="h-4 w-4 rounded border-white/20 bg-transparent text-indigo-600 focus:ring-indigo-500"
         />
         <label htmlFor={`${formId}-recurring`} className="cursor-pointer">
-          Repeat this session weekly
+          Repeat this session every week
         </label>
       </div>
       {recurring && (
-        <div className="md:col-span-2 grid max-w-sm gap-1.5">
-          <label htmlFor={`${formId}-recurrence-until`} className="text-xs font-semibold opacity-80">Repeat weekly through</label>
-          <GlassInput id={`${formId}-recurrence-until`} type="date" required min={startsAt ? startsAt.slice(0, 10) : undefined} value={recurrenceUntil} onChange={(event) => setRecurrenceUntil(event.target.value)} />
-          <p className="text-xs opacity-60">Each occurrence appears separately in the LMS, with attendance tracking. Maximum series length: one year.</p>
+        <div className="md:col-span-2 grid max-w-xs gap-1.5">
+          <label htmlFor={`${formId}-recurrence-count`} className="text-xs font-semibold opacity-80">
+            Number of weekly sessions (2–52)
+          </label>
+          <GlassInput
+            id={`${formId}-recurrence-count`}
+            type="number"
+            min={2}
+            max={52}
+            required
+            value={recurrenceCount}
+            onChange={(event) => setRecurrenceCount(Number(event.target.value))}
+          />
         </div>
       )}
 
@@ -337,7 +334,7 @@ export function AdminSessionCreate({
           disabled={submitting}
           className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-indigo-500/25"
         >
-          {submitting ? "Scheduling class..." : generateMeet && !meetUrl ? "Create Meet and Schedule Class" : "Schedule Class"}
+          {submitting ? "Scheduling Live Class..." : "Schedule Live Class on Google Meet"}
         </GlassButton>
       </div>
 
@@ -357,7 +354,7 @@ export function AdminSessionCreate({
               target="_blank"
               rel="noreferrer"
             >
-              📅 {generateMeet && !meetUrl ? "Open the Google Calendar event" : "Add this class to Google Calendar"} ↗
+              📅 Add the first class to Google Calendar ↗
             </a>
           )}
         </div>

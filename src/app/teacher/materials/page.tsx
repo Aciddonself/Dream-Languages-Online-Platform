@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 const nav = [
   { href: "/teacher", label: "Dashboard", icon: "🏠" },
+  { href: "/teacher/assignments", label: "Assignments", icon: "🗂️" },
   { href: "/teacher/classes", label: "My Classes", icon: "📚" },
   { href: "/teacher/attendance", label: "Attendance", icon: "✅" },
   { href: "/teacher/materials", label: "Materials", icon: "📄" },

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { and, asc, count, eq, gt, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { auditLogs, classes, enrolments, exams, levels, results, users } from "@/db/schema";
+import { auditLogs, classes, enrolments, examAttempts, examQuestions, exams, levels, results, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
 const schema = z.object({
@@ -118,6 +118,23 @@ export async function POST(request: Request) {
     eq(enrolments.status, "active"),
   )).limit(1);
   if (!enrollment) return NextResponse.json({ error: "Student is not actively enrolled in this assessment class" }, { status: 409 });
+  const [onlineQuestion] = await db.select({ id: examQuestions.id }).from(examQuestions)
+    .where(eq(examQuestions.examId, exam.id)).limit(1);
+  const [onlineAttempt] = await db.select({ status: examAttempts.status, score: examAttempts.score })
+    .from(examAttempts)
+    .where(and(eq(examAttempts.examId, exam.id), eq(examAttempts.studentId, student.id)))
+    .limit(1);
+  if (onlineQuestion && !onlineAttempt) {
+    return NextResponse.json({ error: "This student must complete the online assessment before a result can be published" }, { status: 409 });
+  }
+  if (onlineAttempt) {
+    if (onlineAttempt.status !== "submitted" || onlineAttempt.score === null) {
+      return NextResponse.json({ error: "This online assessment has not been submitted and scored yet" }, { status: 409 });
+    }
+    if (score !== onlineAttempt.score) {
+      return NextResponse.json({ error: "Online assessment results must match the server-calculated attempt score. Ask the Head of Academics to record an audited correction if needed." }, { status: 409 });
+    }
+  }
 
   const outcome = await db.transaction(async (tx: any) => {
     const [existing] = await tx.select().from(results).where(and(eq(results.studentId, student.id), eq(results.examId, exam.id))).limit(1);

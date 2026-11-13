@@ -1,9 +1,7 @@
 {
   "name": "nextjs-postgresql-template",
   "private": true,
-  "engines": {
-    "node": ">=22 <25"
-  },
+  "engines": { "node": ">=22 <25" },
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",

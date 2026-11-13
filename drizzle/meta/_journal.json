@@ -68,15 +68,15 @@
     {
       "idx": 9,
       "version": "7",
-      "when": 1794552425528,
-      "tag": "0009_recordings_and_media_storage",
+      "when": 1794464388497,
+      "tag": "0009_durable_assignment_storage",
       "breakpoints": true
     },
     {
       "idx": 10,
       "version": "7",
-      "when": 1794552621033,
-      "tag": "0010_recording_upload_state",
+      "when": 1794556895446,
+      "tag": "0010_recordings_and_media_storage",
       "breakpoints": true
     }
   ]

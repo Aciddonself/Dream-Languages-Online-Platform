@@ -87,6 +87,43 @@ export function AdminNewsCreate() {
   );
 }
 
+export function AdminNewsEditor({ post }: { post: { id: string; title: string; slug: string; excerpt: string | null; body: string | null; status: string } }) {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setBusy(true); setError("");
+    try {
+      await submitCms("/api/admin/cms", "PATCH", {
+        action: "save_news", postId: post.id,
+        title: data.get("title"), slug: data.get("slug"), excerpt: data.get("excerpt"),
+        body: data.get("body"), status: data.get("status"),
+      });
+      router.refresh();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to update this news post."); }
+    finally { setBusy(false); }
+  }
+  return <form className="grid gap-3 rounded-xl border border-white/10 p-4" onSubmit={submit}>
+    <div className="flex flex-wrap items-center justify-between gap-2 text-xs opacity-70">
+      <span>{post.status}</span>
+      {post.status === "published" && <a className="underline" href="/blog" target="_blank" rel="noreferrer">View public news page</a>}
+    </div>
+    <GlassInput name="title" aria-label="News title" defaultValue={post.title} maxLength={180} required />
+    <GlassInput name="slug" aria-label="News page URL" defaultValue={post.slug} maxLength={128} required />
+    <GlassInput name="excerpt" aria-label="News excerpt" defaultValue={post.excerpt ?? ""} maxLength={500} />
+    <textarea className="glass min-h-32 w-full rounded-xl px-4 py-3 text-sm" name="body" aria-label="News body" defaultValue={post.body ?? ""} maxLength={20000} required />
+    <div className="flex flex-wrap gap-3">
+      <select className="glass min-w-40 rounded-xl px-3 py-2.5" name="status" defaultValue={post.status}>
+        <option value="draft">Draft</option><option value="published">Published</option><option value="unpublished">Unpublished</option><option value="archived">Archived</option>
+      </select>
+      <GlassButton type="submit" disabled={busy}>{busy ? "Saving…" : "Save news post"}</GlassButton>
+    </div>
+    {error && <p role="alert" className="text-sm text-[var(--danger)]">{error}</p>}
+  </form>;
+}
+
 export function AdminCmsPageCreate() {
   const router = useRouter();
   const [error, setError] = useState("");

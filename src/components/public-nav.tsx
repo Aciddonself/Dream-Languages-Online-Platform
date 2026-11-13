@@ -23,6 +23,7 @@ const secondaryLinks = [
   { href: "/testimonials", label: "Reviews" },
   { href: "/volunteer", label: "Teach with us" },
   { href: "/login", label: "Sign in" },
+  { href: "/admin-login", label: "Staff sign in" },
 ];
 
 export function PublicNav() {

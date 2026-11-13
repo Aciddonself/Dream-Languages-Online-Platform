@@ -34,7 +34,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
   if (user.role === "student") {
     if (!session.classId) return NextResponse.json({ error: "This session has no enrolled class" }, { status: 403 });
-    const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(eq(enrolments.studentId, user.id), eq(enrolments.classId, session.classId))).limit(1);
+    const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(eq(enrolments.studentId, user.id), eq(enrolments.classId, session.classId), eq(enrolments.status, "active"))).limit(1);
     if (!enrollment) return NextResponse.json({ error: "You are not enrolled in this class" }, { status: 403 });
     const [record] = await db.select().from(attendance).where(and(eq(attendance.sessionId, session.id), eq(attendance.studentId, user.id))).limit(1);
     const completedSessions = await db
@@ -200,7 +200,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Student, corrected status, and a reason are required" }, { status: 400 });
     }
     if (!session.liveEndedAt) return NextResponse.json({ error: "Attendance corrections are available after class ends" }, { status: 409 });
-    const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(eq(enrolments.studentId, studentId), eq(enrolments.classId, session.classId))).limit(1);
+    const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(eq(enrolments.studentId, studentId), eq(enrolments.classId, session.classId), eq(enrolments.status, "active"))).limit(1);
     if (!enrollment) return NextResponse.json({ error: "Student is not enrolled in this class" }, { status: 404 });
     const checkInAt = parsed.data.checkInAt ?? null;
     const checkOutAt = parsed.data.checkOutAt ?? null;

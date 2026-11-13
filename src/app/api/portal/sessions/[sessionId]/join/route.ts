@@ -41,8 +41,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ses
     const [schoolClass] = session.classId
       ? await db.select({ teacherId: classes.teacherId }).from(classes).where(eq(classes.id, session.classId)).limit(1)
       : [];
-    if (session.teacherId !== user.id && schoolClass?.teacherId !== user.id && session.classId !== null) {
-      // Allow assigned teacher, class teacher, or if open session
+    if (session.teacherId !== user.id && schoolClass?.teacherId !== user.id) {
+      return NextResponse.json({ error: "You are not assigned to this class" }, { status: 403 });
     }
   } else if (!["head_academics", "super_admin"].includes(user.role)) {
     return NextResponse.json({ error: "Portal access required" }, { status: 403 });

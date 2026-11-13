@@ -120,11 +120,14 @@ export async function createGoogleCalendarMeet(input: {
   startsAt: Date;
   endsAt: Date;
   recurrenceUntil?: Date;
+  recurrenceCount?: number;
   description?: string;
 }) {
   const accessToken = await getAccessToken();
   const requestId = randomBytes(18).toString("base64url");
-  const recurrence = input.recurrenceUntil
+  const recurrence = input.recurrenceCount
+    ? [`RRULE:FREQ=WEEKLY;COUNT=${input.recurrenceCount}`]
+    : input.recurrenceUntil
     ? [`RRULE:FREQ=WEEKLY;UNTIL=${input.recurrenceUntil.toISOString().slice(0, 10).replaceAll("-", "")}T235959Z`]
     : undefined;
   const response = await fetch(`${GOOGLE_CALENDAR_API}/calendars/primary/events?conferenceDataVersion=1&sendUpdates=none`, {
