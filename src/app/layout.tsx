@@ -5,6 +5,12 @@ import { AppToaster } from "@/components/app-toaster";
 import { CookieConsent } from "@/components/cookie-consent";
 import { SiteChrome } from "@/components/site-chrome";
 
+// The proxy creates a per-request CSP nonce and Next.js copies it onto its
+// inline hydration scripts. Static/ISR HTML would cache an older nonce, causing
+// browsers to block hydration and remain on the route loading skeleton. Keep
+// the route tree request-rendered so the HTML nonce matches the response CSP.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.dreamlanguagesug.com"),
   title: {
