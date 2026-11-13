@@ -6,7 +6,7 @@ import { classes, departments, levels, timetableSessions } from "@/db/schema";
 import { eq, or, ilike, asc, and, gt, sql } from "drizzle-orm";
 import { DEFAULT_DEPARTMENTS } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const CEFR_LEVELS = [
   { code: "A1", name: "Beginner", desc: "Basic greetings, everyday phrases, pronunciation, self-introduction, and numbers." },
@@ -58,7 +58,7 @@ export default async function DepartmentDetailPage({
 
   // Fetch classes and upcoming live Google Meet sessions in this department
   let deptClasses: { id: string; name: string }[] = [];
-  let liveSessions: { id: string; title: string; startsAt: Date; endsAt: Date; meetUrl: string | null }[] = [];
+  let liveSessions: { id: string; title: string; startsAt: Date; endsAt: Date }[] = [];
 
   try {
     deptClasses = await db
@@ -75,7 +75,6 @@ export default async function DepartmentDetailPage({
           title: timetableSessions.title,
           startsAt: timetableSessions.startsAt,
           endsAt: timetableSessions.endsAt,
-          meetUrl: timetableSessions.meetUrl,
         })
         .from(timetableSessions)
         .where(
@@ -204,16 +203,9 @@ export default async function DepartmentDetailPage({
                       {new Date(s.startsAt).toLocaleDateString()} · {new Date(s.startsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
-                  {s.meetUrl && (
-                    <a
-                      href={`/api/portal/sessions/${s.id}/join`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white"
-                    >
-                      Join Meet
-                    </a>
-                  )}
+                  <Link href="/login" className="rounded-lg border border-white/15 px-3 py-1 text-xs font-semibold text-white hover:bg-white/10">
+                    Student login to join
+                  </Link>
                 </li>
               ))}
             </ul>

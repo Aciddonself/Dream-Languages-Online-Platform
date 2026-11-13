@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { auditLogs, cmsPages, newsPosts, testimonials } from "@/db/schema";
@@ -42,7 +42,16 @@ const updatePageSchema = z.object({
   seoDescription: z.string().trim().max(320).optional(),
   status: z.enum(["draft", "published", "unpublished", "archived"]),
 }).strict();
-const patchSchema = z.discriminatedUnion("action", [reviewSchema, updatePageSchema]);
+const updateNewsSchema = z.object({
+  action: z.literal("save_news"),
+  postId: z.string().uuid(),
+  title: z.string().trim().min(1).max(180),
+  slug: z.string().trim().min(1).max(128),
+  excerpt: z.string().trim().max(500).optional(),
+  body: z.string().trim().min(1).max(20_000),
+  status: z.enum(["draft", "preview", "published", "unpublished", "archived"]),
+}).strict();
+const patchSchema = z.discriminatedUnion("action", [reviewSchema, updatePageSchema, updateNewsSchema]);
 
 function makeSlug(value: string) {
   return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
@@ -110,6 +119,7 @@ export async function POST(request: Request) {
     entityId: post.id,
     after: { title: post.title, slug: post.slug, status: post.status },
   });
+  revalidatePath("/blog");
   revalidateTag("public-content", "max");
   return NextResponse.json({ ok: true, post }, { status: 201 });
 }
@@ -164,6 +174,42 @@ export async function PATCH(request: Request) {
     revalidatePath(`/pages/${updated.slug}`);
     revalidateTag("public-content", "max");
     return NextResponse.json({ ok: true, page: updated });
+  }
+
+  if (parsed.data.action === "save_news") {
+    if (detectPhoneOrHandle(`${parsed.data.title} ${parsed.data.body}`).blocked) {
+      return NextResponse.json({ error: "Public content cannot contain personal phone numbers or external contact handles." }, { status: 400 });
+    }
+    const slug = makeSlug(parsed.data.slug);
+    if (!slug) return NextResponse.json({ error: "Use a valid website address." }, { status: 400 });
+    const [existing] = await db.select().from(newsPosts).where(eq(newsPosts.id, parsed.data.postId)).limit(1);
+    if (!existing) return NextResponse.json({ error: "News post not found." }, { status: 404 });
+    const [slugOwner] = await db.select({ id: newsPosts.id }).from(newsPosts).where(and(eq(newsPosts.slug, slug), ne(newsPosts.id, existing.id))).limit(1);
+    if (slugOwner) return NextResponse.json({ error: "That website address is already in use. Choose another slug." }, { status: 409 });
+    const publishedAt = parsed.data.status === "published"
+      ? existing.status === "published" ? existing.publishedAt ?? new Date() : new Date()
+      : null;
+    const [updated] = await db.update(newsPosts).set({
+      title: parsed.data.title,
+      slug,
+      excerpt: parsed.data.excerpt || null,
+      body: parsed.data.body,
+      status: parsed.data.status,
+      publishedAt,
+    }).where(eq(newsPosts.id, existing.id))
+      .returning({ id: newsPosts.id, title: newsPosts.title, slug: newsPosts.slug, status: newsPosts.status });
+    if (!updated) return NextResponse.json({ error: "News post could not be saved." }, { status: 500 });
+    await db.insert(auditLogs).values({
+      actorId: actor.id,
+      action: "update_news_post",
+      entityType: "news_post",
+      entityId: updated.id,
+      before: { title: existing.title, slug: existing.slug, excerpt: existing.excerpt, body: existing.body, status: existing.status },
+      after: { title: parsed.data.title, slug, excerpt: parsed.data.excerpt || null, body: parsed.data.body, status: updated.status },
+    });
+    revalidatePath("/blog");
+    revalidateTag("public-content", "max");
+    return NextResponse.json({ ok: true, post: updated });
   }
 
   const [review] = await db.select().from(testimonials).where(eq(testimonials.id, parsed.data.reviewId)).limit(1);

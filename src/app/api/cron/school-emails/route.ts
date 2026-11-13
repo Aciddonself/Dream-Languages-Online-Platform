@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { enrolments, feeSchedules, payments, timetableSessions, users } from "@/db/schema";
 import { createTextPdf } from "@/lib/pdf";
 import { sendEmail } from "@/lib/email";
+import { formatSchoolDateTime } from "@/lib/school-time";
 
 export const runtime = "nodejs";
 
@@ -21,7 +22,9 @@ export async function GET(request: Request) {
 
   for (const minutes of [25, 10]) {
     const target = new Date(now.getTime() + minutes * 60_000);
-    const windowStart = new Date(target.getTime() - 60_000);
+    // Railway scheduled services run at five-minute intervals. This idempotent
+    // window catches reminders since the previous run without duplicate mail.
+    const windowStart = new Date(target.getTime() - 5 * 60_000);
     const sessions = await db.select({
       id: timetableSessions.id,
       title: timetableSessions.title,
@@ -45,7 +48,7 @@ export async function GET(request: Request) {
         const result = await sendEmail({
           to: recipient.email,
           subject: `Class reminder: ${session.title} begins in ${minutes} minutes`,
-          html: `<p>Hello ${recipient.name ?? "there"},</p><p>This is a reminder that <strong>${session.title}</strong> begins in ${minutes} minutes at ${session.startsAt.toLocaleString()}.</p><p>${session.room ? `Location: ${session.room}. ` : ""}Sign in to your Dream Languages Uganda portal and open your timetable to join the class.</p>`,
+          html: `<p>Hello ${recipient.name ?? "there"},</p><p>This is a reminder that <strong>${session.title}</strong> begins in ${minutes} minutes at ${formatSchoolDateTime(session.startsAt)} (East Africa Time).</p><p>${session.room ? `Location: ${session.room}. ` : ""}Sign in to your Dream Languages Uganda portal and open your timetable to join the class.</p>`,
           dedupeKey: `class-reminder:${session.id}:${recipient.id}:${minutes}`,
         });
         if (result.sent) sentCount++;
@@ -54,7 +57,7 @@ export async function GET(request: Request) {
     }
   }
 
-  if (now.getUTCDate() === 1) {
+  if (now.getUTCDate() === 1 && now.getUTCHours() === 3 && now.getUTCMinutes() < 5) {
     const month = now.toISOString().slice(0, 7);
     const eligibleStudents = await db.select({
       id: users.id,

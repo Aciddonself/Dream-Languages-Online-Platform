@@ -3,8 +3,10 @@ import { requireRole } from "@/lib/rbac";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { db } from "@/db";
-import { users, departments } from "@/db/schema";
-import { count, eq } from "drizzle-orm";
+import { auditLogs, users, departments } from "@/db/schema";
+import { and, count, desc, eq, gte, sql } from "drizzle-orm";
+import { formatSchoolDateTime } from "@/lib/school-time";
+import { MailAccessCard } from "@/components/mail-access-card";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +16,7 @@ const nav = [
   { href: "/admin/users", label: "Users", icon: "👥" },
   { href: "/admin/volunteers", label: "Teacher applications", icon: "🧑‍🏫" },
   { href: "/admin/academic", label: "Academic", icon: "🎓" },
+  { href: "/admin/recordings", label: "Class recordings", icon: "🎬" },
   { href: "/admin/cms", label: "CMS", icon: "📝" },
   { href: "/admin/sms", label: "Bulk SMS", icon: "✉️" },
   { href: "/admin/finance", label: "Finance", icon: "💰" },
@@ -23,31 +26,53 @@ const nav = [
 
 export default async function AdminDashboard() {
   await requireRole(["super_admin"]);
-  const [[studentCount], [teacherCount], [applicantCount], [financeCount], depts] = await Promise.all([
+  const monthWindowStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 11, 1));
+  const [[studentCount], [teacherCount], [applicantCount], [financeCount], depts, monthlyStudentRows, recentActivity] = await Promise.all([
     db.select({ c: count() }).from(users).where(eq(users.role, "student")),
     db.select({ c: count() }).from(users).where(eq(users.role, "teacher")),
     db.select({ c: count() }).from(users).where(eq(users.role, "applicant")),
     db.select({ c: count() }).from(users).where(eq(users.role, "finance")),
     db.select().from(departments),
+    db.select({ month: sql<string>`to_char(${users.createdAt}, 'YYYY-MM')`, total: count() })
+      .from(users)
+      .where(and(eq(users.role, "student"), gte(users.createdAt, monthWindowStart)))
+      .groupBy(sql`to_char(${users.createdAt}, 'YYYY-MM')`),
+    db.select({ action: auditLogs.action, entityType: auditLogs.entityType, createdAt: auditLogs.createdAt, actorName: users.displayName })
+      .from(auditLogs)
+      .leftJoin(users, eq(auditLogs.actorId, users.id))
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(5),
   ]);
 
+  const monthlyStudentCounts = new Map<string, number>(monthlyStudentRows.map(({ month, total }) => [month, Number(total)] as [string, number]));
+  const monthlyStudentAccounts = Array.from({ length: 12 }, (_, index) => {
+    const date = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 11 + index, 1));
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+    const total: number = monthlyStudentCounts.get(monthKey) ?? 0;
+    return { label: new Intl.DateTimeFormat("en-UG", { month: "short", timeZone: "Africa/Kampala" }).format(date), total };
+  });
+  const peakMonthlyAccounts = Math.max(1, ...monthlyStudentAccounts.map((item) => item.total));
+
   const stats = [
-    { label: "Total Students", value: studentCount.c, color: "var(--brand-primary)", trend: "+12%" },
-    { label: "Teachers", value: teacherCount.c, color: "var(--brand-accent)", trend: "+3" },
-    { label: "Applicants", value: applicantCount.c, color: "var(--warning)", trend: "+8" },
-    { label: "Finance Staff", value: financeCount.c, color: "var(--success)", trend: "0" },
+    { label: "Total Students", value: studentCount.c, color: "var(--brand-primary)" },
+    { label: "Teachers", value: teacherCount.c, color: "var(--brand-accent)" },
+    { label: "Applicants", value: applicantCount.c, color: "var(--warning)" },
+    { label: "Finance Staff", value: financeCount.c, color: "var(--success)" },
   ];
 
   return (
     <PortalShell title="Admin Console" nav={nav}>
+      <MailAccessCard />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="display-font text-3xl font-bold">Dashboard</h1>
           <p className="text-sm opacity-60">Welcome back, Admin. Here&apos;s what&apos;s happening.</p>
         </div>
         <div className="flex gap-2">
-          <GlassButton variant="glass">Export</GlassButton>
-          <GlassButton>Create New</GlassButton>
+          <Link className="btn-glass inline-flex items-center px-4 py-2" href="/api/admin/users/export">Export users</Link>
+          <Link className="btn-glass btn-glass-primary inline-flex items-center px-4 py-2" href="/admin/users">Create user</Link>
         </div>
       </div>
 
@@ -57,28 +82,25 @@ export default async function AdminDashboard() {
           <GlassCard key={s.label} className="p-5">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold opacity-60 uppercase tracking-wider">{s.label}</span>
-              <span className="text-xs font-semibold" style={{ color: s.color }}>{s.trend}</span>
             </div>
             <div className="text-3xl font-bold" style={{ color: s.color }}>{s.value}</div>
-            <div className="mt-3 progress-tube"><span style={{ width: "60%" }} /></div>
           </GlassCard>
         ))}
       </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-6">
-        {/* Chart placeholder */}
         <GlassCard className="p-5 md:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <div className="font-semibold">Enrolment Overview</div>
-            <Badge tone="info">This term</Badge>
+            <div className="font-semibold">New student accounts</div>
+            <Badge tone="info">Last 12 months</Badge>
           </div>
           <div className="flex items-end gap-2 h-40">
-            {[40, 65, 50, 80, 55, 90, 70, 85, 60, 75, 95, 88].map((v, i) => (
-              <div key={i} className="dashboard-chart-bar flex-1 rounded-t-md" style={{ height: `${v}%`, animationDelay: `${i * 35}ms`, background: "linear-gradient(180deg, var(--brand-primary), var(--brand-accent))" }} />
+            {monthlyStudentAccounts.map((item, i) => (
+              <div key={item.label} className="dashboard-chart-bar flex-1 rounded-t-md" title={`${item.label}: ${item.total} student accounts`} style={{ height: `${Math.max(4, item.total / peakMonthlyAccounts * 100)}%`, animationDelay: `${i * 35}ms`, background: "linear-gradient(180deg, var(--brand-primary), var(--brand-accent))" }} />
             ))}
           </div>
           <div className="flex justify-between text-[10px] opacity-50 mt-2">
-            {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m) => <span key={m}>{m}</span>)}
+            {monthlyStudentAccounts.map((item) => <span key={item.label}>{item.label}</span>)}
           </div>
         </GlassCard>
 
@@ -86,21 +108,15 @@ export default async function AdminDashboard() {
         <GlassCard className="p-5">
           <div className="font-semibold mb-3">Recent Activity</div>
           <ul className="space-y-3 text-sm">
-            {[
-              { t: "New applicant registered", d: "2 min ago" },
-              { t: "Payment verified", d: "15 min ago" },
-              { t: "Exam published", d: "1 hr ago" },
-              { t: "Student placed on hold", d: "2 hr ago" },
-              { t: "Dead period approved", d: "3 hr ago" },
-            ].map((a, i) => (
-              <li key={i} className="flex items-start gap-2">
+            {recentActivity.length ? recentActivity.map((item) => (
+              <li key={`${item.action}-${item.createdAt.toISOString()}`} className="flex items-start gap-2">
                 <span className="mt-1 w-2 h-2 rounded-full bg-[var(--brand-primary)] shrink-0" />
                 <div>
-                  <div>{a.t}</div>
-                  <div className="text-xs opacity-50">{a.d}</div>
+                  <div className="capitalize">{item.action.replaceAll("_", " ")} · {item.entityType}</div>
+                  <div className="text-xs opacity-50">{item.actorName ?? "System"} · {formatSchoolDateTime(item.createdAt)}</div>
                 </div>
               </li>
-            ))}
+            )) : <li className="text-sm opacity-60">No audited activity has been recorded yet.</li>}
           </ul>
         </GlassCard>
       </div>
@@ -127,10 +143,10 @@ export default async function AdminDashboard() {
       <GlassCard className="p-6">
         <div className="font-semibold mb-3">Quick Actions</div>
         <div className="flex flex-wrap gap-3">
-          <GlassButton>Create User</GlassButton>
-          <GlassButton variant="glass">New Announcement</GlassButton>
-          <GlassButton variant="glass">Import CSV</GlassButton>
-          <GlassButton variant="glass">Run Reports</GlassButton>
+          <Link href="/admin/users" className="btn-glass btn-glass-primary inline-flex items-center px-4 py-2">Create User</Link>
+          <Link href="/admin/cms" className="btn-glass inline-flex items-center px-4 py-2">New Announcement</Link>
+          <Link href="/admin/users?role=applicant" className="btn-glass inline-flex items-center px-4 py-2">Review Applicants</Link>
+          <Link href="/admin/finance" className="btn-glass inline-flex items-center px-4 py-2">Finance Overview</Link>
         </div>
       </GlassCard>
     </PortalShell>

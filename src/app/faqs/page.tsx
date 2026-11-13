@@ -1,7 +1,7 @@
 import { GlassCard } from "@/components/ui/glass";
 import { getPublishedFaqs } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function FaqsPage() {
   const list = await getPublishedFaqs();

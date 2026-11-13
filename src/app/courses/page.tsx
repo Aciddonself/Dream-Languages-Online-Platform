@@ -3,7 +3,7 @@ import Link from "next/link";
 import { whatsappContacts } from "@/lib/contacts";
 import { getPublicDepartments } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function CoursesPage() {
   const depts = await getPublicDepartments();
@@ -11,6 +11,20 @@ export default async function CoursesPage() {
     <main className="min-h-screen px-6 py-10 max-w-6xl mx-auto">
       <h1 className="display-font text-3xl font-bold mb-2">Courses &amp; Fees</h1>
       <p className="opacity-70 mb-6">Choose a language or practical skills programme and a study format that fits your goals.</p>
+      <div className="grid sm:grid-cols-2 gap-4 mb-8">
+        <GlassCard className="p-6 text-center">
+          <div className="text-3xl mb-2">📅</div>
+          <h3 className="display-font text-xl font-bold mb-1">Language Course</h3>
+          <p className="text-2xl font-bold text-[var(--brand-primary)]">~10 months</p>
+          <p className="text-sm opacity-70 mt-1">Approximately one year of structured language learning from beginner to advanced.</p>
+        </GlassCard>
+        <GlassCard className="p-6 text-center">
+          <div className="text-3xl mb-2">⚡</div>
+          <h3 className="display-font text-xl font-bold mb-1">Short Course</h3>
+          <p className="text-2xl font-bold text-[var(--brand-primary)]">4 months</p>
+          <p className="text-sm opacity-70 mt-1">Intensive short-term programme for focused skill building.</p>
+        </GlassCard>
+      </div>
       <div className="courses-portrait">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/site-media/hero-language-class.jpg" alt="Students taking part in a DLA language class" />

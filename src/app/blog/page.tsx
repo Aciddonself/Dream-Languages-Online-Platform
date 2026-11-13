@@ -2,7 +2,7 @@ import Link from "next/link";
 import { GlassCard, GlassButton } from "@/components/ui/glass";
 import { getPublishedNews } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function BlogPage() {
   const posts = await getPublishedNews();

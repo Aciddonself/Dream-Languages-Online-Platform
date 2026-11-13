@@ -144,10 +144,10 @@ const teacher = build("/teacher", {
   ],
   Teaching: [
     ["classes", "My Classes", "📚"],
+    ["assignments", "Assignments", "🗂️"],
     ["live", "Live Class (Start / Join)", "🎥"],
     ["attendance", "Attendance", "✅"],
     ["materials", "Materials", "📄"],
-    ["assignments", "Assignments (Kanban)", "🗂️"],
     ["exams", "Tests and Exams", "📝"],
     ["results", "Results", "📊"],
     ["gradebook", "Gradebook", "📒"],

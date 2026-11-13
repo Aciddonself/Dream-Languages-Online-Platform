@@ -8,6 +8,14 @@ const db = new PGlite();
 await db.exec(`
   CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;
   CREATE SCHEMA auth;
+  CREATE SCHEMA storage;
+  CREATE TABLE storage.buckets (
+    id text PRIMARY KEY,
+    name text NOT NULL,
+    public boolean NOT NULL DEFAULT false,
+    file_size_limit bigint,
+    allowed_mime_types text[]
+  );
   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$ SELECT jsonb_build_object('aal', nullif(current_setting('request.jwt.claim.aal', true), '')) $$;
   GRANT USAGE ON SCHEMA auth, public TO anon, authenticated;
@@ -58,7 +66,8 @@ const allowed = async (name, who, sql, aal = "aal2") => {
 };
 
 const tables = (await db.query("SELECT tablename t, rowsecurity r FROM pg_tables WHERE schemaname='public'")).rows;
-const results = [{ name: `RLS enabled on all ${tables.length} tables`, ok: tables.every((t) => t.r) }];
+const missingRls = tables.filter((t) => !t.r).map((t) => t.t);
+const results = [{ name: `RLS enabled on all ${tables.length} tables${missingRls.length ? ` (missing: ${missingRls.join(", ")})` : ""}`, ok: missingRls.length === 0 }];
 
 results.push(
   await denied("student cannot self-promote to super_admin", "student", `UPDATE users SET role='super_admin' WHERE id='${ids.student}'`),
@@ -92,3 +101,4 @@ for (const r of results) {
 }
 console.log(`\n${results.length - failed}/${results.length} passed`);
 process.exit(failed ? 1 : 0);
+

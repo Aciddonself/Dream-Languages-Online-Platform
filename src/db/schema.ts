@@ -291,8 +291,27 @@ export const materials = pgTable("materials", {
   description: text("description"),
   fileUrl: text("file_url"),
   type: varchar("type", { length: 32 }).default("file"),
+  storagePath: text("storage_path"),
+  fileName: text("file_name"),
+  fileSizeBytes: integer("file_size_bytes"),
+  uploadComplete: boolean("upload_complete").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const classRecordings = pgTable("class_recordings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  classId: uuid("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+  sessionId: uuid("session_id").references(() => timetableSessions.id, { onDelete: "set null" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  recordingUrl: text("recording_url").notNull(),
+  storagePath: text("storage_path"),
+  fileName: text("file_name"),
+  external: boolean("external").default(false).notNull(),
+  uploadComplete: boolean("upload_complete").default(true).notNull(),
+  addedBy: uuid("added_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [index("class_recordings_class_created_idx").on(t.classId, t.createdAt)]);
 
 export const assignments = pgTable("assignments", {
   id: uuid("id").defaultRandom().primaryKey(),

@@ -4,7 +4,7 @@ Next.js application using Supabase Auth and PostgreSQL through Drizzle ORM. Depl
 
 ## Local setup
 
-1. Create a Supabase project. In its database settings, copy the PostgreSQL connection string (use the session pooler for serverless deployments). In Supabase Auth, enable email/password sign-in.
+1. Use a dedicated development Supabase project and database for local end-to-end testing. In its database settings, copy the PostgreSQL connection string (use the session pooler for serverless deployments). In Supabase Auth, enable email/password sign-in. Do not point `db:push`, demo seeding, or unfinished feature migrations at a production database.
 2. Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, and `APP_URL`. Keep `.env.local` private; never commit or share its values.
 3. Install dependencies and create/update tables on a fresh or development database:
 
@@ -13,7 +13,7 @@ Next.js application using Supabase Auth and PostgreSQL through Drizzle ORM. Depl
    npm run db:push
    ```
 
-   For production, review and apply checked-in migrations with `npm run db:migrate`; the migration creates the private Supabase Storage bucket for student photos and adds official document-stamp fields. Do not use `db:push` against a live database.
+   For production, review and apply checked-in migrations with `npm run db:migrate`. This checkout currently adds feature migrations `0009_recordings_and_media_storage.sql` and `0010_recording_upload_state.sql`; first compare their sequence with the target database's migration history, then apply them to a development database and verify its private `class-materials` bucket. Do not use `db:push` against a live database.
 4. To create local demo records, set `ALLOW_DEMO_SEED=1` and a private `SEED_DEMO_PASSWORD` of at least 10 characters, then run:
 
    ```powershell
@@ -85,6 +85,40 @@ Run this only from a trusted machine with the correct Supabase service-role key 
 
 The public sign-in URL is `https://www.example.com/login`. The separate administrator sign-in URL is `https://admin.example.com/admin/login`. `ADMIN_HOST` enforces that admin pages and admin authentication are only available on the configured hostname; `/admin` on the public hostname returns 404. Vercel deployments require the real Supabase and database environment values and the configured admin hostname before production sign-in will succeed.
 
+## Deploy to Namecheap cPanel
+
+This is a server-rendered Next.js application, so deploy it as a Node.js app through **cPanel → Setup Node.js App**. Do not upload it as a static React site. Namecheap's cPanel workflow uses the included `server.js` startup file, which starts Next on the port assigned by cPanel. Use a Node.js version supported by the hosting account and compatible with this Next.js release (Node.js 22 or newer is recommended), set the app mode to **Production**, and keep the application root outside `public_html`.
+
+1. Confirm the hosting plan exposes **Setup Node.js App**, enough memory/process capacity for a Next.js server, and SSH or cPanel Terminal. Build the production app with `npm ci` and `npm run build`, then deploy the project files including `.next`, `public`, `server.js`, `package.json`, and the lockfile. In cPanel, configure `server.js` as the startup file and install production dependencies with the cPanel Node.js app environment.
+2. Add the production environment variables in cPanel's Node.js app settings. At minimum configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `APP_URL`, `ADMIN_HOST`, and a strong `CRON_SECRET`. Add only the integrations the school will use. Keep secrets out of Git and the public web root.
+3. Use Supabase for PostgreSQL and student-photo storage as configured by the app. Apply reviewed database migrations from a trusted machine with the production `DATABASE_URL` before opening the site. Create the first administrator once using the documented bootstrap script and production credentials; never seed demo users in production.
+4. The `private_uploads/` directory holds teacher materials and teacher-application documents. Confirm the deployed app has writable, persistent storage and that this directory is outside the public web root. Back it up and check account disk limits. If the hosting plan does not provide dependable persistent storage, move these uploads to durable object storage before accepting them.
+5. Point the public and administrator DNS hostnames to the cPanel account, enable HTTPS, and verify both login hostnames. Configure the Supabase authentication URLs and `APP_URL` to match the final HTTPS domains.
+6. Configure scheduled endpoints with cPanel Cron Jobs or an external scheduler and send `Authorization: Bearer <CRON_SECRET>`. Namecheap shared hosting does not allow cron intervals shorter than five minutes, while the school-email endpoint is designed for a one-minute cadence. Use an external scheduler that supports one-minute jobs, or use a hosting plan that does; do not silently run it every five minutes because reminders and timed statements may be late. The daily holiday reminder can run daily. Confirm your chosen plan's cron limits before deployment.
+7. After starting the app, check `/api/health`, sign in with the production administrator, and exercise a student login, upload/download flow, email delivery, and scheduled endpoint. Watch cPanel application logs and resource usage during this check.
+
+Shared hosting resources are limited, so measure response time and cPanel CPU/memory limits under realistic concurrent use. If pages remain slow after the client-side bundle reduction, inspect database query time and hosting resource throttling before changing frameworks or increasing client-side complexity. A Namecheap VPS offers more control when the shared plan cannot meet the app's runtime, cron, or storage requirements.
+
+## Deploy to Railway
+
+Create the web service from [Railway's GitHub setup](https://railway.com/new/github) and select the GitHub repository and production branch. Use Node.js 22 or 24, build command `npm run build`, start command `npm start`, health check path `/api/health`, and health check timeout 300 seconds. The health endpoint checks PostgreSQL, so configure the runtime variables before the deployment health check runs. The server listens on Railway's injected `PORT`.
+
+Set the production values listed in the Vercel section as Railway service variables, plus only the integrations used by the school. Do not add secrets to Git. Keep `DATABASE_URL` pointed at the school's selected Supabase project. Review the checked-in Drizzle migrations against that database's migration history before applying any pending migration. Apply a reviewed migration from a trusted environment before directing live traffic to a schema that needs it; do not run migrations automatically during web-service startup.
+
+Upload files use private Supabase Storage rather than Railway's local filesystem. Supabase's project-wide upload limit takes precedence over the 250 MB app bucket limit; check the Storage settings and plan, and compress recordings or increase the project limit before accepting larger videos.
+
+### Google Calendar and Meet setup
+
+1. In Google Cloud Console, create a project, enable the Google Calendar API, and create an OAuth Client ID with application type **Web application**.
+2. Add an authorized redirect URI exactly matching `GOOGLE_REDIRECT_URI`. With a custom staff hostname, use `https://<ADMIN_HOST>/api/admin/google-calendar/callback`. For temporary testing on Railway's generated domain, use `https://<APP_URL-host>/api/admin/google-calendar/callback` and leave `ADMIN_HOST` unset until a dedicated administrator hostname is ready.
+3. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, and `MEET_LINK_ENCRYPTION_KEY` as Railway web-service variables. Generate a unique encryption key locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"`; paste it directly into Railway's secret field and keep a secure backup. Changing or losing this key requires reconnecting Google Calendar.
+4. Deploy, sign in as the super administrator with MFA, and open **Admin → Academic → Google Calendar and Meet → Connect Google Calendar**. The OAuth refresh token is encrypted in the existing `settings` table. Scheduling creates a real Meet link and Calendar event. Weekly repeats appear as separate LMS sessions and attendance records while Google Calendar receives one weekly series. Students join through their LMS portals; this integration does not email invitations.
+5. Before public production use, configure the Google OAuth consent screen with the production domain, homepage, privacy-policy URL, and support contact. The app requests the `calendar.events` scope. Google classifies it as sensitive and may require OAuth verification for production accounts; testing mode is limited to listed testers and has a shorter refresh-token lifetime. See Google's [sensitive-scope verification requirements](https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification).
+
+### Scheduled email services on Railway
+
+Railway cron jobs run no more frequently than every five minutes, so class reminders for the 25-minute and 10-minute windows are approximate. Create two scheduled services from the same GitHub branch. For each, set build command `npm ci --omit=dev`, start command `node scripts/run-scheduled-endpoint.mjs`, and variables `APP_URL` and `CRON_SECRET`. For the school-email service, set `SCHEDULER_PATH=/api/cron/school-emails`, schedule `*/5 * * * *`, and add `RESEND_API_KEY` plus `RESEND_FROM_EMAIL`. For the holiday-reminders service, set `SCHEDULER_PATH=/api/cron/holiday-reminders` and schedule `0 3 * * *` (06:00 East Africa Time). These workers call the authenticated web endpoints and exit after each run. Add secrets through Railway's service settings, not source files.
+
 ## Student photos, digital IDs, and report-card stamps
 
 Student applications require a passport-style photo. The application form and admin-created student form prepare it as a centered, portrait 7:9 JPEG, then save it in the private `student-photos` Supabase Storage bucket. Students can upload or replace their own photo from the digital ID section of their dashboard, and a super administrator can add or replace a photo for an existing student or applicant in **Admin → Users**. Only signed-in staff with the appropriate role can retrieve another student's private photo.
@@ -105,7 +139,9 @@ Apply the checked-in Drizzle migrations with `npm run db:migrate` before using h
 
 The auth endpoints, seeded academic/public records, courses, homepage, payment details, admin user management/statistics, student attendance/fee/assignment/session data, and health check use PostgreSQL through Drizzle. Server-rendered portal entry pages enforce roles; the Next.js proxy redirects unauthenticated requests, while database-backed sessions allow logout/revocation and expiry checks.
 
-This repository is a functional starting point, not a complete production LMS. Several dashboard widgets and actions still use static sample values or are presentation-only (including attendance, exams, results, payment processing, timetable management, document upload, CMS editing, and many admin actions). Do not rely on those for real school operations until their APIs, authorization, persistence, validation, and tests are implemented.
+This repository is a functional starting point, not a complete production LMS. Attendance check-ins and teacher confirmations are recorded in PostgreSQL; student, teacher, HOD, and admin attendance rates and monthly graphs use those completed class records. Teachers can share private class documents, audio, and video with enrolled students through Supabase Storage. The super administrator's **Admin → Class recordings** library stores private video recordings by class, makes them playable to active students enrolled in that class, and deletes the database record and stored video together. Recordings must first be created or exported from the meeting service (for example, Google Meet) and then uploaded by the administrator; this LMS does not start or capture Google Meet recordings automatically.
+
+The super administrator can update the two public TikTok profile links from **Admin → CMS**; the public homepage displays those links. Class scheduling can create real Google Meet links and Calendar events when the school Google account is connected from **Admin → Academic**; it also accepts real Meet URLs pasted by staff. Other areas still need more completion and live validation: payment-provider checkout and proof uploads are not included; online multiple-choice assessments do not support free responses or proctoring; some dashboard widgets/actions remain sample or presentation-only. See [PROJECT_AUDIT.md](PROJECT_AUDIT.md) for audit findings. Validate all workflows against real school accounts and policies before relying on them for school operations.
 
 Useful checks:
 

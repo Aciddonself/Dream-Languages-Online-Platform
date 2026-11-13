@@ -11,6 +11,7 @@ const serverSchema = z.object({
   DATABASE_URL: z.string().min(10),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   APP_URL: z.string().url(),
+  CPANEL_WEBMAIL_URL: z.preprocess((value) => value === "" ? undefined : value, z.string().url().optional()),
   CRON_SECRET: z.string().min(32).optional(),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().optional(),
@@ -25,6 +26,9 @@ const serverSchema = z.object({
   TURNSTILE_SECRET_KEY: z.string().optional(),
   FCM_SERVICE_ACCOUNT_JSON: z.string().optional(),
   MEET_LINK_ENCRYPTION_KEY: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_REDIRECT_URI: z.string().url().optional().or(z.literal("")),
 });
 
 export type PublicEnv = z.infer<typeof publicSchema>;

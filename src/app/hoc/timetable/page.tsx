@@ -1,4 +1,4 @@
-import { asc, eq, gt, or } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, or } from "drizzle-orm";
 import { requireRole } from "@/lib/rbac";
 import { db } from "@/db";
 import { classes, departments, timetableSessions, users } from "@/db/schema";
@@ -6,6 +6,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { AdminSessionCreate } from "@/components/admin-session-create";
 import Link from "next/link";
+import { formatSchoolDateTime, formatSchoolTime } from "@/lib/school-time";
 
 const nav = [
   { href: "/hoc", label: "Dashboard", icon: "🏠" },
@@ -25,7 +26,11 @@ export default async function HocTimetablePage() {
       .where(eq(departments.isLanguage, true))
       .orderBy(asc(departments.name)),
     db.select({ id: classes.id, name: classes.name, departmentId: classes.departmentId }).from(classes).orderBy(asc(classes.name)),
-    db.select({ id: users.id, name: users.displayName }).from(users).where(or(eq(users.role, "teacher"), eq(users.role, "head_academics"))),
+    db.select({ id: users.id, name: users.displayName }).from(users).where(and(
+      or(eq(users.role, "teacher"), eq(users.role, "head_academics")),
+      inArray(users.status, ["active", "registered"]),
+      isNull(users.deletedAt),
+    )),
     db
       .select({
         id: timetableSessions.id,
@@ -69,7 +74,7 @@ export default async function HocTimetablePage() {
       <GlassCard className="mb-5 p-6" strong>
         <h2 className="mb-2 font-semibold">Schedule a Live Class with Google Meet</h2>
         <p className="mb-4 text-sm opacity-70">
-          Filter by language department, pick a class, generate or enter a Google Meet URL, and sync to Google Calendar.
+          Filter by language department, pick a class, create a meeting in Google Meet, then paste its URL here. You can add the session to Google Calendar after saving.
         </p>
         <AdminSessionCreate
           departments={allDepts}
@@ -106,8 +111,8 @@ export default async function HocTimetablePage() {
                   </div>
                   <h2 className="font-semibold text-lg">{session.title}</h2>
                   <p className="text-sm opacity-70">
-                    {session.className ?? "Open Department Session"} · {session.startsAt.toLocaleString()} –{" "}
-                    {session.endsAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {session.className ?? "Open Department Session"} · {formatSchoolDateTime(session.startsAt)} –{" "}
+                    {formatSchoolTime(session.endsAt)}
                     {session.room ? ` · ${session.room}` : ""}
                   </p>
                 </div>

@@ -27,15 +27,16 @@ export function FatherDla() {
   const [agentStatus, setAgentStatus] = useState<{ configured: boolean } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Check agent status on mount
+  // Check agent status when the chat is opened, not on every dashboard visit.
   useEffect(() => {
+    if (!open || agentStatus !== null) return;
     fetch("/api/father-dla")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) setAgentStatus(data);
       })
       .catch(() => {});
-  }, []);
+  }, [open, agentStatus]);
 
   // Auto scroll to bottom of messages
   useEffect(() => {
@@ -120,7 +121,7 @@ export function FatherDla() {
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h2 className="text-sm font-bold text-white">Father-DLA</h2>
+                  <h2 className="text-sm font-bold text-[var(--text)]">Father-DLA</h2>
                   <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
                     Connected
                   </span>
@@ -156,10 +157,10 @@ export function FatherDla() {
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
             {!messages.length && (
               <div className="space-y-4 pt-2">
-                <div className="rounded-2xl border border-white/15 bg-white/5 p-3.5 text-center">
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3.5 text-center">
                   <span className="text-2xl">✨</span>
                   <h3 className="mt-1 font-semibold text-sm">Welcome to Father-DLA</h3>
-                  <p className="mt-1 text-xs opacity-75 leading-relaxed">
+                  <p className="mt-1 text-xs opacity-75 leading-relaxed text-[var(--text)]">
                     I am your multilingual language tutor and academic assistant. Ask me questions about French, German, Kiswahili, Luganda, Spanish, English, or your Google Meet live classes!
                   </p>
                 </div>
@@ -193,7 +194,7 @@ export function FatherDla() {
                   className={`whitespace-pre-wrap rounded-2xl p-3 text-sm max-w-[90%] leading-relaxed ${
                     message.role === "user"
                       ? "bg-blue-600 text-white rounded-tr-sm"
-                      : "border border-white/15 bg-white/10 text-white rounded-tl-sm"
+                      : "border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] rounded-tl-sm"
                   }`}
                 >
                   <strong className="mb-1 block text-[11px] font-semibold opacity-75">
@@ -228,7 +229,7 @@ export function FatherDla() {
               placeholder="Ask anything in English, French, German, Luganda..."
               maxLength={3000}
               rows={2}
-              className="min-w-0 flex-1 resize-none rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-indigo-400 focus:outline-none"
+               className="min-w-0 flex-1 resize-none rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--brand-primary)] focus:outline-none"
               aria-label="Ask Father-DLA anything"
             />
             <button
