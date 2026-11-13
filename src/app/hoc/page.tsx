@@ -10,6 +10,7 @@ import Link from "next/link";
 const nav = [
   { href: "/hoc", label: "Dashboard", icon: "🏠" },
   { href: "/hoc/live-classes", label: "Live Classes", icon: "🎥" },
+  { href: "/hoc/attendance", label: "Attendance", icon: "✅" },
   { href: "/hoc/timetable", label: "Timetable", icon: "🗓️" },
   { href: "/hoc/community", label: "Class discussions", icon: "💬" },
 ];

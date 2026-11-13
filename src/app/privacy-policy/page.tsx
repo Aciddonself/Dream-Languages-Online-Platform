@@ -10,6 +10,8 @@ export default function PrivacyPolicyPage() {
         <p>We collect only necessary information: name, contact details, academic records, and payment information for educational purposes.</p>
         <h2 className="font-bold text-base">How We Use Data</h2>
         <p>Data is used for enrolment, academic tracking, fee management, and communication. We do not sell personal data to third parties.</p>
+        <h2 className="font-bold text-base">Google Calendar and Meet</h2>
+        <p>When an authorized administrator connects the school Google account, DLA uses Google Calendar event access to create class schedule entries and Google Meet links. The integration stores an encrypted refresh token in the school database, and uses it only to create these requested class events. It does not read unrelated calendar events, invite students by email, or use Google Calendar data for advertising. Administrators can disconnect the Google account from the Academic page; they can also revoke access from their Google Account security settings.</p>
         <h2 className="font-bold text-base">Your Rights</h2>
         <p>You have the right to access, correct, or request deletion of your personal data. Use our Data Deletion Request form.</p>
         <h2 className="font-bold text-base">Contact</h2>

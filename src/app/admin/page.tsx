@@ -2,9 +2,11 @@ import Link from "next/link";
 import { requireRole } from "@/lib/rbac";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
+import { AttendanceTrendChart } from "@/components/attendance-trend-chart";
 import { db } from "@/db";
-import { users, departments } from "@/db/schema";
-import { count, eq } from "drizzle-orm";
+import { attendance, users, departments, timetableSessions, enrolments } from "@/db/schema";
+import { and, count, eq, inArray, isNotNull } from "drizzle-orm";
+import { classAttendanceTrend } from "@/lib/attendance-trends";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +16,7 @@ const nav = [
   { href: "/admin/users", label: "Users", icon: "👥" },
   { href: "/admin/volunteers", label: "Teacher applications", icon: "🧑‍🏫" },
   { href: "/admin/academic", label: "Academic", icon: "🎓" },
+  { href: "/admin/recordings", label: "Class recordings", icon: "🎬" },
   { href: "/admin/cms", label: "CMS", icon: "📝" },
   { href: "/admin/sms", label: "Bulk SMS", icon: "✉️" },
   { href: "/admin/finance", label: "Finance", icon: "💰" },
@@ -30,6 +33,17 @@ export default async function AdminDashboard() {
     db.select({ c: count() }).from(users).where(eq(users.role, "finance")),
     db.select().from(departments),
   ]);
+  const completedSessions = await db.select({ id: timetableSessions.id, classId: timetableSessions.classId, startsAt: timetableSessions.startsAt, endsAt: timetableSessions.endsAt })
+    .from(timetableSessions).where(isNotNull(timetableSessions.liveEndedAt));
+  const completedIds = completedSessions.map((session) => session.id);
+  const classIds: string[] = [...new Set<string>(completedSessions.map((session: { classId: string | null }) => session.classId).filter((id: string | null): id is string => Boolean(id)))];
+  const [rosterSizes, attendanceRows] = await Promise.all([
+    classIds.length ? db.select({ classId: enrolments.classId, students: count() }).from(enrolments).where(and(inArray(enrolments.classId, classIds), eq(enrolments.status, "active"))).groupBy(enrolments.classId) : Promise.resolve([] as Array<{ classId: string; students: number }>),
+    completedIds.length ? db.select({ sessionId: attendance.sessionId, studentId: attendance.studentId, status: attendance.status, checkInAt: attendance.checkInAt, checkOutAt: attendance.checkOutAt }).from(attendance).where(inArray(attendance.sessionId, completedIds)) : Promise.resolve([]),
+  ]);
+  const studentsByClass = new Map<string, number>(rosterSizes.map((row) => [row.classId, row.students]));
+  const enrollmentBySession = new Map<string, number>(completedSessions.map((session) => [session.id, session.classId ? studentsByClass.get(session.classId) ?? 0 : 0]));
+  const attendanceMonths = classAttendanceTrend(completedSessions, attendanceRows, enrollmentBySession);
 
   const stats = [
     { label: "Total Students", value: studentCount.c, color: "var(--brand-primary)", trend: "+12%" },
@@ -66,21 +80,7 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-6">
-        {/* Chart placeholder */}
-        <GlassCard className="p-5 md:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <div className="font-semibold">Enrolment Overview</div>
-            <Badge tone="info">This term</Badge>
-          </div>
-          <div className="flex items-end gap-2 h-40">
-            {[40, 65, 50, 80, 55, 90, 70, 85, 60, 75, 95, 88].map((v, i) => (
-              <div key={i} className="dashboard-chart-bar flex-1 rounded-t-md" style={{ height: `${v}%`, animationDelay: `${i * 35}ms`, background: "linear-gradient(180deg, var(--brand-primary), var(--brand-accent))" }} />
-            ))}
-          </div>
-          <div className="flex justify-between text-[10px] opacity-50 mt-2">
-            {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m) => <span key={m}>{m}</span>)}
-          </div>
-        </GlassCard>
+        <div className="md:col-span-2"><AttendanceTrendChart title="School attendance" months={attendanceMonths} /></div>
 
         {/* Recent activity */}
         <GlassCard className="p-5">

@@ -1,4 +1,12 @@
 @import "tailwindcss";
+@import "@fontsource/crimson-text/400.css";
+@import "@fontsource/crimson-text/600.css";
+@import "@fontsource/crimson-text/700.css";
+@import "@fontsource/crimson-text/400-italic.css";
+@import "@fontsource/crimson-text/600-italic.css";
+@import "@fontsource/crimson-text/700-italic.css";
+@import "@fontsource/playball/400.css";
+@import "@fontsource/romanesco/400.css";
 
 :root {
   --brand-primary: #c99c3b;
@@ -32,9 +40,9 @@
   --shadow-glass: 0 8px 32px rgba(8, 38, 74, 0.12), 0 2px 8px rgba(8, 38, 74, 0.06);
   --shadow-liquid: 0 8px 32px rgba(8, 38, 74, 0.08), 0 1px 2px rgba(8, 38, 74, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   --blur: 20px;
-  --font-display: var(--font-romanesco), "Palatino Linotype", Georgia, serif;
-  --font-body: var(--font-crimson), "Noto Sans", "Noto Sans SC", "Noto Sans JP", "Noto Sans Arabic", Georgia, serif;
-  --font-script: var(--font-playball), "Brush Script MT", cursive;
+  --font-display: "Romanesco", "Palatino Linotype", Georgia, serif;
+  --font-body: "Crimson Text", "Noto Sans", "Noto Sans SC", "Noto Sans JP", "Noto Sans Arabic", Georgia, serif;
+  --font-script: "Playball", "Brush Script MT", cursive;
 }
 
 .dark {

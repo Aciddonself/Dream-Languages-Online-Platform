@@ -19,9 +19,10 @@ export async function GET(request: Request) {
   let sentCount = 0;
   let failedCount = 0;
 
-  for (const minutes of [25, 10]) {
-    const target = new Date(now.getTime() + minutes * 60_000);
-    const windowStart = new Date(target.getTime() - 60_000);
+  for (const leadMinutes of [25, 10]) {
+    // Railway cron runs at most every five minutes; a ten-minute window tolerates small scheduler drift.
+    const windowStart = new Date(now.getTime() + (leadMinutes - 5) * 60_000);
+    const windowEnd = new Date(now.getTime() + (leadMinutes + 5) * 60_000);
     const sessions = await db.select({
       id: timetableSessions.id,
       title: timetableSessions.title,
@@ -30,8 +31,9 @@ export async function GET(request: Request) {
       classId: timetableSessions.classId,
       teacherId: timetableSessions.teacherId,
       room: timetableSessions.room,
-    }).from(timetableSessions).where(and(gte(timetableSessions.startsAt, windowStart), lte(timetableSessions.startsAt, target)));
+    }).from(timetableSessions).where(and(gte(timetableSessions.startsAt, windowStart), lte(timetableSessions.startsAt, windowEnd)));
     for (const session of sessions) {
+      const minutesRemaining = Math.max(1, Math.round((session.startsAt.getTime() - now.getTime()) / 60_000));
       const recipients = session.classId
         ? await db.select({ id: users.id, email: users.email, name: users.displayName }).from(enrolments)
             .innerJoin(users, eq(users.id, enrolments.studentId))
@@ -44,9 +46,9 @@ export async function GET(request: Request) {
       for (const recipient of sessionRecipients) {
         const result = await sendEmail({
           to: recipient.email,
-          subject: `Class reminder: ${session.title} begins in ${minutes} minutes`,
-          html: `<p>Hello ${recipient.name ?? "there"},</p><p>This is a reminder that <strong>${session.title}</strong> begins in ${minutes} minutes at ${session.startsAt.toLocaleString()}.</p><p>${session.room ? `Location: ${session.room}. ` : ""}Sign in to your Dream Languages Uganda portal and open your timetable to join the class.</p>`,
-          dedupeKey: `class-reminder:${session.id}:${recipient.id}:${minutes}`,
+          subject: `Class reminder: ${session.title} begins in about ${minutesRemaining} minutes`,
+          html: `<p>Hello ${recipient.name ?? "there"},</p><p>This is a reminder that <strong>${session.title}</strong> begins in about ${minutesRemaining} minutes at ${session.startsAt.toLocaleString()}.</p><p>${session.room ? `Location: ${session.room}. ` : ""}Sign in to your Dream Languages Uganda portal and open your timetable to join the class.</p>`,
+          dedupeKey: `class-reminder:${session.id}:${recipient.id}:${leadMinutes}`,
         });
         if (result.sent) sentCount++;
         else failedCount++;
@@ -54,7 +56,7 @@ export async function GET(request: Request) {
     }
   }
 
-  if (now.getUTCDate() === 1) {
+  if (now.getUTCDate() === 1 && now.getUTCHours() === 3 && now.getUTCMinutes() < 5) {
     const month = now.toISOString().slice(0, 7);
     const eligibleStudents = await db.select({
       id: users.id,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { GlassButton, GlassCard } from "@/components/ui/glass";
 import Image from "next/image";
 
@@ -49,6 +50,7 @@ export function AttendanceSessionPanel({
   sessions: SessionOption[];
   audience: "student" | "teacher";
 }) {
+  const router = useRouter();
   const [states, setStates] = useState<Record<string, AttendanceState>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
@@ -97,6 +99,7 @@ export function AttendanceSessionPanel({
         return false;
       }
       await refresh(sessionId);
+      router.refresh();
       return true;
     } catch {
       setErrors((current) => ({ ...current, [sessionId]: "Unable to update attendance. Check your connection." }));

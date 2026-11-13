@@ -64,6 +64,20 @@
       "when": 1793101072975,
       "tag": "0008_bored_rachel_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794552425528,
+      "tag": "0009_recordings_and_media_storage",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794552621033,
+      "tag": "0010_recording_upload_state",
+      "breakpoints": true
     }
   ]
 }

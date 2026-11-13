@@ -1,9 +1,11 @@
-import { and, eq, gte, isNull, or } from "drizzle-orm";
+import { and, count, eq, gte, inArray, isNotNull, isNull, or } from "drizzle-orm";
 import { AttendanceSessionPanel } from "@/components/attendance-session-panel";
+import { AttendanceTrendChart } from "@/components/attendance-trend-chart";
 import { PortalShell } from "@/components/portal-shell";
 import { db } from "@/db";
-import { classes, timetableSessions } from "@/db/schema";
+import { attendance, classes, enrolments, timetableSessions } from "@/db/schema";
 import { requireRole } from "@/lib/rbac";
+import { classAttendanceTrend } from "@/lib/attendance-trends";
 
 export const dynamic = "force-dynamic";
 
@@ -45,12 +47,23 @@ export default async function TeacherAttendancePage() {
     ))
     .orderBy(timetableSessions.startsAt)
     .limit(30);
+  const completed = await db.select({ id: timetableSessions.id, classId: timetableSessions.classId, startsAt: timetableSessions.startsAt, endsAt: timetableSessions.endsAt })
+    .from(timetableSessions).where(and(isNotNull(timetableSessions.liveEndedAt), sessionFilter));
+  const classIds: string[] = [...new Set<string>(completed.map((session: { classId: string | null }) => session.classId).filter((id: string | null): id is string => Boolean(id)))];
+  const counts: Array<{ classId: string; students: number }> = classIds.length ? await db.select({ classId: enrolments.classId, students: count() }).from(enrolments)
+    .where(and(inArray(enrolments.classId, classIds), eq(enrolments.status, "active"))).groupBy(enrolments.classId) : [];
+  const countByClass = new Map<string, number>(counts.map((item) => [item.classId, item.students]));
+  const completedIds = completed.map((session) => session.id);
+  const records = completedIds.length ? await db.select({ sessionId: attendance.sessionId, studentId: attendance.studentId, status: attendance.status, checkInAt: attendance.checkInAt, checkOutAt: attendance.checkOutAt })
+    .from(attendance).where(inArray(attendance.sessionId, completedIds)) : [];
+  const trend = classAttendanceTrend(completed, records, new Map<string, number>(completed.map((session) => [session.id, session.classId ? countByClass.get(session.classId) ?? 0 : 0])));
   return (
     <PortalShell title="Teacher Portal" nav={nav}>
       <div className="mb-5">
         <h1 className="display-font text-3xl font-bold">Class Attendance</h1>
         <p className="text-sm opacity-65">Start class to record your attendance, monitor student check-ins, and confirm or correct records. The roster never exposes student phone numbers.</p>
       </div>
+      <AttendanceTrendChart title="Class attendance" months={trend} />
       <AttendanceSessionPanel sessions={sessions.map((session) => ({
         ...session,
         startsAt: session.startsAt.toISOString(),

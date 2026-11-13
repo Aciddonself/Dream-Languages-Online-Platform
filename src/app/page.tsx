@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { CountUpStats } from "@/components/count-up-stats";
+import { TikTokLinks } from "@/components/tiktok-links";
 import {
   getPublicDepartments,
   getPublishedFaqs,
@@ -8,16 +9,18 @@ import {
   getPublishedPartners,
   getPublishedTestimonials,
 } from "@/lib/public-content";
+import { getTikTokLinks } from "@/lib/social-links";
 
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [depts, tests, faqList, partnerList, news] = await Promise.all([
+  const [depts, tests, faqList, partnerList, news, socialLinks] = await Promise.all([
     getPublicDepartments(),
     getPublishedTestimonials(),
     getPublishedFaqs(),
     getPublishedPartners(),
     getPublishedNews(),
+    getTikTokLinks(),
   ]);
 
   return (
@@ -163,6 +166,14 @@ export default async function HomePage() {
             </GlassCard>
           ))}
         </div>
+      </section>
+
+      <section className="px-6 max-w-6xl mx-auto mb-12">
+        <GlassCard className="p-6">
+          <h2 className="display-font text-2xl font-bold mb-2">Follow Dream Languages</h2>
+          <p className="mb-4 text-sm opacity-70">Follow our official TikTok accounts for school news and learning updates.</p>
+          <TikTokLinks links={socialLinks} />
+        </GlassCard>
       </section>
 
       {/* Partners */}
