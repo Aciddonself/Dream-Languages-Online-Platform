@@ -30,3 +30,8 @@ VALUES ('class-materials', 'class-materials', false, 262144000, ARRAY[
   'text/plain', 'text/csv', 'audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/ogg', 'audio/aac',
   'video/mp4', 'video/webm', 'video/quicktime'
 ]) ON CONFLICT (id) DO UPDATE SET public = false, file_size_limit = EXCLUDED.file_size_limit, allowed_mime_types = EXCLUDED.allowed_mime_types;
+--> statement-breakpoint
+ALTER TABLE "class_recordings" ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
+ALTER TABLE "school_holidays" ENABLE ROW LEVEL SECURITY;
+
