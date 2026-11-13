@@ -26,6 +26,9 @@ const serverSchema = z.object({
   TURNSTILE_SECRET_KEY: z.string().optional(),
   FCM_SERVICE_ACCOUNT_JSON: z.string().optional(),
   MEET_LINK_ENCRYPTION_KEY: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_REDIRECT_URI: z.string().url().optional().or(z.literal("")),
 });
 
 export type PublicEnv = z.infer<typeof publicSchema>;

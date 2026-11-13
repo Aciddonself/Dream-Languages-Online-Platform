@@ -16,6 +16,7 @@ const nav = [
   { href: "/admin/users", label: "Users", icon: "👥" },
   { href: "/admin/volunteers", label: "Teacher applications", icon: "🧑‍🏫" },
   { href: "/admin/academic", label: "Academic", icon: "🎓" },
+  { href: "/admin/recordings", label: "Class recordings", icon: "🎬" },
   { href: "/admin/cms", label: "CMS", icon: "📝" },
   { href: "/admin/sms", label: "Bulk SMS", icon: "✉️" },
   { href: "/admin/finance", label: "Finance", icon: "💰" },
@@ -43,13 +44,13 @@ export default async function AdminDashboard() {
       .limit(5),
   ]);
 
-  const monthlyStudentCounts = new Map(monthlyStudentRows.map(({ month, total }) => [month, total]));
+  const monthlyStudentCounts = new Map<string, number>(monthlyStudentRows.map(({ month, total }) => [month, Number(total)] as [string, number]));
   const monthlyStudentAccounts = Array.from({ length: 12 }, (_, index) => {
     const date = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 11 + index, 1));
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth();
     const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
-    const total = monthlyStudentCounts.get(monthKey) ?? 0;
+    const total: number = monthlyStudentCounts.get(monthKey) ?? 0;
     return { label: new Intl.DateTimeFormat("en-UG", { month: "short", timeZone: "Africa/Kampala" }).format(date), total };
   });
   const peakMonthlyAccounts = Math.max(1, ...monthlyStudentAccounts.map((item) => item.total));

@@ -3,7 +3,8 @@ import { z } from "zod";
 import { db } from "@/db";
 import { classes, timetableSessions, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { and, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, eq, gt, lt, or } from "drizzle-orm";
+import { createGoogleCalendarMeet, deleteGoogleCalendarEvent } from "@/lib/google-calendar";
 
 const schema = z.object({
   title: z.string().trim().min(1).max(160),
@@ -14,6 +15,7 @@ const schema = z.object({
   endsAt: z.coerce.date(),
   room: z.string().trim().max(160).optional(),
   meetUrl: z.string().trim().url().optional().or(z.literal("")),
+  generateMeet: z.boolean().default(false),
   recurring: z.boolean().default(false),
   recurrenceCount: z.coerce.number().int().min(2).max(52).default(8),
 }).refine((data) => data.endsAt > data.startsAt, {
@@ -40,7 +42,8 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { title, classId, departmentId, teacherId, startsAt, endsAt, room, meetUrl, recurring, recurrenceCount } = parsed.data;
+  const { title, classId, departmentId, teacherId, startsAt, endsAt, room, recurring, recurrenceCount } = parsed.data;
+  let meetUrl = parsed.data.meetUrl || "";
   if (departmentId && !classId) {
     return NextResponse.json({ error: "Choose a class in the selected department, or clear the department filter for a school-wide session" }, { status: 400 });
   }
@@ -94,6 +97,21 @@ export async function POST(request: Request) {
     startsAt: new Date(startsAt.getTime() + index * 7 * 24 * 60 * 60_000),
     endsAt: new Date(endsAt.getTime() + index * 7 * 24 * 60 * 60_000),
   }));
+  let calendarEvent: Awaited<ReturnType<typeof createGoogleCalendarMeet>> | null = null;
+  if (parsed.data.generateMeet && !meetUrl) {
+    try {
+      calendarEvent = await createGoogleCalendarMeet({
+        title,
+        startsAt,
+        endsAt,
+        recurrenceCount: recurring ? occurrenceCount : undefined,
+        description: ["Dream Languages Uganda online class.", room ? `Location: ${room}` : ""].filter(Boolean).join("\n"),
+      });
+      meetUrl = calendarEvent.meetUrl;
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "Google Meet creation failed." }, { status: 502 });
+    }
+  }
   const firstStart = occurrences[0].startsAt;
   const lastEnd = occurrences[occurrences.length - 1].endsAt;
   const matchingAssignments = [eq(timetableSessions.teacherId, assignedTeacherId)];
@@ -112,6 +130,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "The selected class or teacher already has a session during that time" }, { status: 409 });
   }
 
+  try {
   const sessions = await db
     .insert(timetableSessions)
     .values(occurrences.map((occurrence) => ({
@@ -126,5 +145,9 @@ export async function POST(request: Request) {
     })))
     .returning({ id: timetableSessions.id, title: timetableSessions.title, meetUrl: timetableSessions.meetUrl });
 
-  return NextResponse.json({ ok: true, session: sessions[0], createdCount: sessions.length }, { status: 201 });
+  return NextResponse.json({ ok: true, session: sessions[0], sessions, createdCount: sessions.length, calendarEventUrl: calendarEvent?.calendarEventUrl ?? null }, { status: 201 });
+  } catch (error) {
+    if (calendarEvent?.calendarEventId) await deleteGoogleCalendarEvent(calendarEvent.calendarEventId).catch(() => {});
+    throw error;
+  }
 }

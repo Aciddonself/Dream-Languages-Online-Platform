@@ -34,6 +34,7 @@ const nav = [
   { href: "/student/results", label: "Results", icon: "📊" },
   { href: "/student/requests", label: "Requests", icon: "📨" },
   { href: "/student/materials", label: "Materials", icon: "📄" },
+  { href: "/student/recordings", label: "Recorded classes", icon: "🎬" },
   { href: "/student/community", label: "Community", icon: "💬" },
   { href: "/student/reviews", label: "Share a Review", icon: "⭐" },
 ];

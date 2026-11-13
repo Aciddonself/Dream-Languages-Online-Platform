@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { GlassCard, GlassButton } from "@/components/ui/glass";
 
 export function CookieConsent() {
@@ -8,7 +9,10 @@ export function CookieConsent() {
 
   useEffect(() => {
     const consent = localStorage.getItem("dla-cookie-consent");
-    if (!consent) setVisible(true);
+    if (consent) return;
+    let active = true;
+    queueMicrotask(() => { if (active) setVisible(true); });
+    return () => { active = false; };
   }, []);
 
   function accept() {
@@ -34,7 +38,7 @@ export function CookieConsent() {
           <GlassButton variant="primary" onClick={accept}>Accept</GlassButton>
         </div>
         <p className="text-xs opacity-60">
-          <a href="/cookie-policy" className="underline">Cookie Policy</a>
+          <Link href="/cookie-policy" className="underline">Cookie Policy</Link>
         </p>
       </GlassCard>
     </div>

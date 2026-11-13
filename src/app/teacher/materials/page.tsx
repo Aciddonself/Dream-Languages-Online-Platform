@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { MaterialUploadForm } from "@/components/material-upload-form";
+import { ClassMaterialCard } from "@/components/class-material-card";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { db } from "@/db";
@@ -30,10 +30,12 @@ export default async function TeacherMaterialsPage() {
     title: materials.title,
     description: materials.description,
     fileUrl: materials.fileUrl,
+    fileName: materials.fileName,
+    type: materials.type,
     createdAt: materials.createdAt,
     className: classes.name,
   }).from(materials).leftJoin(classes, eq(materials.classId, classes.id))
-    .where(user.role === "teacher" ? eq(materials.teacherId, user.id) : undefined)
+    .where(user.role === "teacher" ? and(eq(materials.teacherId, user.id), eq(materials.uploadComplete, true)) : eq(materials.uploadComplete, true))
     .orderBy(desc(materials.createdAt)).limit(100);
   return (
     <PortalShell title="Teacher Portal" nav={nav}>
@@ -41,12 +43,8 @@ export default async function TeacherMaterialsPage() {
       <p className="text-sm opacity-65 mb-5">Upload documents privately for students enrolled in the selected class.</p>
       <GlassCard className="p-5 mb-5"><MaterialUploadForm classes={classesForUser} /></GlassCard>
       <div className="grid gap-3">
-        {items.length ? items.map((item) => (
-          <GlassCard key={item.id} className="flex flex-wrap items-center justify-between gap-4 p-4">
-            <div><div className="font-semibold">{item.title}</div><div className="text-sm opacity-65">{item.className ?? "Class"} · {item.description ?? "Learning document"} · {item.createdAt.toLocaleDateString()}</div></div>
-            {item.fileUrl && <Link className="font-semibold underline" href={item.fileUrl}>Download</Link>}
-          </GlassCard>
-        )) : <GlassCard className="p-5 text-sm opacity-65">No class documents have been uploaded.</GlassCard>}
+        {items.length ? items.map((item) => <ClassMaterialCard key={item.id} item={item} canDelete />)
+          : <GlassCard className="p-5 text-sm opacity-65">No learning materials have been uploaded.</GlassCard>}
       </div>
     </PortalShell>
   );

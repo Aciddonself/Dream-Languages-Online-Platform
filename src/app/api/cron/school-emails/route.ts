@@ -22,7 +22,9 @@ export async function GET(request: Request) {
 
   for (const minutes of [25, 10]) {
     const target = new Date(now.getTime() + minutes * 60_000);
-    const windowStart = new Date(target.getTime() - 60_000);
+    // Railway scheduled services run at five-minute intervals. This idempotent
+    // window catches reminders since the previous run without duplicate mail.
+    const windowStart = new Date(target.getTime() - 5 * 60_000);
     const sessions = await db.select({
       id: timetableSessions.id,
       title: timetableSessions.title,
@@ -55,7 +57,7 @@ export async function GET(request: Request) {
     }
   }
 
-  if (now.getUTCDate() === 1) {
+  if (now.getUTCDate() === 1 && now.getUTCHours() === 3 && now.getUTCMinutes() < 5) {
     const month = now.toISOString().slice(0, 7);
     const eligibleStudents = await db.select({
       id: users.id,

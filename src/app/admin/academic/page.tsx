@@ -2,22 +2,26 @@ import { requireRole } from "@/lib/rbac";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { AdminSessionCreate } from "@/components/admin-session-create";
+import { GoogleCalendarIntegration } from "@/components/google-calendar-integration";
 import { db } from "@/db";
 import { classes, timetableSessions } from "@/db/schema";
 import { desc, isNull } from "drizzle-orm";
+import { googleCalendarConnectionStatus, googleCalendarIsConfigured } from "@/lib/google-calendar";
 
 const nav = [{ href: "/admin", label: "Dashboard", icon: "🏠" }, { href: "/admin/academic", label: "Academic", icon: "🎓" }];
 
 export default async function AdminAcademic() {
   await requireRole(["super_admin"]);
-  const [schoolClasses, sessions] = await Promise.all([
+  const [schoolClasses, sessions, googleStatus] = await Promise.all([
     db.select({ id: classes.id, name: classes.name }).from(classes).where(isNull(classes.deletedAt)).orderBy(classes.name),
     db.select().from(timetableSessions).orderBy(desc(timetableSessions.startsAt)).limit(50),
+    googleCalendarConnectionStatus(),
   ]);
   return (
     <PortalShell title="Academic Structure" nav={nav}>
       <h1 className="display-font text-2xl font-bold mb-4">Academic Structure</h1>
       <div className="grid gap-4">
+        <GoogleCalendarIntegration initialStatus={{ ...googleStatus, configured: googleCalendarIsConfigured() }} />
         <GlassCard className="p-6" strong>
           <h2 className="font-semibold mb-2">Schedule a class or online lesson</h2>
           <p className="text-sm opacity-70 mb-4">Add the Google Meet link created for the session so enrolled students can join from their portal.</p>

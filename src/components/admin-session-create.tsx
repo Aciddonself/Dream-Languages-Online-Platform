@@ -43,6 +43,7 @@ export function AdminSessionCreate({
   const [endsAt, setEndsAt] = useState("");
   const [room, setRoom] = useState("Google Meet Online Room");
   const [meetUrl, setMeetUrl] = useState("");
+  const [generateMeet, setGenerateMeet] = useState(false);
   const [recurring, setRecurring] = useState(false);
   const [recurrenceCount, setRecurrenceCount] = useState(8);
 
@@ -99,6 +100,7 @@ export function AdminSessionCreate({
           endsAt: endsAt ? new Date(endsAt).toISOString() : "",
           room,
           meetUrl: meetUrl || undefined,
+          generateMeet,
           recurring,
           recurrenceCount,
         }),
@@ -114,26 +116,8 @@ export function AdminSessionCreate({
         ? `${data.createdCount} weekly class sessions successfully scheduled.`
         : "Live class successfully scheduled.");
 
-      // Generate Google Calendar Link
-      const calendar = new URL("https://calendar.google.com/calendar/render");
-      calendar.searchParams.set("action", "TEMPLATE");
-      calendar.searchParams.set("text", title);
-      calendar.searchParams.set(
-        "dates",
-        `${new Date(startsAt).toISOString().replaceAll(/[-:]/g, "").replace(/\.\d{3}/, "")}/${new Date(endsAt).toISOString().replaceAll(/[-:]/g, "").replace(/\.\d{3}/, "")}`
-      );
-      calendar.searchParams.set(
-        "details",
-        [
-          `Live Class for Dream Languages Uganda`,
-          meetUrl ? `Join Google Meet: ${meetUrl}` : "",
-          room ? `Location: ${room}` : "",
-        ]
-          .filter(Boolean)
-          .join("\n\n")
-      );
-      calendar.searchParams.set("location", meetUrl || room || "Google Meet");
-      setCalendarUrl(calendar.toString());
+      setCalendarUrl(data.calendarEventUrl ?? "");
+      if (data.session?.meetUrl) setMeetUrl(data.session.meetUrl);
 
       // Reset
       setTitle("");
@@ -290,19 +274,14 @@ export function AdminSessionCreate({
             <div>
               <h4 className="text-sm font-semibold text-white">Google Meet Connection</h4>
               <p className="text-xs opacity-70">
-                Create a real meeting in your Google account, then paste its link here. This form cannot create meeting rooms automatically.
+                Create a meeting from the school Calendar connection, or paste an existing Google Meet link.
               </p>
             </div>
           </div>
-          <a
-            href="https://meet.google.com/new"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:opacity-90 transition-opacity"
-          >
-            <span>↗</span>
-            <span>Create a real Meet room</span>
-          </a>
+          <label
+            htmlFor={`${formId}-generate-meet`}
+            className="flex items-center gap-2 text-xs font-semibold"
+          ><input id={`${formId}-generate-meet`} type="checkbox" checked={generateMeet} onChange={(event) => setGenerateMeet(event.target.checked)} /> Create Google Meet automatically</label>
         </div>
 
         <GlassInput
@@ -310,11 +289,11 @@ export function AdminSessionCreate({
           value={meetUrl}
           onChange={(e) => setMeetUrl(e.target.value)}
           placeholder="https://meet.google.com/xxx-yyyy-zzz"
-          required
+          required={!generateMeet}
         />
 
         <div className="flex flex-wrap items-center justify-between text-xs opacity-75">
-          <span>Paste the meeting URL from your Google Meet account.</span>
+          <span>Enable automatic creation above or paste an existing Meet link.</span>
         </div>
       </div>
 

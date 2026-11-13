@@ -41,7 +41,9 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
   const authNotConfigured = search.get("error") === "auth_not_configured";
 
   useEffect(() => {
-    setSearchString(window.location.search);
+    let active = true;
+    queueMicrotask(() => { if (active) setSearchString(window.location.search); });
+    return () => { active = false; };
   }, []);
 
   // Deep link only if it stays inside the role's own portal; otherwise use the server-chosen home.

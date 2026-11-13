@@ -9,15 +9,18 @@ import { AdminCmsPageCreate, AdminCmsPageEditor, AdminNewsCreate, AdminNewsEdito
 import { AnnouncementCreate } from "@/components/announcement-create";
 import { classes } from "@/db/schema";
 import { isNull } from "drizzle-orm";
+import { AdminTikTokLinksForm } from "@/components/admin-tiktok-links-form";
+import { getTikTokLinks } from "@/lib/social-links";
 
-const nav = [{ href: "/admin", label: "Dashboard", icon: "🏠" }, { href: "/admin/cms", label: "CMS", icon: "📝" }, { href: "/admin/sms", label: "Bulk SMS", icon: "✉️" }];
+const nav = [{ href: "/admin", label: "Dashboard", icon: "🏠" }, { href: "/admin/recordings", label: "Class recordings", icon: "🎬" }, { href: "/admin/cms", label: "CMS", icon: "📝" }, { href: "/admin/sms", label: "Bulk SMS", icon: "✉️" }];
 
 export default async function AdminCms() {
   await requireRole(["super_admin"]);
-  const [pages, posts, reviews] = await Promise.all([
+  const [pages, posts, reviews, tiktokLinks] = await Promise.all([
     db.select().from(cmsPages).orderBy(desc(cmsPages.updatedAt)).limit(50),
     db.select().from(newsPosts).orderBy(desc(newsPosts.createdAt)).limit(50),
     db.select().from(testimonials).orderBy(desc(testimonials.createdAt)).limit(100),
+    getTikTokLinks(),
   ]);
   const schoolClasses = await db.select({ id: classes.id, name: classes.name }).from(classes).where(isNull(classes.deletedAt)).orderBy(classes.name);
   const partnerList = await db.select({ id: partners.id, name: partners.name }).from(partners).orderBy(partners.name);
@@ -37,6 +40,11 @@ export default async function AdminCms() {
         <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">Create a website update</h2>
           <AdminNewsCreate />
+        </GlassCard>
+        <GlassCard className="p-5" strong>
+          <h2 className="font-semibold mb-3">Public TikTok accounts</h2>
+          <p className="mb-3 text-sm opacity-65">Update the two TikTok profiles shown to website visitors.</p>
+          <AdminTikTokLinksForm links={tiktokLinks} />
         </GlassCard>
         <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">Publish a school announcement</h2>
