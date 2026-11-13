@@ -5,7 +5,7 @@ import { classes, timetableSessions } from "@/db/schema";
 import { asc, eq, gte } from "drizzle-orm";
 import { LEVELS, MODES, SLOTS, range } from "@/lib/classes-2027";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const TZ = "Africa/Kampala";
 const dayLabel = (d: Date) => d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: TZ });

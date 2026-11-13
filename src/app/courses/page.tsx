@@ -3,7 +3,7 @@ import Link from "next/link";
 import { whatsappContacts } from "@/lib/contacts";
 import { getPublicDepartments } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function CoursesPage() {
   const depts = await getPublicDepartments();

@@ -11,7 +11,7 @@ import {
 } from "@/lib/public-content";
 import { getTikTokLinks } from "@/lib/social-links";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [depts, tests, faqList, partnerList, news, socialLinks] = await Promise.all([

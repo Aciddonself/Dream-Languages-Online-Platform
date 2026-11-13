@@ -2,7 +2,7 @@ import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass";
 import { getPublishedTestimonials, getTeacherRatingSummaries } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function TestimonialsPage() {
   const [testimonials, teachers] = await Promise.all([getPublishedTestimonials(), getTeacherRatingSummaries()]);

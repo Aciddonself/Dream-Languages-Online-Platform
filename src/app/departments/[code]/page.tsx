@@ -6,7 +6,7 @@ import { classes, departments, levels, timetableSessions } from "@/db/schema";
 import { eq, or, ilike, asc, and, gt, sql } from "drizzle-orm";
 import { DEFAULT_DEPARTMENTS } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const CEFR_LEVELS = [
   { code: "A1", name: "Beginner", desc: "Basic greetings, everyday phrases, pronunciation, self-introduction, and numbers." },
