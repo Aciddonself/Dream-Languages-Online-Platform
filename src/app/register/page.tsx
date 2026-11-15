@@ -12,7 +12,6 @@ export default function RegisterPage() {
         </p>
         <div className="mt-6 flex flex-wrap gap-4 text-sm font-semibold">
           <Link href="/apply" className="text-[var(--brand-primary)]">Apply to DLA</Link>
-          <Link href="/login" className="text-[var(--brand-primary)]">Sign in</Link>
         </div>
       </GlassCard>
     </main>

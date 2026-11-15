@@ -50,7 +50,6 @@ export default async function HomePage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/apply"><GlassButton>Apply Now</GlassButton></Link>
               <Link href="/courses"><GlassButton variant="glass">Explore Courses</GlassButton></Link>
-              <Link href="/login"><GlassButton variant="ghost">Login</GlassButton></Link>
             </div>
           </div>
           <div className="hero-image">

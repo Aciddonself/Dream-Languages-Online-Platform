@@ -11,7 +11,6 @@ export default function NotFound() {
         <div className="flex justify-center gap-3 text-sm font-semibold">
           <Link className="underline" href="/">Home</Link>
           <Link className="underline" href="/courses">Courses</Link>
-          <Link className="underline" href="/login">Sign in</Link>
         </div>
       </GlassCard>
     </main>

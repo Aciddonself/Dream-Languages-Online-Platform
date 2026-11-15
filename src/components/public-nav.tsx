@@ -22,8 +22,6 @@ const secondaryLinks = [
   { href: "/classes-2027", label: "Classes 2027" },
   { href: "/testimonials", label: "Reviews" },
   { href: "/volunteer", label: "Teach with us" },
-  { href: "/login", label: "Sign in" },
-  { href: "/admin-login", label: "Staff sign in" },
 ];
 
 export function PublicNav() {

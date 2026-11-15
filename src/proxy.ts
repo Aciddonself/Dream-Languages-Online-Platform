@@ -50,7 +50,7 @@ export async function proxy(req: NextRequest) {
       const allowed = isAdminPath || pathname.startsWith("/api/") || pathname.startsWith("/_next/");
       if (!allowed) {
         const url = req.nextUrl.clone();
-        url.pathname = "/admin/login";
+        url.pathname = "/admin/sign-in";
         url.search = "";
         return NextResponse.redirect(url);
       }
@@ -69,12 +69,12 @@ export async function proxy(req: NextRequest) {
   response.headers.set("Content-Security-Policy", csp);
 
   const protectedArea = PROTECTED.find((p) => pathname === p || pathname.startsWith(`${p}/`));
-  const adminPublicPage = pathname === "/admin/login" || pathname.startsWith("/admin/forgot-password");
+  const adminPublicPage = pathname === "/admin/sign-in" || pathname === "/admin/login" || pathname.startsWith("/admin/forgot-password");
   if (!protectedArea || adminPublicPage) return response;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const loginPath = protectedArea === "/admin" ? "/admin/login" : "/login";
+  const loginPath = protectedArea === "/admin" ? "/admin/sign-in" : "/login";
 
   const loginRedirect = () => {
     const url = req.nextUrl.clone();

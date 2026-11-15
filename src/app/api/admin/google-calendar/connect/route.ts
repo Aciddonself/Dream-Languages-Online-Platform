@@ -9,7 +9,7 @@ const STATE_COOKIE = "google_calendar_oauth_state";
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "super_admin") return NextResponse.redirect(new URL("/admin/login", googleAdminOrigin()));
+  if (!user || user.role !== "super_admin") return NextResponse.redirect(new URL("/admin/sign-in", googleAdminOrigin()));
   const config = googleOAuthConfig();
   if (!config) return NextResponse.redirect(new URL("/admin/academic?google-calendar=not-configured", googleAdminOrigin()));
 

@@ -15,7 +15,6 @@ const community = [
   { href: "/testimonials", label: "Student reviews" },
   { href: "/blog", label: "News & stories" },
   { href: "/faqs", label: "FAQs" },
-  { href: "/login", label: "Sign in" },
 ];
 
 const legal = [

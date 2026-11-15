@@ -25,7 +25,6 @@ export default function ContactPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link className="inline-flex rounded-full border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold hover:bg-white/40" href="/register">Apply online</Link>
-          <Link className="inline-flex rounded-full border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold hover:bg-white/40" href="/login">Sign in to the help desk</Link>
         </div>
       </GlassCard>
     </main>

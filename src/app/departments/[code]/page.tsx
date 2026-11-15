@@ -203,9 +203,6 @@ export default async function DepartmentDetailPage({
                       {new Date(s.startsAt).toLocaleDateString()} · {new Date(s.startsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
-                  <Link href="/login" className="rounded-lg border border-white/15 px-3 py-1 text-xs font-semibold text-white hover:bg-white/10">
-                    Student login to join
-                  </Link>
                 </li>
               ))}
             </ul>

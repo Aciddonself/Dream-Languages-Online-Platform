@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const config = googleOAuthConfig();
   const origin = config ? new URL(config.callbackUrl).origin : googleAdminOrigin();
   const currentUser = await getCurrentUser();
-  if (!currentUser || currentUser.role !== "super_admin") return NextResponse.redirect(new URL("/admin/login", origin));
+  if (!currentUser || currentUser.role !== "super_admin") return NextResponse.redirect(new URL("/admin/sign-in", origin));
   if (!config) return destination(origin, "not-configured");
 
   const url = new URL(request.url);
