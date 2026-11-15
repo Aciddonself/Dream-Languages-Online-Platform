@@ -58,7 +58,7 @@ export default async function TimetablePage() {
                     <GlassCard className="p-5" key={session.id}>
                       <div className="font-semibold">{session.title}</div>
                       <div className="text-sm opacity-70 mt-1">{session.className ?? "School session"}</div>
-                      <div className="text-sm mt-2">{clock(session.startsAt)} – {clock(session.endsAt)}</div>
+                      <div className="text-sm mt-2">{clock(session.startsAt)} to {clock(session.endsAt)}</div>
                       {session.room && <div className="text-sm opacity-70 mt-1">{session.room}</div>}
                     </GlassCard>
                   ))}

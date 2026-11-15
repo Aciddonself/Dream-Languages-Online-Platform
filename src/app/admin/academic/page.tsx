@@ -35,7 +35,7 @@ export default async function AdminAcademic() {
                 <li key={session.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div>
                     <div className="font-medium">{session.title}</div>
-                    <div className="text-sm opacity-65">{new Date(session.startsAt).toLocaleString()} – {new Date(session.endsAt).toLocaleString()}</div>
+                    <div className="text-sm opacity-65">{new Date(session.startsAt).toLocaleString()} to {new Date(session.endsAt).toLocaleString()}</div>
                   </div>
                   {session.meetUrl ? (
                     <a className="text-sm font-semibold text-[var(--brand-secondary-soft)] underline-offset-4 hover:underline" href={session.meetUrl} target="_blank" rel="noreferrer">Open Google Meet</a>

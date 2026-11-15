@@ -89,7 +89,7 @@ export default async function StudentTimetablePage() {
                   <h2 className="font-semibold text-lg">{session.title}</h2>
                   <p className="text-sm opacity-70">
                     {session.className ?? "Open Language Session"} ·{" "}
-                    {formatSchoolDate(session.startsAt)} · {formatSchoolTime(session.startsAt)} – {formatSchoolTime(session.endsAt)}
+                    {formatSchoolDate(session.startsAt)} · {formatSchoolTime(session.startsAt)} to {formatSchoolTime(session.endsAt)}
                     {session.room ? ` · ${session.room}` : ""}
                   </p>
                 </div>

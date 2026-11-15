@@ -310,7 +310,7 @@ export async function PATCH(req: Request) {
   ], portrait);
   const email = await sendEmail({
     to: admitted.email,
-    subject: `Dream Languages Uganda admission confirmed — ${admitted.registrationNumber ?? ""}`,
+    subject: `Dream Languages Uganda admission confirmed: ${admitted.registrationNumber ?? ""}`,
     html: `<p>Hello ${name.replace(/[&<>"]/g, "")},</p><p>Your student application has been approved. Your registration number is <strong>${admitted.registrationNumber ?? "pending"}</strong>.</p><p>Your application form and admission form are attached as PDFs. Sign in to the student portal to view your classes and fees.</p><p>Dream Languages Uganda</p>`,
     dedupeKey: `admission:${outcome.student.id}`,
     attachments: [

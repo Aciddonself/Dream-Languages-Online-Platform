@@ -158,7 +158,10 @@ export async function* runFatherDla(actor: Actor, rawMessage: string, signal?: A
     return;
   }
   const staff = !!actor && STAFF_ROLES.includes(actor.role);
-  const systemPrompt = staff ? config.staffPrompt : config.systemPrompt;
+  const systemPrompt = `${staff ? config.staffPrompt : config.systemPrompt}
+
+WRITING STYLE
+Write in a natural, conversational voice. Do not use em dash or en dash punctuation to join phrases or sentences. Use commas, periods, or conjunctions instead. Keep hyphens only in necessary compound words.`;
 
   const screen = screenInput(message);
   if (screen.action !== "allow" || screen.category === "distress") {

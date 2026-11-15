@@ -24,11 +24,11 @@ const day = (offset: number, hour: number, length = 1) => {
 };
 
 const events = [
-  { id: "1", title: "German A1 – Morning", room: "Room 2", ...day(0, 9, 2) },
-  { id: "2", title: "French B1 – Evening", room: "Room 4", ...day(1, 17, 2) },
-  { id: "3", title: "Kiswahili A2 – Weekend", room: "Online", ...day(2, 10, 2) },
+  { id: "1", title: "German A1 Morning", room: "Room 2", ...day(0, 9, 2) },
+  { id: "2", title: "French B1 Evening", room: "Room 4", ...day(1, 17, 2) },
+  { id: "3", title: "Kiswahili A2 Weekend", room: "Online", ...day(2, 10, 2) },
   { id: "4", title: "Exam: Dutch A1", room: "Hall", ...day(4, 14, 3) },
-  { id: "5", title: "Fee due date – Term 2", room: null, ...day(6, 8, 1) },
+  { id: "5", title: "Fee due date for Term 2", room: null, ...day(6, 8, 1) },
 ];
 
 export default function DashboardPreview() {

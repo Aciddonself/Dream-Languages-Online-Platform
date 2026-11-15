@@ -26,7 +26,7 @@ export function AssessmentAttempts({ attempts }: { attempts: Attempt[] }) {
 
   return <div className="space-y-3">
     {attempts.length ? attempts.map((attempt) => <div key={attempt.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-3 text-sm">
-      <div><div className="font-semibold">{attempt.examTitle} · {attempt.studentName}</div><div className="opacity-65">Score: {attempt.score ?? "Pending"}% · Submitted {attempt.submittedAt ? new Date(attempt.submittedAt).toLocaleString() : "—"}</div></div>
+      <div><div className="font-semibold">{attempt.examTitle} · {attempt.studentName}</div><div className="opacity-65">Score: {attempt.score ?? "Pending"}% · Submitted {attempt.submittedAt ? new Date(attempt.submittedAt).toLocaleString() : "time not recorded"}</div></div>
       {attempt.published ? <span className="text-emerald-700">Result published</span> : <button type="button" disabled={busyId === attempt.id || attempt.score === null} onClick={() => void publish(attempt)} className="rounded-lg bg-[var(--brand-primary)] px-3 py-2 font-semibold text-white disabled:opacity-50">{busyId === attempt.id ? "Publishing…" : "Review and publish"}</button>}
     </div>) : <p className="text-sm opacity-65">No submitted online assessments are awaiting review.</p>}
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}

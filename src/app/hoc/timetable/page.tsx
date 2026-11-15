@@ -111,7 +111,7 @@ export default async function HocTimetablePage() {
                   </div>
                   <h2 className="font-semibold text-lg">{session.title}</h2>
                   <p className="text-sm opacity-70">
-                    {session.className ?? "Open Department Session"} · {formatSchoolDateTime(session.startsAt)} –{" "}
+                    {session.className ?? "Open Department Session"} · {formatSchoolDateTime(session.startsAt)} to{" "}
                     {formatSchoolTime(session.endsAt)}
                     {session.room ? ` · ${session.room}` : ""}
                   </p>

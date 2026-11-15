@@ -121,7 +121,7 @@ export default function DlaOpportunitiesPage() {
             A shared vision for growth
           </p>
           <h2 id="partnership-heading" className="display-font text-3xl font-bold sm:text-4xl">
-            Let’s create opportunity—and grow together.
+            Let’s create opportunity and grow together.
           </h2>
           <p className="mt-4 max-w-4xl leading-relaxed text-[var(--text-muted)]">
             Our goal is a mutually beneficial partnership: opening new pathways for Ugandans while helping Dream Languages become a recognized, trusted name and expand its international footprint. We welcome conversations with people and organizations who share that vision.

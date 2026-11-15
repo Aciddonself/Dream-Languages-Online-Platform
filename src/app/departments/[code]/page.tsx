@@ -133,7 +133,7 @@ export default async function DepartmentDetailPage({
           <div className="rounded-2xl border border-white/15 bg-white/5 p-5 min-w-[240px] space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider opacity-70">Programme Highlights</h3>
             <ul className="space-y-2 text-xs opacity-85">
-              <li>✓ CEFR Certified Levels (A1 – C2)</li>
+              <li>✓ CEFR certified levels from A1 to C2</li>
               <li>✓ Live Google Meet Interactive Video</li>
               <li>✓ Weekend, Evening &amp; Day Batches</li>
               <li>✓ 24/7 Father-DLA AI Study Companion</li>

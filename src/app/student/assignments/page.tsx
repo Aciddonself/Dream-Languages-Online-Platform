@@ -52,7 +52,7 @@ export default async function StudentAssignmentsPage() {
         {item.description && <p className="mt-3 whitespace-pre-wrap text-sm opacity-80">{item.description}</p>}
         {submission?.text && <div className="mt-3 rounded-xl bg-white/5 p-3 text-sm"><strong>Your response</strong><p className="mt-1 whitespace-pre-wrap">{submission.text}</p></div>}
         {submission?.fileUrl && <a className="mt-3 inline-block text-sm font-semibold underline" href={submission.fileUrl}>Download your submitted file</a>}
-        {submission?.gradedAt && <div className="mt-3 rounded-xl bg-emerald-500/10 p-3 text-sm"><strong>Grade: {submission.score ?? "—"}/{item.maxScore ?? 100}</strong>{submission.feedback && <p className="mt-1 whitespace-pre-wrap">{submission.feedback}</p>}</div>}
+        {submission?.gradedAt && <div className="mt-3 rounded-xl bg-emerald-500/10 p-3 text-sm"><strong>Grade: {submission.score ?? "Pending"}/{item.maxScore ?? 100}</strong>{submission.feedback && <p className="mt-1 whitespace-pre-wrap">{submission.feedback}</p>}</div>}
         {!locked && <AssignmentSubmissionForm assignmentId={item.id} />}
       </GlassCard>;
     }) : <GlassCard className="p-5 text-sm opacity-65">No assignments are available for your active classes yet.</GlassCard>}</div>

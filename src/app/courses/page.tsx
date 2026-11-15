@@ -81,7 +81,7 @@ export default async function CoursesPage() {
           <p className="mt-3 text-sm opacity-70">Contact admissions for current intake dates, study format, and fees.</p>
         </GlassCard>
         <GlassCard className="p-6">
-          <h2 className="display-font text-2xl font-bold mb-2">Basic computer studies — MS Office</h2>
+          <h2 className="display-font text-2xl font-bold mb-2">Basic computer studies and MS Office</h2>
           <p className="text-sm opacity-75">A practical three-month programme: Month 1, computer fundamentals and file management; Month 2, Microsoft Word and PowerPoint; Month 3, Microsoft Excel, internet safety, and useful digital workflows.</p>
           <p className="mt-3 font-semibold">UGX 500,000 per month · UGX 1,500,000 for three months</p>
           <p className="mt-2 text-sm opacity-70">Available in-person or online. Online learners need a computer or laptop (not a phone), stable internet, and a quiet study environment.</p>

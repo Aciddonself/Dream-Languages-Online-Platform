@@ -79,7 +79,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
             {all.map((u: { id: string; displayName: string | null; role: string; status: string; registrationNumber: string | null; address: string | null; nextOfKinName: string | null; nextOfKinPhone: string | null; studyFormat: string | null; studyDurationMonths: number | null; email: string; avatarStorageKey: string | null; documentStampedAt: Date | null; documentStamperName: string | null; documentStamperTitle: string | null; }) => (
               <tr key={u.id} className="border-t border-white/10">
                 <td className="p-3"><span className="flex items-center gap-2">{["student", "applicant"].includes(u.role) && u.avatarStorageKey && <Image src={`/api/portal/profile-photo?userId=${u.id}`} alt={`${u.displayName ?? "Student"} passport photo`} width={40} height={48} unoptimized className="h-12 w-10 rounded object-cover" />}{u.displayName}</span>{u.role === "applicant" && <div className="max-w-xs text-xs opacity-65">{u.address ?? "Address missing"} · Next of kin: {u.nextOfKinName ?? "Not provided"} {u.nextOfKinPhone ?? ""} · {u.studyFormat?.replaceAll("_", " ") ?? "Format pending"} {u.studyDurationMonths ? `${u.studyDurationMonths} month(s)` : ""}</div>}</td>
-                <td className="p-3 font-mono text-xs">{u.registrationNumber ?? "—"}</td>
+                <td className="p-3 font-mono text-xs">{u.registrationNumber ?? "Not assigned"}</td>
                 <td className="p-3 opacity-70">{u.email}</td>
                         <td className="p-3">
                           {u.status === "archived" && ["teacher", "finance", "head_academics"].includes(u.role)
@@ -88,9 +88,9 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                         </td>
                         <td className="p-3"><AdminUserStatus userId={u.id} status={u.status} isSelf={u.id === actor.id} /></td>
                         <td className="p-3">{u.id === actor.id ? "Use administrator recovery" : <AdminUserCredentials userId={u.id} />}</td>
-                <td className="p-3">{u.role === "applicant" ? <AdminApplicantPromote userId={u.id} /> : "—"}</td>
-                        <td className="p-3">{["student", "applicant"].includes(u.role) ? <AdminStudentPhotoControl userId={u.id} hasPhoto={Boolean(u.avatarStorageKey)} /> : "—"}</td>
-                        <td className="p-3">{u.role === "student" ? <StudentDocumentStampControl studentId={u.id} stampedAt={u.documentStampedAt ? new Intl.DateTimeFormat("en-UG", { dateStyle: "medium", timeZone: "Africa/Kampala" }).format(u.documentStampedAt) : null} stamperName={u.documentStamperName} stamperTitle={u.documentStamperTitle} /> : "—"}</td>
+                <td className="p-3">{u.role === "applicant" ? <AdminApplicantPromote userId={u.id} /> : "Not applicable"}</td>
+                        <td className="p-3">{["student", "applicant"].includes(u.role) ? <AdminStudentPhotoControl userId={u.id} hasPhoto={Boolean(u.avatarStorageKey)} /> : "Not applicable"}</td>
+                        <td className="p-3">{u.role === "student" ? <StudentDocumentStampControl studentId={u.id} stampedAt={u.documentStampedAt ? new Intl.DateTimeFormat("en-UG", { dateStyle: "medium", timeZone: "Africa/Kampala" }).format(u.documentStampedAt) : null} stamperName={u.documentStamperName} stamperTitle={u.documentStamperTitle} /> : "Not applicable"}</td>
               </tr>
             ))}
           </tbody>

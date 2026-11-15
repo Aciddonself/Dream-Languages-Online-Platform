@@ -172,7 +172,7 @@ export function AdminSessionCreate({
           required={Boolean(selectedDeptId)}
         >
           <option value="">
-            {selectedDeptId ? "Choose a class in this department" : "Entire school — all enrolled students"}
+            {selectedDeptId ? "Choose a class in this department" : "All enrolled students across the school"}
           </option>
           {filteredClasses.map((schoolClass) => (
             <option key={schoolClass.id} value={schoolClass.id}>
@@ -313,7 +313,7 @@ export function AdminSessionCreate({
       {recurring && (
         <div className="md:col-span-2 grid max-w-xs gap-1.5">
           <label htmlFor={`${formId}-recurrence-count`} className="text-xs font-semibold opacity-80">
-            Number of weekly sessions (2–52)
+            Number of weekly sessions (2 to 52)
           </label>
           <GlassInput
             id={`${formId}-recurrence-count`}
