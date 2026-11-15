@@ -1,11 +1,13 @@
-import { db } from "@/db";
-import { sql } from "drizzle-orm";
+import { pool } from "@/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    await db.execute(sql`select 1`);
+    // Probe the real Postgres pool directly. The build-time safe DB stub
+    // intentionally makes Drizzle calls resolve empty, so db.execute would
+    // incorrectly report healthy when DATABASE_URL is missing.
+    await pool.query("select 1");
     return Response.json({ ok: true });
   } catch (error) {
     console.error("Database health check failed:", error);
