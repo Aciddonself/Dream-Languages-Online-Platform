@@ -34,7 +34,7 @@ Next.js application using Supabase Auth and PostgreSQL through Drizzle ORM. Depl
 
 ## Demo sign-ins
 
-Demo account passwords are the value you set in `SEED_DEMO_PASSWORD` when seeding. Use `/login` for non-admin demo accounts and `/admin/login` for the administrator. The seed does not reset existing users.
+Demo account passwords are the value you set in `SEED_DEMO_PASSWORD` when seeding. Use `/login` for non-admin demo accounts and `/admin/sign-in` for the administrator. The seed does not reset existing users.
 
 | Portal | Email | Role |
 | --- | --- | --- |
