@@ -14,7 +14,7 @@ const opportunities = [
     eyebrow: "Prepare for your next career move",
     title: "Work opportunities abroad",
     description:
-      "Build the language and career readiness to pursue work beyond Uganda. We help you strengthen practical communication for your target country, understand role requirements, prepare your CV and interview skills, and plan your next steps. When relevant opportunities or recruitment partners are available, we can help you explore them and understand how to apply.",
+      "For qualified Ugandans looking beyond borders, DLA brings language learning together with practical career preparation. Build communication skills for your destination country, understand the requirements of roles you’re targeting, and get support preparing your CV, interviews, and applications. Where relevant employers, openings, or recruitment partners are available, we can help you explore the pathway and the next steps.",
     takeaway: "Feel more prepared to pursue international career pathways.",
   },
   {
@@ -22,7 +22,7 @@ const opportunities = [
     eyebrow: "Turn your study goal into a plan",
     title: "Study abroad guidance",
     description:
-      "Make your study plans clearer and more achievable. We can help you explore courses and institutions that match your goals, prepare for language requirements, organize application documents, and understand each stage of the admissions process. We also help you prepare questions and learn about common visa requirements, so you can approach the relevant institutions with confidence.",
+      "For Ugandan students aiming to study internationally, we help turn a big goal into a clear application plan. Explore suitable courses and universities, prepare for language requirements, organize supporting documents, and understand admissions steps and timelines. We can also help you learn about common study-visa requirements and prepare questions for the relevant institution or authority.",
     takeaway: "Move from wondering where to start to knowing your next step.",
   },
   {
@@ -30,7 +30,7 @@ const opportunities = [
     eyebrow: "Build meaningful growth together",
     title: "Partnerships that open doors in Uganda",
     description:
-      "Are you an education provider, employer, institution, or community organization? Partner with DLA to reach learners and clients in Uganda through local outreach, student recruitment, institutional connections, brand awareness, and business development. We’ll discuss shared goals, responsibilities, and a transparent collaboration model before moving forward.",
+      "Are you an education provider, employer, institution, or organization looking to grow in Uganda? Work with Dream Languages to introduce and develop your services through local marketing, student and client recruitment, institutional partnerships, brand awareness, and business development. We’re open to discussing a local representative or strategic-partner role, with clear responsibilities and a transparent model for collaboration.",
     takeaway: "Connect your work with a trusted local learning community.",
   },
 ];
@@ -52,7 +52,7 @@ export default function DlaOpportunitiesPage() {
           Your next chapter can reach beyond borders.
         </h1>
         <p className="mt-5 max-w-3xl text-lg leading-relaxed text-[var(--text-muted)] sm:text-xl">
-          Dream Languages Uganda helps people prepare for international work and study—and helps organizations build a stronger local presence. Bring us your ambition. We’ll help you find a practical place to begin.
+          Dream Languages Uganda helps qualified Ugandans prepare for work and study abroad, while helping organizations connect with people and partners here at home. Bring us your ambition or your partnership idea. We’ll help you find a practical place to begin.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
@@ -82,7 +82,7 @@ export default function DlaOpportunitiesPage() {
             Three ways DLA helps you move forward
           </h2>
           <p className="mt-3 text-[var(--text-muted)]">
-            Start with the goal that matters to you. We’ll help you understand the options and take the next step with confidence.
+            We’re interested in working across these three areas to create opportunities for Ugandans and help Dream Languages grow its international reach.
           </p>
         </div>
 
@@ -115,16 +115,33 @@ export default function DlaOpportunitiesPage() {
         </p>
       </section>
 
+      <section aria-labelledby="partnership-heading" className="mt-12 sm:mt-16">
+        <GlassCard className="p-6 sm:p-9">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--brand-primary)]">
+            A shared vision for growth
+          </p>
+          <h2 id="partnership-heading" className="display-font text-3xl font-bold sm:text-4xl">
+            Let’s create opportunity—and grow together.
+          </h2>
+          <p className="mt-4 max-w-4xl leading-relaxed text-[var(--text-muted)]">
+            Our goal is a mutually beneficial partnership: opening new pathways for Ugandans while helping Dream Languages become a recognized, trusted name and expand its international footprint. We welcome conversations with people and organizations who share that vision.
+          </p>
+          <p className="mt-4 max-w-4xl leading-relaxed text-[var(--text-muted)]">
+            Let’s talk about your goals, our partnership model, collaboration requirements, commission structures, and the possibility of representing or growing DLA services locally. We’ll agree on expectations and responsibilities together before any collaboration begins.
+          </p>
+        </GlassCard>
+      </section>
+
       <GlassCard className="mt-12 flex flex-col items-start justify-between gap-6 p-6 sm:mt-16 sm:flex-row sm:items-center sm:p-9" strong>
         <div className="max-w-2xl">
           <p className="mb-2 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--brand-primary)]">
             Let’s make a plan
           </p>
           <h2 className="display-font text-3xl font-bold sm:text-4xl">
-            Tell us where you want to go.
+            Your idea could be the start of something big.
           </h2>
           <p className="mt-3 text-[var(--text-muted)]">
-            Share your work, study, or partnership goal with our team. We’ll help you explore the right next step.
+            Tell us whether you’re exploring work abroad, planning to study, or ready to partner with DLA in Uganda. Let’s explore the next step together.
           </p>
         </div>
         <Link
