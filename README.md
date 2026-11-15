@@ -49,7 +49,7 @@ Use demo accounts only for local testing. Do not seed demo accounts into product
 
 ### Recover administrator access
 
-First use the dedicated sign-in page: `/admin/login`. An administrator signing in through `/login` is intentionally rejected. Production additionally requires the request to use the exact hostname configured in `ADMIN_HOST`.
+Use `/admin/sign-in` for administrators. The old `/admin/login` path redirects there. Students and staff use the shared `/login` page and choose their role; administrators signing in through it are rejected. If `ADMIN_HOST` is configured, admin sign-in must use that hostname. For a single-origin Railway deployment without a custom admin domain, leave `ADMIN_HOST` empty and set `ALLOW_ADMIN_WITHOUT_HOST=true`.
 
 If the password is unknown and administrator recovery email is not configured, reset the existing account without removing other users:
 
@@ -60,7 +60,7 @@ npm run admin:password-reset
 Remove-Item Env:ADMIN_PASSWORD_RESET_EMAIL, Env:ADMIN_PASSWORD_RESET_PASSWORD
 ```
 
-Run this only from a trusted machine with the correct Supabase service-role key and database connection in `.env.local`. Then sign in at `/admin/login`; administrators must enroll or verify authenticator-based 2FA.
+Run this only from a trusted machine with the correct Supabase service-role key and database connection in `.env.local`. Then sign in at `/admin/sign-in`; administrators must enroll or verify authenticator-based 2FA.
 
 `npm run admin:reset` is a different, destructive operation: it deletes demo users and creates one super administrator. Use it only when you intentionally want to remove those demo accounts.
 
@@ -83,7 +83,7 @@ Run this only from a trusted machine with the correct Supabase service-role key 
 6. In the Supabase Auth URL configuration, set the public site URL and allow the administrator recovery URL, for example `https://admin.example.com/admin/forgot-password`. Configure the email provider if password-recovery links should be delivered.
 7. Create the production administrator on a trusted machine by setting `FIRST_ADMIN_EMAIL` and `FIRST_ADMIN_PASSWORD` in its environment, then running `npx tsx scripts/create-first-admin.ts` with production Supabase/database credentials. This is a one-time bootstrap and refuses to run if an administrator already exists. Never put the first-admin password in Git or Vercel build logs.
 
-The public sign-in URL is `https://www.example.com/login`. The separate administrator sign-in URL is `https://admin.example.com/admin/login`. `ADMIN_HOST` enforces that admin pages and admin authentication are only available on the configured hostname; `/admin` on the public hostname returns 404. Vercel deployments require the real Supabase and database environment values and the configured admin hostname before production sign-in will succeed.
+The shared student and staff sign-in URL is `https://www.example.com/login`; the administrator URL is `https://admin.example.com/admin/sign-in`. These URLs are not linked from public visitor navigation. `ADMIN_HOST` enforces that admin pages and admin authentication are only available on the configured hostname; `/admin` on the public hostname returns 404. If no separate admin hostname exists yet, use a deployment setup that deliberately enables same-origin admin access with `ALLOW_ADMIN_WITHOUT_HOST=true`.
 
 ## Deploy to Namecheap cPanel
 
@@ -103,13 +103,13 @@ Shared hosting resources are limited, so measure response time and cPanel CPU/me
 
 Create the web service from [Railway's GitHub setup](https://railway.com/new/github) and select the GitHub repository and production branch. Use Node.js 22 or 24, build command `npm run build`, start command `npm start`, health check path `/api/health`, and health check timeout 300 seconds. The health endpoint checks PostgreSQL, so configure the runtime variables before the deployment health check runs. The server listens on Railway's injected `PORT`.
 
-Set the production values listed in the Vercel section as Railway service variables, plus only the integrations used by the school. Do not add secrets to Git. Keep `DATABASE_URL` pointed at the school's selected Supabase project. Review the checked-in Drizzle migrations against that database's migration history before applying any pending migration. Apply a reviewed migration from a trusted environment before directing live traffic to a schema that needs it; do not run migrations automatically during web-service startup.
+Set the production values listed in the Vercel section as Railway service variables, plus only the integrations used by the school. While using Railway's generated domain, set `APP_URL` to the full Railway HTTPS origin, leave `ADMIN_HOST` empty, and set `ALLOW_ADMIN_WITHOUT_HOST=true` so administrators can use `/admin/sign-in` on that same origin. Do not add secrets to Git. Keep `DATABASE_URL` pointed at the school's selected Supabase project. Review the checked-in Drizzle migrations against that database's migration history before applying any pending migration. Apply a reviewed migration from a trusted environment before directing live traffic to a schema that needs it; do not run migrations automatically during web-service startup.
 
 Upload files use private Supabase Storage rather than Railway's local filesystem. Supabase's project-wide upload limit takes precedence over the 250 MB app bucket limit; check the Storage settings and plan, and compress recordings or increase the project limit before accepting larger videos.
 
 ### Google Calendar and Meet setup
 
-1. In Google Cloud Console, create a project, enable the Google Calendar API, and create an OAuth Client ID with application type **Web application**.
+1. In Google Cloud Console, create a project, enable the Google Calendar API, and create an OAuth Client ID with application type **Web application**. Configure the OAuth consent screen with a school-managed support email before publishing it; a personal Gmail may own the project without being the public support address.
 2. Add an authorized redirect URI exactly matching `GOOGLE_REDIRECT_URI`. With a custom staff hostname, use `https://<ADMIN_HOST>/api/admin/google-calendar/callback`. For temporary testing on Railway's generated domain, use `https://<APP_URL-host>/api/admin/google-calendar/callback` and leave `ADMIN_HOST` unset until a dedicated administrator hostname is ready.
 3. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, and `MEET_LINK_ENCRYPTION_KEY` as Railway web-service variables. Generate a unique encryption key locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"`; paste it directly into Railway's secret field and keep a secure backup. Changing or losing this key requires reconnecting Google Calendar.
 4. Deploy, sign in as the super administrator with MFA, and open **Admin → Academic → Google Calendar and Meet → Connect Google Calendar**. The OAuth refresh token is encrypted in the existing `settings` table. Scheduling creates a real Meet link and Calendar event. Weekly repeats appear as separate LMS sessions and attendance records while Google Calendar receives one weekly series. Students join through their LMS portals; this integration does not email invitations.
