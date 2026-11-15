@@ -37,7 +37,7 @@ export default async function CoursesPage() {
                 <span className="text-3xl">{d.flagEmoji ?? "🌐"}</span>
                 <span className="text-xs font-mono font-semibold opacity-60 bg-white/10 px-2 py-0.5 rounded">{d.code}</span>
               </div>
-              <div className="font-bold text-lg text-white">{d.name}</div>
+              <div className="font-bold text-lg text-[var(--brand-primary)]">{d.name}</div>
               <div className="text-xs opacity-75 mt-1.5 leading-relaxed">{d.description ?? "Accredited language and skills programme."}</div>
             </div>
             <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold">

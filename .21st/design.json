@@ -1,0 +1,198 @@
+{
+  "version": 1,
+  "project": {
+    "name": "nextjs-postgresql-template",
+    "productType": null,
+    "stack": [
+      "nextjs",
+      "react",
+      "tailwind-v4"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "src/app/globals.css"
+    ],
+    "components": [
+      "src/components/ui"
+    ],
+    "assets": [],
+    "instructions": [
+      "AGENTS.md"
+    ]
+  },
+  "design": {
+    "colorMode": "light-and-dark",
+    "colors": {
+      "--brand-primary": {
+        "value": "#c99c3b",
+        "source": "src/app/globals.css"
+      },
+      "--brand-primary-soft": {
+        "value": "#efd27e",
+        "source": "src/app/globals.css"
+      },
+      "--brand-secondary": {
+        "value": "#08264a",
+        "source": "src/app/globals.css"
+      },
+      "--brand-secondary-soft": {
+        "value": "#17456f",
+        "source": "src/app/globals.css"
+      },
+      "--brand-accent": {
+        "value": "#d8b357",
+        "source": "src/app/globals.css"
+      },
+      "--brand-accent-soft": {
+        "value": "#f4df9b",
+        "source": "src/app/globals.css"
+      },
+      "--border": {
+        "value": "rgba(200, 212, 232, 0.28)",
+        "source": "src/app/globals.css"
+      },
+      "--border-strong": {
+        "value": "rgba(232, 160, 164, 0.42)",
+        "source": "src/app/globals.css"
+      },
+      "--text-muted": {
+        "value": "#c9d2e2",
+        "source": "src/app/globals.css"
+      },
+      "--text-on-primary": {
+        "value": "#ffffff",
+        "source": "src/app/globals.css"
+      },
+      "--portal-muted": {
+        "value": "#c9d2e2",
+        "source": "src/app/globals.css"
+      },
+      "--portal-accent": {
+        "value": "#c99c3b",
+        "source": "src/app/globals.css"
+      },
+      "--fc-border-color": {
+        "value": "var(--portal-line)",
+        "source": "src/app/globals.css"
+      },
+      "--fc-page-bg-color": {
+        "value": "var(--portal-surface)",
+        "source": "src/app/globals.css"
+      },
+      "--fc-neutral-bg-color": {
+        "value": "var(--portal-surface-soft)",
+        "source": "src/app/globals.css"
+      },
+      "--fc-today-bg-color": {
+        "value": "rgba(214, 62, 92, 0.22)",
+        "source": "src/app/globals.css"
+      },
+      "--fc-list-event-hover-bg-color": {
+        "value": "var(--portal-surface-soft)",
+        "source": "src/app/globals.css"
+      }
+    },
+    "typography": {
+      "--text": {
+        "value": "#f4f6fb",
+        "source": "src/app/globals.css"
+      },
+      "--font-display": {
+        "value": "\"Romanesco\", \"Palatino Linotype\", Georgia, serif",
+        "source": "src/app/globals.css"
+      },
+      "--font-body": {
+        "value": "\"Crimson Text\", \"Noto Sans\", \"Noto Sans SC\", \"Noto Sans JP\", \"Noto Sans Arabic\", Georgia, serif",
+        "source": "src/app/globals.css"
+      },
+      "--font-script": {
+        "value": "\"Playball\", \"Brush Script MT\", cursive",
+        "source": "src/app/globals.css"
+      },
+      "--fc-small-font-size": {
+        "value": "0.72rem",
+        "source": "src/app/globals.css"
+      }
+    },
+    "spacing": {},
+    "radius": {
+      "--radius-sm": {
+        "value": "12px",
+        "source": "src/app/globals.css"
+      },
+      "--radius-md": {
+        "value": "20px",
+        "source": "src/app/globals.css"
+      },
+      "--radius-lg": {
+        "value": "28px",
+        "source": "src/app/globals.css"
+      },
+      "--radius-xl": {
+        "value": "36px",
+        "source": "src/app/globals.css"
+      }
+    },
+    "shadows": {
+      "--shadow-glass": {
+        "value": "0 8px 32px rgba(9, 31, 54, 0.4), 0 2px 8px rgba(9, 31, 54, 0.24)",
+        "source": "src/app/globals.css"
+      },
+      "--shadow-liquid": {
+        "value": "0 8px 32px rgba(9, 31, 54, 0.32), 0 1px 2px rgba(9, 31, 54, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+        "source": "src/app/globals.css"
+      }
+    },
+    "motion": {},
+    "density": "unknown"
+  },
+  "components": {
+    "installed": [
+      "glass"
+    ],
+    "preferredPrimitives": [],
+    "patterns": []
+  },
+  "constraints": {
+    "must": [],
+    "avoid": []
+  },
+  "decisions": [
+    {
+      "decision": "Use a muted cream palette for light-mode public and portal backgrounds while preserving the established navy and gold brand accents.",
+      "source": "User request, 2026-11-15"
+    }
+  ],
+  "evidence": [
+    {
+      "fact": "components.installed",
+      "source": "src/components/ui"
+    },
+    {
+      "fact": "design.colorMode:light-and-dark",
+      "source": "src/app/globals.css"
+    },
+    {
+      "fact": "design.tokens",
+      "source": "src/app/globals.css"
+    },
+    {
+      "fact": "project.instructions",
+      "source": "AGENTS.md"
+    },
+    {
+      "fact": "project.stack:nextjs",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:react",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:tailwind-v4",
+      "source": "package.json"
+    }
+  ],
+  "generatedAt": "2026-11-15T10:11:36.791Z"
+}

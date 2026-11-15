@@ -9,6 +9,7 @@ const primaryLinks = [
   { href: "/", label: "Home" },
   { href: "/courses", label: "Courses" },
   { href: "/services", label: "Services" },
+  { href: "/dla-opportunities", label: "DLA_Opportunities" },
   { href: "/apply", label: "Apply" },
   { href: "/contact", label: "Contact" },
 ];

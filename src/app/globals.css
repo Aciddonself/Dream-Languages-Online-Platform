@@ -21,13 +21,13 @@
   --danger: #cf2e2e;
   --info: #174c7d;
 
-  --bg: #f1f2f8;
-  --bg-2: #e4e6f2;
-  --surface: rgba(255, 255, 255, 0.55);
-  --surface-strong: rgba(255, 255, 255, 0.78);
-  --surface-solid: #f1f2f8;
-  --border: rgba(255, 255, 255, 0.45);
-  --border-strong: rgba(8, 38, 74, 0.14);
+  --bg: #e9e1d2;
+  --bg-2: #ddd3c3;
+  --surface: rgba(244, 237, 223, 0.76);
+  --surface-strong: rgba(247, 241, 230, 0.92);
+  --surface-solid: #eee7d8;
+  --border: rgba(123, 98, 54, 0.18);
+  --border-strong: rgba(8, 38, 74, 0.2);
   --text: #08264a;
   --text-muted: #53667e;
   --text-on-primary: #08264a;
@@ -261,10 +261,10 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; }
 .ambient-word-four { top: 68%; right: 20%; animation-delay: -11s; }
 .light .mesh-bg {
   background:
-    radial-gradient(ellipse at 12% 18%, rgba(23, 69, 111, 0.13), transparent 38%),
-    radial-gradient(ellipse at 92% 15%, rgba(201, 156, 59, 0.18), transparent 34%),
-    radial-gradient(ellipse at 53% 102%, rgba(53, 97, 137, 0.12), transparent 42%),
-    linear-gradient(135deg, #f4f2eb, #e9edf2 52%, #f5f1e5);
+    radial-gradient(ellipse at 12% 18%, rgba(23, 69, 111, 0.1), transparent 38%),
+    radial-gradient(ellipse at 92% 15%, rgba(201, 156, 59, 0.14), transparent 34%),
+    radial-gradient(ellipse at 53% 102%, rgba(53, 97, 137, 0.09), transparent 42%),
+    linear-gradient(135deg, #ede6d7, #e5dccb 52%, #ece3d1);
 }
 .light .ambient-word { color: rgba(8, 38, 74, 0.055); }
 
@@ -560,16 +560,16 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; }
 
 /* Portal workspace */
 .portal-shell {
-  --portal-surface: #fff;
-  --portal-surface-soft: #f6f8fb;
-  --portal-line: #e9edf3;
+  --portal-surface: #f1eadb;
+  --portal-surface-soft: #e8dfce;
+  --portal-line: #d8cbb2;
   --portal-ink: #202a3b;
   --portal-muted: #5b6678;
   --portal-accent: #c99c3b;
   display: flex;
   min-height: 100vh;
   color: var(--portal-ink);
-  background: #f5f7fa;
+  background: #e5dccb;
 }
 .dark .portal-shell {
   --portal-surface: #25407a;
