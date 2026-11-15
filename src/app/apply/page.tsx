@@ -5,7 +5,7 @@ import { departments } from "@/db/schema";
 import { asc } from "drizzle-orm";
 import { DEFAULT_DEPARTMENTS } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function ApplyPage({
   searchParams,

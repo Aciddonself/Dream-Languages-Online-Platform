@@ -30,4 +30,3 @@ export async function PUT(request: Request) {
   revalidatePath("/");
   return NextResponse.json({ ok: true, links: parsed.data.links });
 }
-

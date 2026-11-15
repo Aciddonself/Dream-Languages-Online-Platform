@@ -2,7 +2,7 @@ import Link from "next/link";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { getPublicDepartments } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function DepartmentsPage() {
   const depts = await getPublicDepartments();

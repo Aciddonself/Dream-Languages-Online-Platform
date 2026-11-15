@@ -19,7 +19,13 @@ const linkSchema = z.object({
 }).strict();
 
 export async function getTikTokLinks(): Promise<TikTokLinks> {
-  const [setting] = await db.select({ value: settings.value }).from(settings).where(eq(settings.key, "public_tiktok_links")).limit(1);
-  const parsed = z.array(linkSchema).length(2).safeParse(setting?.value);
-  return parsed.success ? parsed.data : [...DEFAULT_TIKTOK_LINKS];
+  try {
+    const [setting] = await db.select({ value: settings.value }).from(settings).where(eq(settings.key, "public_tiktok_links")).limit(1);
+    const parsed = z.array(linkSchema).length(2).safeParse(setting?.value);
+    return parsed.success ? parsed.data : [...DEFAULT_TIKTOK_LINKS];
+  } catch (error) {
+    // Public pages must remain renderable when the database is cold or unreachable.
+    console.warn("TikTok links DB fetch error; using defaults:", error);
+    return [...DEFAULT_TIKTOK_LINKS];
+  }
 }
