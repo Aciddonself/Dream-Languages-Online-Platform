@@ -11,9 +11,11 @@ type DepartmentOption = { id: string; name: string };
 export function ApplyForm({
   departments,
   initialDepartmentId = "",
+  requestedIntake,
 }: {
   departments: DepartmentOption[];
   initialDepartmentId?: string;
+  requestedIntake: string;
 }) {
   const [selectedDeptId, setSelectedDeptId] = useState(initialDepartmentId);
   const [isInternational, setIsInternational] = useState(false);
@@ -72,6 +74,10 @@ export function ApplyForm({
 
   return (
     <form onSubmit={submit} className="space-y-3">
+      <input type="hidden" name="requestedIntake" value={requestedIntake} />
+      <p className="rounded-xl border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/10 px-4 py-3 font-semibold" role="status">
+        Intake requested: {requestedIntake}. Your place is confirmed after the admissions team reviews your application.
+      </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <GlassInput name="firstName" placeholder="First name" required maxLength={100} />
         <GlassInput name="lastName" placeholder="Last name" required maxLength={100} />

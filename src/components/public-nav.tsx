@@ -22,6 +22,7 @@ const secondaryLinks = [
   { href: "/blog", label: "News" },
   { href: "/timetable", label: "Timetable" },
   { href: "/classes-2027", label: "Classes 2027" },
+  { href: "/apply?intake=next", label: "Book next intake" },
   { href: "/testimonials", label: "Reviews" },
   { href: "/volunteer", label: "Teach with us" },
 ];
@@ -95,7 +96,7 @@ export function PublicNav() {
             <Link
               key={link.href}
               href={link.href}
-              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all duration-200 ${isActive(link.href) ? "bg-[var(--brand-primary)] text-[var(--text-on-primary)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10 hover:scale-105"}`}
+              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all duration-200 ${link.href.includes("intake=next") ? "site-nav-booking" : isActive(link.href) ? "bg-[var(--brand-primary)] text-[var(--text-on-primary)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10 hover:scale-105"}`}
               onClick={() => setOpen(false)}
             >
               {link.label}
@@ -116,7 +117,7 @@ export function PublicNav() {
                   onClick={() => setOpen(false)}
                 >
                   <span className="site-menu-index">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="site-menu-label">
+                  <span className={`site-menu-label${link.href.includes("intake=next") ? " site-menu-booking-label" : ""}`}>
                     <strong>{link.label}</strong>
                   </span>
                   <ArrowUpRight className="site-menu-arrow" size={20} />

@@ -119,9 +119,9 @@ export default async function DepartmentDetailPage({
                 `Master ${department.name} with certified language instructors, immersive speaking sessions, and live Google Meet classes at Dream Languages Uganda.`}
             </p>
             <div className="flex flex-wrap gap-3 pt-3">
-              <Link href={`/apply?dept=${encodeURIComponent(department.id)}`}>
+              <Link href={`/apply?dept=${encodeURIComponent(department.id)}&intake=next`}>
                 <GlassButton className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold">
-                  Apply for {department.name}
+                  Book {department.name} for the Next Intake
                 </GlassButton>
               </Link>
               <Link href="/courses">
@@ -175,8 +175,8 @@ export default async function DepartmentDetailPage({
               {deptClasses.map((c) => (
                 <li key={c.id} className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
                   <span className="font-semibold text-white">{c.name}</span>
-                  <Link href={`/apply?dept=${encodeURIComponent(department.id)}`} className="text-xs text-indigo-400 hover:underline">
-                    Enrol →
+                  <Link href={`/apply?dept=${encodeURIComponent(department.id)}&intake=next`} className="text-xs text-indigo-400 hover:underline">
+                    Book Now →
                   </Link>
                 </li>
               ))}
@@ -222,9 +222,9 @@ export default async function DepartmentDetailPage({
           Submit your admission details in 2 minutes. Receive your student registration number and access your live Google Meet classes.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link href={`/apply?dept=${encodeURIComponent(department.id)}`}>
+          <Link href={`/apply?dept=${encodeURIComponent(department.id)}&intake=next`}>
             <GlassButton className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold">
-              Submit Application for {department.name}
+              Book for the Next Intake
             </GlassButton>
           </Link>
           <Link href="/courses">

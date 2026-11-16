@@ -125,6 +125,7 @@ export const users = pgTable(
     studyFormat: varchar("study_format", { length: 32 }),
     studyDurationMonths: integer("study_duration_months"),
     studyMode: varchar("study_mode", { length: 16 }),
+    requestedIntake: varchar("requested_intake", { length: 64 }),
     isInternational: boolean("is_international").default(false).notNull(),
     registrationNumber: varchar("registration_number", { length: 64 }).unique(),
     departmentId: uuid("department_id"),

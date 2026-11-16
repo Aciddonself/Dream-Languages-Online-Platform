@@ -94,7 +94,7 @@ export function upcomingEvents(today: Date): Upcoming[] {
 }
 
 export function nextIntakeIndex(today: Date) {
-  const found = intakes.findIndex((i) => i.end >= today);
+  const found = intakes.findIndex((i) => i.start >= today);
   return found === -1 ? intakes.length - 1 : found;
 }
 

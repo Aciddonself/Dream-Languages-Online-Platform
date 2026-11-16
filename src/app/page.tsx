@@ -49,7 +49,7 @@ export default async function HomePage() {
             </ul>
             <p className="mt-4 font-semibold max-w-xl">Join hundreds of students already building their future with DLA. Your first lesson could be this week.</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/apply"><GlassButton>Apply Now</GlassButton></Link>
+              <Link href="/apply?intake=next"><GlassButton>Book Now</GlassButton></Link>
               <Link href="/courses"><GlassButton variant="glass">Explore Courses</GlassButton></Link>
             </div>
           </div>

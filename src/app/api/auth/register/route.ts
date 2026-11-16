@@ -26,6 +26,7 @@ const schema = z.object({
   studyFormat: z.enum(["regular", "intensive", "super_intensive"]).optional(),
   studyDurationMonths: z.coerce.number().int().min(1).max(2).optional(),
   studyMode: z.enum(["physical", "online"]).optional(),
+  requestedIntake: z.string().trim().max(64).optional(),
   isInternational: z.boolean().optional(),
 });
 
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
       studyFormat: form.get("studyFormat"),
       studyDurationMonths: form.get("studyDurationMonths"),
       studyMode: form.get("studyMode"),
+      requestedIntake: form.get("requestedIntake"),
       isInternational: form.get("isInternationalValue") === "true",
     };
   } catch {
@@ -86,7 +88,7 @@ export async function POST(request: Request) {
   const {
     email, firstName, lastName, phone, departmentId, address, dateOfBirth, nationality,
     nextOfKinName, nextOfKinRelationship, nextOfKinPhone, nextOfKinAddress, studyFormat,
-    studyDurationMonths, studyMode, isInternational,
+    studyDurationMonths, studyMode, requestedIntake, isInternational,
   } = parsed.data;
   const avatarStorageKey = `${randomUUID()}${photoExtensions[photo.type]}`;
   await storeStudentPhoto(avatarStorageKey, photoBytes);
@@ -112,6 +114,7 @@ export async function POST(request: Request) {
       studyFormat: studyFormat || null,
       studyDurationMonths: studyDurationMonths || null,
       studyMode: studyMode || null,
+      requestedIntake: requestedIntake || null,
       isInternational: isInternational ?? false,
       avatarUrl: avatarStorageKey ? "/api/portal/profile-photo" : null,
       avatarStorageKey,

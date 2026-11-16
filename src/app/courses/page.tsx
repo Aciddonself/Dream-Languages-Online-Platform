@@ -44,8 +44,8 @@ export default async function CoursesPage() {
               <Link href={`/departments/${d.code.toLowerCase()}`} className="text-indigo-400 hover:text-indigo-300">
                 View Curriculum →
               </Link>
-              <Link href={`/apply?dept=${encodeURIComponent(d.id)}`} className="text-[var(--brand-primary)] hover:underline">
-                Apply Now →
+              <Link href={`/apply?dept=${encodeURIComponent(d.id)}&intake=next`} className="text-[var(--brand-primary)] hover:underline">
+                Book Now →
               </Link>
             </div>
           </GlassCard>
@@ -72,25 +72,28 @@ export default async function CoursesPage() {
           </tbody></table>
           <p className="mt-2 text-xs opacity-65">International rates are for language study. Contact admissions to confirm the course schedule and payment method.</p>
         </GlassCard>
-        <div className="mt-4"><Link href="/apply" className="btn-glass btn-glass-primary inline-flex rounded-xl px-5 py-3 font-semibold">Choose a language and apply</Link></div>
+        <div className="mt-4"><Link href="/apply?intake=next" className="btn-glass btn-glass-primary inline-flex rounded-xl px-5 py-3 font-semibold">Book a language course for the next intake</Link></div>
       </section>
       <section className="mt-12 grid gap-4 md:grid-cols-2">
         <GlassCard className="p-6">
           <h2 className="display-font text-2xl font-bold mb-2">Communication skills</h2>
           <p className="text-sm opacity-75">Build confidence for everyday and professional communication. Learners practise listening, clear speaking, vocabulary, pronunciation, reading comprehension, writing, presentations, and respectful conversation in guided activities.</p>
           <p className="mt-3 text-sm opacity-70">Contact admissions for current intake dates, study format, and fees.</p>
+          <Link href="/apply?intake=next" className="btn-glass btn-glass-primary mt-4 inline-flex rounded-xl px-5 py-3 font-semibold">Book Now for the Next Intake</Link>
         </GlassCard>
         <GlassCard className="p-6">
           <h2 className="display-font text-2xl font-bold mb-2">Basic computer studies and MS Office</h2>
           <p className="text-sm opacity-75">A practical three-month programme: Month 1, computer fundamentals and file management; Month 2, Microsoft Word and PowerPoint; Month 3, Microsoft Excel, internet safety, and useful digital workflows.</p>
           <p className="mt-3 font-semibold">UGX 500,000 per month · UGX 1,500,000 for three months</p>
           <p className="mt-2 text-sm opacity-70">Available in-person or online. Online learners need a computer or laptop (not a phone), stable internet, and a quiet study environment.</p>
+          <Link href="/apply?intake=next" className="btn-glass btn-glass-primary mt-4 inline-flex rounded-xl px-5 py-3 font-semibold">Book Now for the Next Intake</Link>
         </GlassCard>
         <GlassCard className="p-6 md:col-span-2">
           <h2 className="display-font text-2xl font-bold mb-2">Web development, design &amp; programming</h2>
           <p className="text-sm opacity-75">Learn to build and style websites, create responsive interfaces, and develop programming foundations through practical projects. Topics include HTML, CSS, JavaScript, React, and Python. Contact admissions to discuss the right pathway, schedule, and fees.</p>
           <div className="mt-4 flex flex-wrap gap-2">{["HTML", "CSS", "JavaScript", "React", "Python", "Web design"].map((skill) => <span key={skill} className="rounded-full border border-white/15 px-3 py-1 text-sm">{skill}</span>)}</div>
           <p className="mt-3 text-sm opacity-70">Online classes require a computer or laptop, stable internet, and a quiet learning space.</p>
+          <Link href="/apply?intake=next" className="btn-glass btn-glass-primary mt-4 inline-flex rounded-xl px-5 py-3 font-semibold">Book Now for the Next Intake</Link>
         </GlassCard>
       </section>
       <section className="mt-12">
