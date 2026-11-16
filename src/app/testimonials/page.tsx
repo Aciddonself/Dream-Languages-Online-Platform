@@ -15,7 +15,12 @@ export default async function TestimonialsPage() {
         Have you learned with DLA or been part of our community? Share your experience. Each review is checked by the DLA team before it appears here.
         <Link href="/student/reviews" className="liquid-link ml-1 rounded-full border border-transparent px-2 py-1 font-semibold">Current students can also review from their dashboard.</Link>
       </p>
-      <GlassCard className="mb-8 p-5 md:p-6" strong>
+      <div className="mb-5">
+        <a href="#write-review" className="btn-glass btn-glass-primary inline-flex min-h-11 items-center rounded-xl px-5 py-2.5 font-bold">
+          Write a review
+        </a>
+      </div>
+      <GlassCard id="write-review" className="mb-8 scroll-mt-6 p-5 md:p-6" strong>
         <h2 className="mb-1 text-2xl font-bold">Share your DLA experience</h2>
         <p className="mb-4 text-sm">Your honest feedback helps future learners choose the right path.</p>
         <PublicReviewForm />
