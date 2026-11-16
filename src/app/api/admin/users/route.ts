@@ -153,8 +153,9 @@ export async function PATCH(req: Request) {
     }),
   ]).safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  const action = parsed.data;
 
-  if (parsed.data.action === "archive_others") {
+  if (action.action === "archive_others") {
     const archived = await db.transaction(async (tx: any) => {
       const accounts = await tx.update(users)
         .set({ status: "archived", deletedAt: new Date(), updatedAt: new Date() })
@@ -182,11 +183,11 @@ export async function PATCH(req: Request) {
     }, { status: failedBans ? 502 : 200 });
   }
 
-  if (parsed.data.action === "set_password") {
-    if (parsed.data.userId === actor.id) {
+  if (action.action === "set_password") {
+    if (action.userId === actor.id) {
       return NextResponse.json({ error: "Use administrator password recovery to change your own password" }, { status: 403 });
     }
-    const { password, userId } = parsed.data;
+    const { password, userId } = action;
     const passwordProblem = await validateNewPassword(password);
     if (passwordProblem) return NextResponse.json({ error: passwordProblem }, { status: 400 });
     const [account] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -206,13 +207,13 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (parsed.data.action === "set_status") {
-    const status = parsed.data.status;
-    if (parsed.data.userId === actor.id) {
+  if (action.action === "set_status") {
+    const status = action.status;
+    if (action.userId === actor.id) {
       return NextResponse.json({ error: "Administrators cannot change or disable their own account from user management" }, { status: 403 });
     }
     const outcome = await db.transaction(async (tx: any) => {
-      const [account] = await tx.select().from(users).where(eq(users.id, parsed.data.userId)).limit(1);
+      const [account] = await tx.select().from(users).where(eq(users.id, action.userId)).limit(1);
       if (!account) return { error: "Account not found", status: 404 as const };
       const [updated] = await tx.update(users)
         .set({ status, deletedAt: status === "active" ? null : account.deletedAt, updatedAt: new Date() })
@@ -235,7 +236,7 @@ export async function PATCH(req: Request) {
   }
 
   const outcome = await db.transaction(async (tx: any) => {
-    const [applicant] = await tx.select().from(users).where(eq(users.id, parsed.data.userId)).limit(1);
+    const [applicant] = await tx.select().from(users).where(eq(users.id, action.userId)).limit(1);
     if (!applicant || applicant.role !== "applicant") return { error: "Applicant account not found", status: 404 as const };
     if (!applicant.avatarStorageKey) {
       return { error: "Upload the applicant's passport photo before admitting them as a student.", status: 409 as const };
