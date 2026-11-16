@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "@/db";
@@ -139,6 +139,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 });
   }
   const parsed = z.discriminatedUnion("action", [
+    z.object({ action: z.literal("archive_others"), confirmation: z.literal("ARCHIVE OTHER ACCOUNTS") }),
     z.object({ userId: z.string().uuid(), action: z.literal("admit_applicant") }),
     z.object({
       userId: z.string().uuid(),
@@ -152,6 +153,34 @@ export async function PATCH(req: Request) {
     }),
   ]).safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+
+  if (parsed.data.action === "archive_others") {
+    const archived = await db.transaction(async (tx: any) => {
+      const accounts = await tx.update(users)
+        .set({ status: "archived", deletedAt: new Date(), updatedAt: new Date() })
+        .where(ne(users.id, actor.id))
+        .returning({ id: users.id, authId: users.authId });
+      await tx.insert(auditLogs).values({
+        actorId: actor.id,
+        action: "archive_other_accounts",
+        entityType: "user_directory",
+        after: { archivedCount: accounts.length },
+        ip: clientIp(req),
+      });
+      return accounts;
+    });
+    const authIds = archived.flatMap((account: { authId: string | null }) => account.authId ? [account.authId] : []);
+    const banResults = await Promise.allSettled(authIds.map((authId: string) => syncAuthBan(authId, "archived")));
+    const failedBans = banResults.filter((result) => result.status === "rejected").length;
+    return NextResponse.json({
+      ok: failedBans === 0,
+      archivedCount: archived.length,
+      failedAuthBans: failedBans,
+      message: failedBans
+        ? "Other accounts have been archived in the LMS. Some Auth bans need attention; archived accounts are still blocked by the LMS."
+        : "All other accounts have been archived and can no longer sign in. Their records are retained.",
+    }, { status: failedBans ? 502 : 200 });
+  }
 
   if (parsed.data.action === "set_password") {
     if (parsed.data.userId === actor.id) {
@@ -186,7 +215,7 @@ export async function PATCH(req: Request) {
       const [account] = await tx.select().from(users).where(eq(users.id, parsed.data.userId)).limit(1);
       if (!account) return { error: "Account not found", status: 404 as const };
       const [updated] = await tx.update(users)
-        .set({ status, updatedAt: new Date() })
+        .set({ status, deletedAt: status === "active" ? null : account.deletedAt, updatedAt: new Date() })
         .where(eq(users.id, account.id))
         .returning({ id: users.id, status: users.status, role: users.role });
       await tx.insert(auditLogs).values({

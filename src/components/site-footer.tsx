@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { whatsappContacts } from "@/lib/contacts";
 
 const explore = [
@@ -31,8 +32,7 @@ export function SiteFooter() {
       <div className="site-footer-inner">
         <div className="site-footer-brand">
           <div className="site-footer-brand-head">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/dla-logo.png" alt="" />
+            <Image src="/dla-logo.png" alt="" width={88} height={88} quality={90} />
             <strong>Dream Languages Uganda</strong>
           </div>
           <p>Language learning, adult literacy, and practical skills for every learner.</p>

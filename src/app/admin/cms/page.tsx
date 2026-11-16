@@ -68,7 +68,7 @@ export default async function AdminCms() {
           ))}</div> : <p className="text-sm opacity-65">No news posts have been added yet.</p>}
         </GlassCard>
         <GlassCard className="p-5 lg:col-span-2" strong>
-          <h2 className="font-semibold mb-3">Student reviews/comments awaiting approval ({reviews.filter((review: { published: boolean | null }) => !review.published).length})</h2>
+          <h2 className="font-semibold mb-3">Public reviews awaiting approval ({reviews.filter((review: { published: boolean | null }) => !review.published).length})</h2>
           {reviews.filter((review: { published: boolean | null }) => !review.published).length ? (
             <ul className="space-y-3">{reviews.filter((review: { published: boolean | null }) => !review.published).map((review: { id: string; authorName: string; rating?: number | null; quote: string }) => (
               <li className="rounded-xl border border-white/10 p-3" key={review.id}>

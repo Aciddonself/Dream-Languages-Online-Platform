@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { GlassCard } from "@/components/ui/glass";
 import Link from "next/link";
 import { whatsappContacts } from "@/lib/contacts";
@@ -26,8 +27,7 @@ export default async function CoursesPage() {
         </GlassCard>
       </div>
       <div className="courses-portrait">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/site-media/hero-language-class.jpg" alt="Students taking part in a DLA language class" />
+        <Image src="/site-media/hero-language-class.jpg" alt="Students taking part in a DLA language class" fill quality={90} sizes="100vw" />
       </div>
       <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
         {depts.map((d) => (
@@ -112,8 +112,9 @@ export default async function CoursesPage() {
           ["Confusing German grammar made easy", "language-learning.jpg"],
         ].map(([title, image]) => (
           <GlassCard className="overflow-hidden" key={title}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/site-media/${image}`} alt={title} className="h-48 w-full object-cover" loading="lazy" />
+            <div className="course-photo-frame">
+              <Image src={`/site-media/${image}`} alt={title} fill quality={90} sizes="(max-width: 767px) 100vw, 33vw" />
+            </div>
             <div className="p-4">
               <div className="font-semibold">{title}</div>
               <Link href="/apply" className="mt-3 inline-block text-sm font-semibold text-[var(--brand-secondary-soft)] hover:underline">Ask about enrolment →</Link>

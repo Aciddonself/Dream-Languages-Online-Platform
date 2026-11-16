@@ -11,6 +11,7 @@ import { MailAccessCard } from "@/components/mail-access-card";
 
 const nav = [
   { href: "/hoc", label: "Dashboard", icon: "🏠" },
+  { href: "/hoc/reviews", label: "Public reviews", icon: "⭐" },
   { href: "/hoc/live-classes", label: "Live Classes", icon: "🎥" },
   { href: "/hoc/attendance", label: "Attendance", icon: "✅" },
   { href: "/hoc/timetable", label: "Timetable", icon: "🗓️" },

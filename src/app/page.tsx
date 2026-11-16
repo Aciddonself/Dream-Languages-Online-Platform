@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { CountUpStats } from "@/components/count-up-stats";
 import { TikTokLinks } from "@/components/tiktok-links";
@@ -53,8 +54,14 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="hero-image">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/gallery-5.jpg" alt="DLA students and tutors" style={{ objectPosition: "center top" }} />
+            <Image
+              src="/site-media/hero-language-class.jpg"
+              alt="Learners taking part in a classroom lesson at Dream Languages"
+              fill
+              preload
+              quality={92}
+              sizes="(max-width: 900px) 100vw, 42vw"
+            />
           </div>
           </div>
         </GlassCard>
@@ -77,8 +84,9 @@ export default async function HomePage() {
             { title: "Confusing German grammar made easy", image: "language-learning.jpg", alt: "Learners taking part in a language lesson" },
           ].map((item) => (
             <GlassCard className="overflow-hidden" key={item.image}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/site-media/${item.image}`} alt={item.alt} className="h-52 w-full object-cover" loading="lazy" />
+              <div className="home-learning-image">
+                <Image src={`/site-media/${item.image}`} alt={item.alt} fill quality={90} sizes="(max-width: 767px) 100vw, 33vw" />
+              </div>
               <div className="p-4 font-semibold">{item.title}</div>
             </GlassCard>
           ))}
@@ -186,8 +194,7 @@ export default async function HomePage() {
             { name: "Atrsy", image: "partner-atrsy.png" },
           ].map((partner) => (
             <GlassCard key={partner.name} className="grid min-h-24 min-w-40 place-items-center p-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/site-media/${partner.image}`} alt={partner.name} className="max-h-16 max-w-36 object-contain" loading="lazy" />
+              <Image src={`/site-media/${partner.image}`} alt={partner.name} width={288} height={128} quality={90} className="max-h-16 max-w-36 object-contain" />
             </GlassCard>
           ))}
           {partnerList.map((partner) => <GlassCard key={partner.id} className="px-6 py-4 font-semibold">{partner.name}</GlassCard>)}

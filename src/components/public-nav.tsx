@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 
@@ -55,8 +56,7 @@ export function PublicNav() {
         <div className="site-nav-top">
           <Link href="/" className="site-brand" aria-label="DLA Learning Hub home" onClick={() => setOpen(false)}>
             <span className="site-brand-mark">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/dla-logo.png" alt="DLA Logo" />
+              <Image src="/dla-logo.png" alt="DLA Logo" width={136} height={104} loading="eager" quality={90} />
             </span>
             <span className="site-brand-copy">
               <strong>Dream Languages Uganda</strong>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { GlassCard } from "@/components/ui/glass";
 
 const photographs = [
@@ -22,8 +23,9 @@ export default function GalleryPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {photographs.map((photo) => (
           <GlassCard className="overflow-hidden" key={photo.src}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="h-60 w-full object-cover" src={`/site-media/${photo.src}`} alt={photo.alt} loading="lazy" />
+            <div className="gallery-photo-frame">
+              <Image className="gallery-photo" src={`/site-media/${photo.src}`} alt={photo.alt} fill quality={90} sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw" />
+            </div>
             <div className="p-4 font-semibold">{photo.title}</div>
           </GlassCard>
         ))}

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass";
 import { db } from "@/db";
-import { classes, timetableSessions } from "@/db/schema";
-import { asc, eq, gte } from "drizzle-orm";
+import { classes, schoolHolidays, timetableSessions } from "@/db/schema";
+import { and, asc, eq, gte, sql } from "drizzle-orm";
 import { LEVELS, MODES, SLOTS, range } from "@/lib/classes-2027";
+import { expectedMuslimHolidays } from "@/lib/muslim-holidays";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +14,11 @@ const clock = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minu
 
 export default async function TimetablePage() {
   let sessions: Array<{ id: string; title: string; startsAt: Date; endsAt: Date; room: string | null; className: string | null }> = [];
+  let approvedHolidays: Array<{ id: string; title: string; startsOn: string; endsOn: string | null; details: string | null }> = [];
 
   try {
-    sessions = await db
+    const today = new Intl.DateTimeFormat("sv-SE", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    [sessions, approvedHolidays] = await Promise.all([db
       .select({
         id: timetableSessions.id,
         title: timetableSessions.title,
@@ -28,7 +31,21 @@ export default async function TimetablePage() {
       .leftJoin(classes, eq(timetableSessions.classId, classes.id))
       .where(gte(timetableSessions.endsAt, new Date()))
       .orderBy(asc(timetableSessions.startsAt))
-      .limit(200);
+      .limit(200),
+      db.select({
+        id: schoolHolidays.id,
+        title: schoolHolidays.title,
+        startsOn: schoolHolidays.startsOn,
+        endsOn: schoolHolidays.endsOn,
+        details: schoolHolidays.details,
+      }).from(schoolHolidays)
+        .where(and(
+          eq(schoolHolidays.status, "approved"),
+          sql`COALESCE(${schoolHolidays.endsOn}, ${schoolHolidays.startsOn}) >= ${today}::date`,
+        ))
+        .orderBy(asc(schoolHolidays.startsOn))
+        .limit(100),
+    ]);
   } catch (error) {
     console.warn("Timetable DB fetch error, using fallback:", error);
   }
@@ -38,6 +55,12 @@ export default async function TimetablePage() {
     const key = dayLabel(s.startsAt);
     days.set(key, [...(days.get(key) ?? []), s]);
   }
+  const publishedEidNames = approvedHolidays.map((holiday) => holiday.title.toLowerCase());
+  const upcomingMuslimHolidays = expectedMuslimHolidays.filter((holiday) => {
+    const inFuture = holiday.startsOn >= new Intl.DateTimeFormat("sv-SE", { timeZone: TZ }).format(new Date());
+    const alreadyPublished = publishedEidNames.some((title) => title.includes(holiday.matchTitle.toLowerCase()));
+    return inFuture && !alreadyPublished;
+  });
 
   return (
     <main className="min-h-screen px-6 py-10 max-w-5xl mx-auto space-y-10">
@@ -69,6 +92,26 @@ export default async function TimetablePage() {
         ) : (
           <GlassCard className="p-6"><p className="opacity-70">No sessions are scheduled right now. The regular class times are below.</p></GlassCard>
         )}
+      </section>
+
+      <section aria-labelledby="holidays">
+        <h2 id="holidays" className="text-2xl mb-3">Upcoming holidays and observances</h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          {approvedHolidays.map((holiday) => (
+            <GlassCard className="p-5" key={holiday.id}>
+              <h3 className="font-bold">{holiday.title}</h3>
+              <p className="mt-1 text-sm">{dayLabel(new Date(`${holiday.startsOn}T12:00:00+03:00`))}{holiday.endsOn && holiday.endsOn !== holiday.startsOn ? ` to ${dayLabel(new Date(`${holiday.endsOn}T12:00:00+03:00`))}` : ""}</p>
+              {holiday.details && <p className="mt-2 text-sm">{holiday.details}</p>}
+            </GlassCard>
+          ))}
+          {upcomingMuslimHolidays.map((holiday) => (
+            <GlassCard className="p-5" key={holiday.title}>
+              <h3 className="font-bold">{holiday.title}</h3>
+              <p className="mt-1 text-sm">Expected {dayLabel(new Date(`${holiday.startsOn}T12:00:00+03:00`))}</p>
+              <p className="mt-2 text-sm">Estimated date. The final date may shift with the moon sighting and Uganda Government announcement.</p>
+            </GlassCard>
+          ))}
+        </div>
       </section>
 
       <section aria-labelledby="regular">

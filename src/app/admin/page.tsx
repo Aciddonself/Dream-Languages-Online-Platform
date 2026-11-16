@@ -4,7 +4,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { db } from "@/db";
 import { auditLogs, users, departments } from "@/db/schema";
-import { and, count, desc, eq, gte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { formatSchoolDateTime } from "@/lib/school-time";
 import { MailAccessCard } from "@/components/mail-access-card";
 
@@ -28,14 +28,14 @@ export default async function AdminDashboard() {
   await requireRole(["super_admin"]);
   const monthWindowStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 11, 1));
   const [[studentCount], [teacherCount], [applicantCount], [financeCount], depts, monthlyStudentRows, recentActivity] = await Promise.all([
-    db.select({ c: count() }).from(users).where(eq(users.role, "student")),
-    db.select({ c: count() }).from(users).where(eq(users.role, "teacher")),
-    db.select({ c: count() }).from(users).where(eq(users.role, "applicant")),
-    db.select({ c: count() }).from(users).where(eq(users.role, "finance")),
+    db.select({ c: count() }).from(users).where(and(eq(users.role, "student"), inArray(users.status, ["active", "registered", "applicant"]))),
+    db.select({ c: count() }).from(users).where(and(eq(users.role, "teacher"), inArray(users.status, ["active", "registered", "applicant"]))),
+    db.select({ c: count() }).from(users).where(and(eq(users.role, "applicant"), inArray(users.status, ["active", "registered", "applicant"]))),
+    db.select({ c: count() }).from(users).where(and(eq(users.role, "finance"), inArray(users.status, ["active", "registered", "applicant"]))),
     db.select().from(departments),
     db.select({ month: sql<string>`to_char(${users.createdAt}, 'YYYY-MM')`, total: count() })
       .from(users)
-      .where(and(eq(users.role, "student"), gte(users.createdAt, monthWindowStart)))
+      .where(and(eq(users.role, "student"), inArray(users.status, ["active", "registered", "applicant"]), gte(users.createdAt, monthWindowStart)))
       .groupBy(sql`to_char(${users.createdAt}, 'YYYY-MM')`),
     db.select({ action: auditLogs.action, entityType: auditLogs.entityType, createdAt: auditLogs.createdAt, actorName: users.displayName })
       .from(auditLogs)

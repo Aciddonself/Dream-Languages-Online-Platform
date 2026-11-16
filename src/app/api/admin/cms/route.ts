@@ -127,7 +127,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
+  if (actor.role !== "super_admin" && actor.role !== "head_academics") return NextResponse.json({ error: "Administrator or Head of Academics access required" }, { status: 403 });
   const limit = await rateLimit("admin-cms", actor.id, 30, "1 m");
   if (!limit.ok) return tooManyRequests(limit.retryAfter);
   let body: unknown;
@@ -138,6 +138,9 @@ export async function PATCH(request: Request) {
   }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (actor.role === "head_academics" && parsed.data.action !== "approve_review" && parsed.data.action !== "reject_review") {
+    return NextResponse.json({ error: "Head of Academics can only review and moderate testimonials here." }, { status: 403 });
+  }
   if (parsed.data.action === "save_page") {
     if (detectPhoneOrHandle(`${parsed.data.title} ${parsed.data.body}`).blocked) {
       return NextResponse.json({ error: "Public content cannot contain personal phone numbers or external contact handles." }, { status: 400 });
@@ -224,6 +227,7 @@ export async function PATCH(request: Request) {
     before: { published: review.published },
     after: { published },
   });
+  revalidatePath("/testimonials");
   revalidateTag("public-content", "max");
   return NextResponse.json({ ok: true, published });
 }

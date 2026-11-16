@@ -4,12 +4,13 @@ import { requireRole } from "@/lib/rbac";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { AdminUserCreate } from "@/components/admin-user-create";
+import { AdminUserArchiveOthers } from "@/components/admin-user-archive-others";
 import { AdminApplicantPromote } from "@/components/admin-applicant-promote";
 import { AdminUserStatus } from "@/components/admin-user-status";
 import { AdminUserCredentials } from "@/components/admin-user-credentials";
 import { AdminStudentPhotoControl } from "@/components/admin-student-photo-control";
 import { StudentDocumentStampControl } from "@/components/student-document-stamp-control";
-import { and, asc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, eq, ilike, isNull, ne, or } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 
@@ -20,13 +21,16 @@ const nav = [
   { href: "/admin/users", label: "Users", icon: "👥" },
 ];
 
-export default async function AdminUsers({ searchParams }: { searchParams: Promise<{ q?: string; role?: string }> }) {
+export default async function AdminUsers({ searchParams }: { searchParams: Promise<{ q?: string; role?: string; archived?: string }> }) {
   const actor = await requireRole(["super_admin"]);
-  const { q = "", role = "" } = await searchParams;
+  const { q = "", role = "", archived } = await searchParams;
+  const includeArchived = archived === "1";
   const term = q.trim().slice(0, 80);
   const filters = [
+    includeArchived ? undefined : isNull(users.deletedAt),
     term ? or(ilike(users.registrationNumber, `%${term}%`), ilike(users.displayName, `%${term}%`), ilike(users.email, `%${term}%`)) : undefined,
     role ? eq(users.role, role as typeof users.$inferSelect.role) : undefined,
+    includeArchived ? undefined : ne(users.status, "archived"),
   ].filter(Boolean);
   const all = await db
     .select({
@@ -51,10 +55,21 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
     .orderBy(asc(users.registrationNumber), asc(users.createdAt));
   return (
     <PortalShell title="User Management" nav={nav}>
-      <h1 className="display-font text-2xl font-bold mb-4">Users</h1>
+      <h1 className="display-font text-2xl font-bold mb-4">User accounts</h1>
       <GlassCard className="p-4 mb-4 space-y-4">
-        <div className="text-sm opacity-70">{all.length} user{all.length === 1 ? "" : "s"}{term || role ? " matching your filter" : ""}</div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm">{all.length} {includeArchived ? "account" : "active account"}{all.length === 1 ? "" : "s"}{term || role ? " matching your filter" : ""}</p>
+          <Link href={includeArchived ? "/admin/users" : "/admin/users?archived=1"} className="font-semibold underline underline-offset-4">
+            {includeArchived ? "Hide archived accounts" : "Show archived accounts"}
+          </Link>
+        </div>
+        <div className="rounded-xl border border-[var(--border-strong)] p-4">
+          <h2 className="mb-2 font-bold">Account access reset</h2>
+          <p className="mb-3 text-sm">Archive everyone except the super admin signed in now. Archived users can no longer sign in. Their learning, payment, and attendance history is retained, and archived accounts can be reactivated individually.</p>
+          <AdminUserArchiveOthers />
+        </div>
         <form method="get" className="flex flex-wrap gap-2">
+          {includeArchived && <input type="hidden" name="archived" value="1" />}
           <input name="q" defaultValue={term} placeholder="Search registration no. (e.g. DLA/2026/REG/0001), name or email" className="glass min-w-0 flex-1 px-4 py-2.5 outline-none" />
           <select name="role" defaultValue={role} className="glass px-3 py-2.5">
             <option value="">All roles</option>
@@ -66,7 +81,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
             <option value="super_admin">Administrator</option>
           </select>
           <button type="submit" className="glass px-4 py-2.5 font-semibold">Filter</button>
-          {(term || role) && <Link href="/admin/users" className="glass px-4 py-2.5">Clear</Link>}
+          {(term || role) && <Link href={includeArchived ? "/admin/users?archived=1" : "/admin/users"} className="glass px-4 py-2.5">Clear filters</Link>}
         </form>
         <AdminUserCreate />
       </GlassCard>

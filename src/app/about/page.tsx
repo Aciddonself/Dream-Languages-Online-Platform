@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { GlassCard } from "@/components/ui/glass";
 export default function AboutPage() {
   return (
@@ -10,8 +11,9 @@ export default function AboutPage() {
           <h2 className="text-xl font-semibold">Our Mission</h2>
           <p>To provide accessible and quality adult education and language training that empowers individuals to achieve their personal and professional goals, enhance their knowledge and skills, and contribute to their communities.</p>
         </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/site-media/dla-about.jpg" alt="Learners taking part in a DLA class" className="h-full min-h-64 w-full rounded-2xl object-cover" />
+        <div className="about-feature-image">
+          <Image src="/site-media/dla-about.jpg" alt="Learners taking part in a DLA class" fill quality={90} sizes="(max-width: 767px) 100vw, 50vw" />
+        </div>
       </GlassCard>
       <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
@@ -21,8 +23,9 @@ export default function AboutPage() {
           ["Hildburg", "teacher-hildburg.jpg"],
         ].map(([name, image]) => (
           <GlassCard className="overflow-hidden" key={name}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/site-media/${image}`} alt={name} className="h-56 w-full object-cover" loading="lazy" />
+            <div className="people-photo-frame">
+              <Image src={`/site-media/${image}`} alt={name} fill quality={90} sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 25vw" />
+            </div>
             <div className="p-4 font-semibold">{name}</div>
           </GlassCard>
         ))}
