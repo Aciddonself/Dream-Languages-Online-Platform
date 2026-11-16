@@ -41,8 +41,12 @@ export async function POST(req: Request) {
   // Per-account lockout: repeated failures slow attackers down without revealing which emails exist.
   const byEmail = await rateLimit("login-email", email, 5, "15 m");
   if (!byEmail.ok) return tooManyRequests(byEmail.retryAfter);
-  if (!await verifyTurnstile(turnstileToken, ip)) {
-    return NextResponse.json({ error: "CAPTCHA verification failed" }, { status: 400 });
+  const captchaResult = await verifyTurnstile(turnstileToken);
+  if (!captchaResult.ok) {
+    if (captchaResult.reason === "not_configured" || captchaResult.reason === "provider_unavailable") {
+      return NextResponse.json({ error: "Sign-in security verification is temporarily unavailable. Please try again later." }, { status: 503 });
+    }
+    return NextResponse.json({ error: captchaResult.reason === "missing_token" ? "Complete the security check and try again." : "CAPTCHA verification failed. Complete a new security check and try again." }, { status: 400 });
   }
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
