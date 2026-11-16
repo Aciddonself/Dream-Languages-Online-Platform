@@ -15,7 +15,7 @@ export default function TermsOfServicePage() {
         <h2 className="font-bold text-base">Termination</h2>
         <p>DLA reserves the right to suspend or terminate accounts that violate these terms or school policies.</p>
         <h2 className="font-bold text-base">Contact</h2>
-        <p>For questions, contact DLA at info@dreamlanguagesug.com or visit our Contact page.</p>
+        <p>For questions, contact DLA at info@dreamlanguagesug.online or visit our Contact page.</p>
       </GlassCard>
     </main>
   );

@@ -20,7 +20,7 @@ function buildCsp() {
     `script-src ${script.join(" ")}`,
     "script-src-attr 'none'",
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob: https://www.dreamlanguagesug.com https://dreamlanguagesug.com ${supabase}`.trim(),
+    `img-src 'self' data: blob: https://www.dreamlanguagesug.online https://dreamlanguagesug.online ${supabase}`.trim(),
     "font-src 'self' data:",
     `connect-src ${connect.join(" ")}`,
     "frame-src https://challenges.cloudflare.com",

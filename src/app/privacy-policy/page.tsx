@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
         <h2 className="font-bold text-base">Your Rights</h2>
         <p>You have the right to access, correct, or request deletion of your personal data. Use our Data Deletion Request form.</p>
         <h2 className="font-bold text-base">Contact</h2>
-        <p>Data Protection Officer: privacy@dreamlanguagesug.com</p>
+        <p>For data protection enquiries, contact DLA at info@dreamlanguagesug.online.</p>
       </GlassCard>
     </main>
   );

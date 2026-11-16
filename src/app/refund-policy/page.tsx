@@ -13,7 +13,7 @@ export default function RefundPolicyPage() {
         <h2 className="font-bold text-base">Process</h2>
         <p>To request a refund, contact the Finance office with your registration number and payment receipt. Refunds are processed within 14 business days.</p>
         <h2 className="font-bold text-base">Contact</h2>
-        <p>Finance office: finance@dreamlanguagesug.com</p>
+        <p>Finance office: please contact us at info@dreamlanguagesug.online with your registration number and payment receipt.</p>
       </GlassCard>
     </main>
   );

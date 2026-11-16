@@ -75,7 +75,7 @@ export function SiteFooter() {
         </div>
         <div className="site-footer-bottom">
           <span>© Dream Languages And Adult Literacy Uganda Limited. All rights reserved.</span>
-          <span>Kampala, Uganda · info@dreamlanguagesug.com · Reg. No. DLA-UG-001</span>
+          <span>Kampala, Uganda · info@dreamlanguagesug.online · Reg. No. DLA-UG-001</span>
         </div>
       </div>
     </footer>

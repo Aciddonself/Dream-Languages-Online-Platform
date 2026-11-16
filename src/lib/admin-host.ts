@@ -2,7 +2,7 @@ import "server-only";
 
 const isProd = process.env.NODE_ENV === "production";
 
-/** Hostname dedicated to administrator sign-in, e.g. admin.dreamlanguagesug.com. */
+/** Hostname dedicated to administrator sign-in, e.g. admin.dreamlanguagesug.online. */
 export function adminHost() {
   return (process.env.ADMIN_HOST ?? "").trim().toLowerCase();
 }

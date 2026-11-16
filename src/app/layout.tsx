@@ -11,7 +11,7 @@ import { SiteChrome } from "@/components/site-chrome";
 // the route tree request-rendered so the HTML nonce matches the response CSP.
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.dreamlanguagesug.com"),
+  metadataBase: new URL("https://www.dreamlanguagesug.online"),
   title: {
     default: "Dream Languages And Adult Literacy",
     template: "%s | DLA",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     title: "Dream Languages And Adult Literacy",
     description:
       "Dream Languages and Adult Literacy offers modern language learning, adult literacy, placement assessments, and student support in Uganda.",
-    url: "https://www.dreamlanguagesug.com",
+    url: "https://www.dreamlanguagesug.online",
     siteName: "Dream Languages And Adult Literacy",
     type: "website",
     images: [

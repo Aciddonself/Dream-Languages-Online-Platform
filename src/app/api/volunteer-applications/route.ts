@@ -104,7 +104,7 @@ export async function POST(request: Request) {
     }
     console.error("Could not save teacher application:", error);
     return NextResponse.json(
-      { error: "We could not save your application right now. Please try again later or email info@dreamlanguagesug.com for help." },
+      { error: "We could not save your application right now. Please try again later or email info@dreamlanguagesug.online for help." },
       { status: 500 },
     );
   }

@@ -6,8 +6,8 @@ const nextConfig: NextConfig = {
   experimental: { agentUpgrade: "security" },
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "dreamlanguagesug.com" },
-      { protocol: "https", hostname: "www.dreamlanguagesug.com" },
+      { protocol: "https", hostname: "dreamlanguagesug.online" },
+      { protocol: "https", hostname: "www.dreamlanguagesug.online" },
     ],
   },
   async headers() {
