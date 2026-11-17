@@ -1234,3 +1234,37 @@ p, li, td, th, label, summary, blockquote { font-weight: 600; }
 .dark .text-\[var\(--brand-primary\)\], .dark .text-brand { color: #9cc8ff !important; }
 .site-footer-inner { grid-template-columns: 1.4fr 1fr 1fr 1.2fr 1fr 1.1fr; }
 @media (max-width: 900px) { .site-footer-inner { grid-template-columns: 1fr 1fr; } }
+
+/* Public heading treatment follows the bold Georgia wordmark. Portal and admin titles keep their existing styles. */
+.public-site-shell h1,
+.public-site-shell h2,
+.public-site-shell h3,
+.public-site-shell h4,
+.public-site-shell h5,
+.public-site-shell h6,
+.public-site-shell .display-font {
+  color: #0b315a;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em;
+  text-shadow: 0 1px 0 rgba(255,255,255,.32);
+}
+.public-site-shell h1 { font-size: clamp(2.55rem, 5.2vw, 4.5rem); line-height: 1.05; }
+.public-site-shell h1:not(.hero-heading) { font-size: clamp(2.4rem, 4.6vw, 3.8rem); }
+.public-site-shell h2 { font-size: clamp(2.1rem, 3.8vw, 3rem); line-height: 1.12; }
+.public-site-shell h3 { font-size: clamp(1.65rem, 2.7vw, 2.25rem); line-height: 1.16; }
+.public-site-shell h4 { font-size: clamp(1.4rem, 2.2vw, 1.8rem); line-height: 1.2; }
+.public-site-shell h5 { font-size: clamp(1.25rem, 1.9vw, 1.55rem); line-height: 1.22; }
+.public-site-shell h6 { font-size: clamp(1.12rem, 1.6vw, 1.35rem); line-height: 1.25; }
+.public-site-shell .hero-heading,
+.public-site-shell .hero-heading span,
+.public-site-shell .hero-heading .text-gradient,
+.public-site-shell .hero-heading [class*="text-"] {
+  color: #0b315a !important;
+  -webkit-text-fill-color: #0b315a !important;
+  background: none !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-weight: 700 !important;
+}
+.dla-photo-frame { aspect-ratio: 16 / 7; min-height: 260px; border: 1px solid color-mix(in srgb, var(--brand-secondary) 24%, var(--border)); box-shadow: 0 8px 26px rgba(8,38,74,.11), 0 0 12px rgba(201,156,59,.045); }
+@media (max-width: 640px) { .dla-photo-frame { aspect-ratio: 4 / 3; min-height: 220px; } }

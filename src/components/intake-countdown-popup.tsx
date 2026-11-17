@@ -19,19 +19,36 @@ function getNextIntake(): Countdown | null {
 export function IntakeCountdownPopup() {
   const [countdown, setCountdown] = useState<Countdown | null>(null);
   const [open, setOpen] = useState(false);
-  const [cycle, setCycle] = useState(0);
-
   useEffect(() => {
     const refresh = () => setCountdown(getNextIntake());
     refresh();
     const daily = window.setInterval(refresh, 60_000);
-    const popup = window.setInterval(() => { refresh(); setOpen(true); setCycle((value) => value + 1); }, 30_000);
-    return () => { window.clearInterval(daily); window.clearInterval(popup); };
+    let showTimer = 0;
+    let hideTimer = 0;
+    let cancelled = false;
+    const scheduleNext = () => {
+      showTimer = window.setTimeout(() => {
+        if (cancelled) return;
+        refresh();
+        setOpen(true);
+        hideTimer = window.setTimeout(() => {
+          setOpen(false);
+          if (!cancelled) scheduleNext();
+        }, 8_000);
+      }, 30_000);
+    };
+    scheduleNext();
+    return () => {
+      cancelled = true;
+      window.clearInterval(daily);
+      window.clearTimeout(showTimer);
+      window.clearTimeout(hideTimer);
+    };
   }, []);
 
   if (!open || !countdown) return null;
   return (
-    <aside key={cycle} aria-live="polite" aria-label="Next DLA intake reminder" className="fixed bottom-4 left-4 right-4 z-[60] mx-auto max-w-lg rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-strong)] p-4 shadow-xl sm:left-auto sm:right-6 sm:bottom-6">
+    <aside aria-live="polite" aria-label="Next DLA intake reminder" className="fixed bottom-4 left-4 right-4 z-[60] mx-auto max-w-lg rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-strong)] p-4 shadow-xl sm:left-auto sm:right-6 sm:bottom-6">
       <button type="button" onClick={() => setOpen(false)} aria-label="Close intake reminder" className="absolute right-3 top-3 rounded-full p-1 hover:bg-[var(--surface)]"><X size={18} /></button>
       <p className="pr-8 text-sm font-bold text-[var(--brand-secondary)]">The {countdown.month} intake is coming up</p>
       <p className="mt-1 text-sm text-[var(--text-muted)]">{countdown.days === 0 ? "Classes start today" : `${countdown.days} ${countdown.days === 1 ? "day" : "days"} left`} · {countdown.date.toLocaleDateString("en-UG", { day: "numeric", month: "long", year: "numeric" })}</p>

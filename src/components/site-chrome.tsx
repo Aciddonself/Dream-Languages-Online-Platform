@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { PublicNav } from "@/components/public-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { IntakeCountdownPopup } from "@/components/intake-countdown-popup";
+import { DlaPhotoCarousel } from "@/components/dla-photo-carousel";
 
 // These optional widgets belong to different route groups. Keep their code out
 // of the shared shell bundle so public pages do not download the portal tutor.
@@ -42,10 +43,11 @@ export function SiteChrome({ children }: { children: ReactNode }) {
         <span className="ambient-word ambient-word-three">Bienvenue</span>
         <span className="ambient-word ambient-word-four">Guten Tag</span>
       </div>
-      <div className="app-content-layer">
+      <div className={`app-content-layer${!hideNavigation ? " public-site-shell" : ""}`}>
         {!hideNavigation && <PublicNav />}
         {!hideNavigation && <ContactChooser />}
         {children}
+        {!hideNavigation && <DlaPhotoCarousel />}
         {!hideNavigation && <SiteFooter />}
         {!hideNavigation && <IntakeCountdownPopup />}
       </div>
