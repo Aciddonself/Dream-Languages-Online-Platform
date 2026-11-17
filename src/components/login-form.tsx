@@ -100,6 +100,26 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
     return { res, data };
   }
 
+  async function finishSignIn(redirectTo?: string) {
+    const response = await fetch("/api/auth/session-status", { cache: "no-store" });
+    const session = await response.json().catch(() => ({}));
+    const expectedRole = isAdmin ? "super_admin" : signInAs;
+    if (!response.ok || session.authenticated !== true) {
+      fail("Your credentials were accepted, but this browser did not keep the sign-in session. Refresh this page and try again.");
+      return;
+    }
+    if (session.role !== expectedRole) {
+      fail("Your sign-in reached a different account role. Please use the correct sign-in page for this account.");
+      return;
+    }
+    if (isAdmin && session.assuranceLevel !== "aal2") {
+      fail("Your authenticator code was accepted, but the admin session is still awaiting verification. Sign in again and complete the code step.");
+      return;
+    }
+    toast.success("Signed in successfully.");
+    window.location.replace(destination(redirectTo));
+  }
+
   function fail(message: string) {
     setError(message);
     toast.error(message);
@@ -126,14 +146,12 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
           if (!enrol.res.ok) return fail(enrol.data.error || "Could not start 2FA setup");
           return setStep({ kind: "enroll", factorId: enrol.data.factorId, qrCode: enrol.data.qrCode, secret: enrol.data.secret });
         }
-        toast.success("Signed in successfully.");
-        window.location.replace(destination(data.redirectTo));
+        await finishSignIn(data.redirectTo);
         return;
       }
       const { res, data } = await post("/api/auth/mfa", { action: "verify", factorId: step.factorId, code });
       if (!res.ok) return fail(data.error || "Invalid code");
-      toast.success("Signed in successfully.");
-      window.location.replace(destination(data.redirectTo));
+      await finishSignIn(data.redirectTo);
     } catch {
       resetTurnstile();
       fail("Unable to reach the sign-in service. Check your connection and try again.");
