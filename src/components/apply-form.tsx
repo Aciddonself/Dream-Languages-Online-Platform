@@ -40,7 +40,7 @@ export function ApplyForm({
         body: formData,
       });
       const body = await response.text();
-      let data: { error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[]> }; message?: string };
+      let data: { error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[]> }; message?: string; code?: string };
       try {
         data = JSON.parse(body) as typeof data;
       } catch {
@@ -52,8 +52,10 @@ export function ApplyForm({
           ? apiError.formErrors?.[0] ?? Object.values(apiError.fieldErrors ?? {}).flat()[0]
           : undefined;
         const message = (typeof apiError === "string" ? apiError : fieldError) ?? "Application failed. Check the form and try again.";
-        setError(message);
-        toast.error(message);
+        const reference = typeof data.code === "string" ? ` Reference: ${data.code}.` : "";
+        const displayedMessage = `${message}${reference}`;
+        setError(displayedMessage);
+        toast.error(displayedMessage);
         return;
       }
       const message = data.message ?? "Application received. The administrator will review it and provide login credentials if accepted.";
