@@ -39,7 +39,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ app
   }
   const extension = application.path.split(".").pop()?.toLowerCase();
   const contentType = extension === "pdf" ? "application/pdf" : extension === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/msword";
-  return new Response(file, {
+  const body = new ArrayBuffer(file.byteLength);
+  new Uint8Array(body).set(file);
+  return new Response(body, {
     headers: {
       "Content-Type": contentType,
       "Content-Disposition": `attachment; filename="teacher-application-${document}.${extension}"`,
