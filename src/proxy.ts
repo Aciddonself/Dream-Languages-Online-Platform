@@ -80,6 +80,7 @@ export async function proxy(req: NextRequest) {
     url.pathname = loginPath;
     url.search = "";
     url.searchParams.set("next", pathname);
+    url.searchParams.set("error", "proxy_session_missing");
     return NextResponse.redirect(url);
   };
 

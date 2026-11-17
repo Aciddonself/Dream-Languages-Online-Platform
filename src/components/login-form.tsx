@@ -54,6 +54,7 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
   const captchaUnavailable = process.env.NODE_ENV === "production" && !siteKey;
   const authNotConfigured = search.get("error") === "auth_not_configured";
   const serverSessionRejected = search.get("error") === "server_session_rejected";
+  const proxySessionMissing = search.get("error") === "proxy_session_missing";
 
   useEffect(() => {
     let active = true;
@@ -177,6 +178,11 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
         {serverSessionRejected && (
           <div role="alert" className="mb-4 rounded-lg border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]">
             The password and authenticator step completed, but the admin dashboard could not confirm the server session. Reference: AUTH_SERVER_SESSION_REJECTED.
+          </div>
+        )}
+        {proxySessionMissing && (
+          <div role="alert" className="mb-4 rounded-lg border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]">
+            The admin page request arrived without a session the server could verify. Reference: AUTH_PROXY_SESSION_MISSING.
           </div>
         )}
         <form onSubmit={submit} className="space-y-4">

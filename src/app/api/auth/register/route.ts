@@ -91,9 +91,12 @@ export async function POST(request: Request) {
     studyDurationMonths, studyMode, requestedIntake, isInternational,
   } = parsed.data;
   const avatarStorageKey = `${randomUUID()}${photoExtensions[photo.type]}`;
-  await storeStudentPhoto(avatarStorageKey, photoBytes);
-
+  let stage: "photo_storage" | "application_database" = "photo_storage";
+  let photoStored = false;
   try {
+    await storeStudentPhoto(avatarStorageKey, photoBytes);
+    photoStored = true;
+    stage = "application_database";
     const [user] = await db.transaction(async (tx: any) => tx.insert(users).values({
       email,
       role: "applicant",
@@ -133,11 +136,21 @@ export async function POST(request: Request) {
       message: "Application received. The administrator will review it and provide login credentials if accepted.",
     }, { status: 201 });
   } catch (error) {
-    try {
-      await deleteStudentPhoto(avatarStorageKey);
-    } catch (cleanupError) {
-      console.error("Could not clean up failed applicant profile photo:", cleanupError);
+    const detail = error && typeof error === "object" ? error as { name?: string; code?: string } : {};
+    console.error("Applicant submission failed", { stage, errorName: detail.name ?? "Error", errorCode: detail.code ?? "unknown" });
+    if (photoStored) {
+      try {
+        await deleteStudentPhoto(avatarStorageKey);
+      } catch (cleanupError) {
+        const cleanup = cleanupError && typeof cleanupError === "object" ? cleanupError as { name?: string; code?: string } : {};
+        console.error("Could not clean up failed applicant profile photo", { errorName: cleanup.name ?? "Error", errorCode: cleanup.code ?? "unknown" });
+      }
     }
-    throw error;
+    return NextResponse.json(
+      stage === "photo_storage"
+        ? { error: "We could not securely save your photo right now. Please try again later.", code: "STUDENT_PHOTO_STORAGE_UNAVAILABLE" }
+        : { error: "We could not record your application right now. Please try again later.", code: "APPLICATION_SAVE_UNAVAILABLE" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
   }
 }

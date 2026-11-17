@@ -69,4 +69,4 @@ export function NewsMediaCarousel({ slides }: { slides: NewsMediaSlide[] }) {
   );
 }
 
-export function isVideo(url: string) { return /\.(mp4|webm|mov)(\?|$)/i.test(url); }
+export function isVideo(url: string) { return typeof url === "string" && /\.(mp4|webm|mov)(\?|$)/i.test(url); }
