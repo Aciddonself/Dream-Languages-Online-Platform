@@ -13,7 +13,7 @@ import {
 import baseConfig from "../../../config/father-dla.json";
 import { streamGemini, type ModelMessage } from "./gemini";
 import { streamGroq } from "./groq";
-import { activeProvider } from "./provider";
+import { activeProvider, fallbackProvider } from "./provider";
 import {
   CANNED,
   chooseModel,
@@ -198,7 +198,7 @@ Write in a natural, conversational voice. Do not use em dash or en dash punctuat
     yield { type: "error", error: "Father-DLA is not configured yet. Ask the administrator to add the model key." };
     return;
   }
-  const model = (provider === "groq" ? config.groqModels : config.models)[modelKey];
+  let model = (provider === "groq" ? config.groqModels : config.models)[modelKey];
   const cacheKey = `${staff ? "s" : "l"}:${profile?.cefrLevel ?? "-"}:${normalizeQuestion(message)}`;
 
   if (actor) await save(actor.id, "user", message);
@@ -220,18 +220,26 @@ Write in a natural, conversational voice. Do not use em dash or en dash punctuat
     ];
     let emitted = 0;
     try {
-      const stream = provider === "groq"
-        ? streamGroq({ model, system: `${systemPrompt}\n\n${context}`, messages, maxTokens: config.limits.maxReplyTokens, signal })
-        : streamGemini({
-          model,
-          system: `${systemPrompt}\n\n${context}`,
-          messages,
-          maxTokens: config.limits.maxReplyTokens,
-          maxSearches: config.limits.maxSearchesPerAnswer,
-          allowSearch: !!actor,
-          signal,
-        });
-      for await (const event of stream) {
+      const createStream = (selectedProvider: NonNullable<ReturnType<typeof activeProvider>>) => {
+        const selectedModel = (selectedProvider === "groq" ? config.groqModels : config.models)[modelKey];
+        if (!selectedModel) throw new Error(`No ${selectedProvider} model is configured for ${modelKey}`);
+        return selectedProvider === "groq"
+          ? streamGroq({ model: selectedModel, system: `${systemPrompt}\n\n${context}`, messages, maxTokens: config.limits.maxReplyTokens, signal })
+          : streamGemini({
+            model: selectedModel,
+            system: `${systemPrompt}\n\n${context}`,
+            messages,
+            maxTokens: config.limits.maxReplyTokens,
+            maxSearches: config.limits.maxSearchesPerAnswer,
+            allowSearch: !!actor,
+            signal,
+          });
+      };
+      let selectedProvider = provider;
+      let selectedModel = model;
+      let stream = createStream(selectedProvider);
+      try {
+        for await (const event of stream) {
         if (event.type === "searching") yield { type: "status", text: event.query ? `Searching the web: ${event.query}` : "Searching the web..." };
         else if (event.type === "source") {
           if (/^https?:\/\//i.test(event.url) && sources.length < 6) {
@@ -260,6 +268,39 @@ Write in a natural, conversational voice. Do not use em dash or en dash punctuat
             yield { type: "delta", text: full.slice(emitted, safeEnd) };
             emitted = safeEnd;
           }
+        }
+        }
+      } catch (error) {
+        const fallback = fallbackProvider(selectedProvider);
+        if (!fallback || full || signal?.aborted) throw error;
+        console.warn("Father-DLA primary provider failed; switching to the configured fallback.", error instanceof Error ? error.message : "Unknown provider error");
+        selectedProvider = fallback;
+        selectedModel = (config.models as Record<string, string>)[modelKey];
+        model = selectedModel;
+        stream = createStream(selectedProvider);
+        for await (const event of stream) {
+          if (event.type === "text") {
+            full += event.text;
+            const verdict = screenOutput(full, systemPrompt);
+            if (!verdict.ok) {
+              const replacement = verdict.reason === "phone" ? CANNED.phone : CANNED.injection;
+              if (actor) {
+                if (verdict.reason === "phone") await reportIncident("phone_share", actor.id, "father-dla-reply", "Contact detail blocked in Father-DLA reply");
+                const id = await save(actor.id, "assistant", replacement, { flagged: true, flagReason: `output_${verdict.reason}`, model: selectedModel });
+                yield { type: "replace", text: replacement };
+                yield { type: "done", messageId: id, model: selectedModel };
+              } else {
+                yield { type: "replace", text: replacement };
+                yield { type: "done", messageId: null, model: selectedModel };
+              }
+              return;
+            }
+            const safeEnd = full.length - LOOKAHEAD;
+            if (safeEnd > emitted) {
+              yield { type: "delta", text: full.slice(emitted, safeEnd) };
+              emitted = safeEnd;
+            }
+          } else if (event.type === "usage") usage = event;
         }
       }
     } catch (error) {

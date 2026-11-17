@@ -4,29 +4,34 @@ import { z } from "zod";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { isAllowedSocialUrl, parseSocialLinks, SOCIAL_SLOTS, type SocialSlot } from "@/lib/social-links";
 
 export const runtime = "nodejs";
 
-const link = z.object({
-  label: z.string().trim().min(1).max(60),
-  url: z.string().trim().url().refine((value) => {
-    try {
-      const parsed = new URL(value);
-      return parsed.protocol === "https:" && parsed.hostname === "www.tiktok.com" && /^\/@[\w.-]+\/?$/.test(parsed.pathname);
-    } catch { return false; }
-  }, "Use an HTTPS TikTok profile link such as https://www.tiktok.com/@school"),
-}).strict();
+const linkSchema = z.object({
+  slot: z.enum(SOCIAL_SLOTS.map((item) => item.id) as [SocialSlot, ...SocialSlot[]]),
+  url: z.string().trim().max(500),
+}).strict().superRefine((link, context) => {
+  if (!isAllowedSocialUrl(link.slot, link.url)) {
+    context.addIssue({ code: "custom", path: ["url"], message: `Enter a secure ${SOCIAL_SLOTS.find((item) => item.id === link.slot)?.name} profile link.` });
+  }
+});
 
 export async function PUT(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   if (actor.role !== "super_admin") return NextResponse.json({ error: "Only the administrator can update public social links" }, { status: 403 });
+
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 }); }
-  const parsed = z.object({ links: z.array(link).length(2) }).strict().safeParse(body);
+  const parsed = z.object({ links: z.array(linkSchema).length(SOCIAL_SLOTS.length) }).strict().safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  await db.insert(settings).values({ key: "public_tiktok_links", value: parsed.data.links })
-    .onConflictDoUpdate({ target: settings.key, set: { value: parsed.data.links, updatedAt: new Date() } });
+  const links = parseSocialLinks(parsed.data.links);
+  if (!links) return NextResponse.json({ error: "Include each social network once and use a matching HTTPS profile link." }, { status: 400 });
+
+  await db.insert(settings).values({ key: "public_social_links", value: links })
+    .onConflictDoUpdate({ target: settings.key, set: { value: links, updatedAt: new Date() } });
   revalidatePath("/");
-  return NextResponse.json({ ok: true, links: parsed.data.links });
+  revalidatePath("/api/public/social-links");
+  return NextResponse.json({ ok: true, links });
 }

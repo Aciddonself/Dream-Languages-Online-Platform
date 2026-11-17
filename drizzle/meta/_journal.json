@@ -92,6 +92,13 @@
       "when": 1794898400425,
       "tag": "0012_site_media_library",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794922268137,
+      "tag": "0013_shop_products",
+      "breakpoints": true
     }
   ]
 }

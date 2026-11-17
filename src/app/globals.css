@@ -1225,3 +1225,12 @@ p, li, td, th, label, summary, blockquote { font-weight: 600; }
 [class~="font-normal"] { font-weight: 600 !important; }
 .review-font, .review-card q, .review-card .review-quote { font-family: var(--font-body); font-style: normal; font-weight: 600; }
 .portal-scrim, .portal-drawer-backdrop, .portal-search-backdrop { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+
+/* Give content cards a clear edge and a restrained glow. */
+.glass, .kpi-card, .dash-card { border-color: color-mix(in srgb, var(--brand-secondary) 18%, var(--border)); box-shadow: 0 4px 18px rgba(8, 38, 74, .07), 0 0 9px rgba(201, 156, 59, .035); }
+.glass:not(.glass-strong):hover { box-shadow: 0 8px 24px rgba(8, 38, 74, .1), 0 0 10px rgba(201, 156, 59, .05); }
+/* Improve contrast for emphasis text currently using pale gold. */
+.text-\[var\(--brand-primary\)\], .text-brand { color: #174f8a !important; }
+.dark .text-\[var\(--brand-primary\)\], .dark .text-brand { color: #9cc8ff !important; }
+.site-footer-inner { grid-template-columns: 1.4fr 1fr 1fr 1.2fr 1fr 1.1fr; }
+@media (max-width: 900px) { .site-footer-inner { grid-template-columns: 1fr 1fr; } }

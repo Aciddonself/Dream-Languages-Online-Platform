@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { CountUpStats } from "@/components/count-up-stats";
-import { TikTokLinks } from "@/components/tiktok-links";
+import { SocialLinksDisplay } from "@/components/social-links-display";
 import {
   getPublicDepartments,
   getPublishedFaqs,
@@ -10,7 +10,7 @@ import {
   getPublishedPartners,
   getPublishedTestimonials,
 } from "@/lib/public-content";
-import { getTikTokLinks } from "@/lib/social-links";
+import { getSocialLinks } from "@/lib/social-links";
 import { getSiteImages } from "@/lib/site-images";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +22,7 @@ export default async function HomePage() {
     getPublishedFaqs(),
     getPublishedPartners(),
     getPublishedNews(),
-    getTikTokLinks(),
+    getSocialLinks(),
     getSiteImages(),
   ]);
 
@@ -180,8 +180,8 @@ export default async function HomePage() {
       <section className="px-6 max-w-6xl mx-auto mb-12">
         <GlassCard className="p-6">
           <h2 className="display-font text-2xl font-bold mb-2">Follow Dream Languages</h2>
-          <p className="mb-4 text-sm opacity-70">Follow our official TikTok accounts for school news and learning updates.</p>
-          <TikTokLinks links={socialLinks} />
+          <p className="mb-4 text-sm opacity-70">Follow our official pages for school news, learning updates and community stories.</p>
+          <SocialLinksDisplay links={socialLinks} />
         </GlassCard>
       </section>
 

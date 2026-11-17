@@ -5,6 +5,7 @@ import { useEffect, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { PublicNav } from "@/components/public-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { IntakeCountdownPopup } from "@/components/intake-countdown-popup";
 
 // These optional widgets belong to different route groups. Keep their code out
 // of the shared shell bundle so public pages do not download the portal tutor.
@@ -46,6 +47,7 @@ export function SiteChrome({ children }: { children: ReactNode }) {
         {!hideNavigation && <ContactChooser />}
         {children}
         {!hideNavigation && <SiteFooter />}
+        {!hideNavigation && <IntakeCountdownPopup />}
       </div>
       {allowFatherDla && <FatherDla />}
     </>

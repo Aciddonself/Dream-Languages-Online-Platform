@@ -7,6 +7,7 @@ import {
   boolean,
   timestamp,
   date,
+  numeric,
   jsonb,
   pgEnum,
   uniqueIndex,
@@ -584,6 +585,20 @@ export const newsPosts = pgTable("news_posts", {
   publishedAt: timestamp("published_at"),
   authorId: uuid("author_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const shopProducts = pgTable("shop_products", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: varchar("category", { length: 80 }).notNull(),
+  imageUrl: text("image_url").notNull(),
+  price: numeric("price", { precision: 12, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("UGX"),
+  published: boolean("published").default(false).notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const testimonials = pgTable("testimonials", {

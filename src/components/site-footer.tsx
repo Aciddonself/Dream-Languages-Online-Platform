@@ -1,5 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { SocialLinksDisplay } from "@/components/social-links-display";
+import { DEFAULT_SOCIAL_LINKS, type SocialLinks } from "@/lib/social-link-types";
 import { whatsappContacts } from "@/lib/contacts";
 
 const explore = [
@@ -12,6 +17,7 @@ const explore = [
 
 const community = [
   { href: "/apply", label: "Apply for admission" },
+  { href: "/my-dla-shop", label: "MY_DLA_SHOP" },
   { href: "/volunteer", label: "Teach with us" },
   { href: "/testimonials", label: "Student reviews" },
   { href: "/blog", label: "News & stories" },
@@ -27,6 +33,15 @@ const legal = [
 ];
 
 export function SiteFooter() {
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>([...DEFAULT_SOCIAL_LINKS]);
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/public/social-links", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() as Promise<{ links?: SocialLinks }> : null)
+      .then((data) => { if (active && data?.links) setSocialLinks(data.links); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, []);
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
@@ -72,6 +87,10 @@ export function SiteFooter() {
               <Link key={link.href} href={link.href}>{link.label}</Link>
             ))}
           </nav>
+        </div>
+        <div className="site-footer-col">
+          <h3>Social media</h3>
+          <SocialLinksDisplay links={socialLinks} compact />
         </div>
         <div className="site-footer-bottom">
           <span>© Dream Languages And Adult Literacy Uganda Limited. All rights reserved.</span>

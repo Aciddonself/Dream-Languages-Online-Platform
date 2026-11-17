@@ -10,6 +10,7 @@ const primaryLinks = [
   { href: "/", label: "Home" },
   { href: "/courses", label: "Courses" },
   { href: "/services", label: "Services" },
+  { href: "/my-dla-shop", label: "MY_DLA_SHOP" },
   { href: "/dla-opportunities", label: "DLA_Opportunities" },
   { href: "/apply", label: "Apply" },
   { href: "/contact", label: "Contact" },

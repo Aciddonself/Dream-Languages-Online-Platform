@@ -16,6 +16,7 @@ const createNewsSchema = z.object({
   slug: z.string().trim().max(128).optional(),
   excerpt: z.string().trim().max(500).optional(),
   body: z.string().trim().min(1).max(20_000),
+  coverUrl: z.string().trim().url().max(1000).optional().or(z.literal("")),
   status: z.enum(["draft", "published"]).default("draft"),
 }).strict();
 const createPageSchema = z.object({
@@ -49,6 +50,7 @@ const updateNewsSchema = z.object({
   slug: z.string().trim().min(1).max(128),
   excerpt: z.string().trim().max(500).optional(),
   body: z.string().trim().min(1).max(20_000),
+  coverUrl: z.string().trim().url().max(1000).optional().or(z.literal("")),
   status: z.enum(["draft", "preview", "published", "unpublished", "archived"]),
 }).strict();
 const patchSchema = z.discriminatedUnion("action", [reviewSchema, updatePageSchema, updateNewsSchema]);
@@ -73,6 +75,9 @@ export async function POST(request: Request) {
   const parsed = z.discriminatedUnion("kind", [createNewsSchema, createPageSchema]).safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const { data } = parsed;
+  if (data.kind === "news" && data.coverUrl && !isSiteMediaUrl(data.coverUrl)) {
+    return NextResponse.json({ error: "Choose media uploaded to the DLA website media library." }, { status: 400 });
+  }
   if (detectPhoneOrHandle(`${data.title} ${data.body}`).blocked) {
     return NextResponse.json({ error: "Public content cannot contain personal phone numbers or external contact handles." }, { status: 400 });
   }
@@ -107,10 +112,11 @@ export async function POST(request: Request) {
     slug,
     excerpt: data.excerpt || null,
     body: data.body,
+    coverUrl: data.coverUrl || null,
     status: data.status,
     publishedAt: data.status === "published" ? new Date() : null,
     authorId: actor.id,
-  }).onConflictDoNothing().returning({ id: newsPosts.id, title: newsPosts.title, slug: newsPosts.slug, status: newsPosts.status });
+  }).onConflictDoNothing().returning({ id: newsPosts.id, title: newsPosts.title, slug: newsPosts.slug, status: newsPosts.status, coverUrl: newsPosts.coverUrl });
   if (!post) return NextResponse.json({ error: "That website address is already in use. Choose another slug." }, { status: 409 });
   await db.insert(auditLogs).values({
     actorId: actor.id,
@@ -185,6 +191,9 @@ export async function PATCH(request: Request) {
     }
     const slug = makeSlug(parsed.data.slug);
     if (!slug) return NextResponse.json({ error: "Use a valid website address." }, { status: 400 });
+    if (parsed.data.coverUrl && !isSiteMediaUrl(parsed.data.coverUrl)) {
+      return NextResponse.json({ error: "Choose media uploaded to the DLA website media library." }, { status: 400 });
+    }
     const [existing] = await db.select().from(newsPosts).where(eq(newsPosts.id, parsed.data.postId)).limit(1);
     if (!existing) return NextResponse.json({ error: "News post not found." }, { status: 404 });
     const [slugOwner] = await db.select({ id: newsPosts.id }).from(newsPosts).where(and(eq(newsPosts.slug, slug), ne(newsPosts.id, existing.id))).limit(1);
@@ -197,18 +206,19 @@ export async function PATCH(request: Request) {
       slug,
       excerpt: parsed.data.excerpt || null,
       body: parsed.data.body,
+      coverUrl: parsed.data.coverUrl || null,
       status: parsed.data.status,
       publishedAt,
     }).where(eq(newsPosts.id, existing.id))
-      .returning({ id: newsPosts.id, title: newsPosts.title, slug: newsPosts.slug, status: newsPosts.status });
+      .returning({ id: newsPosts.id, title: newsPosts.title, slug: newsPosts.slug, status: newsPosts.status, coverUrl: newsPosts.coverUrl });
     if (!updated) return NextResponse.json({ error: "News post could not be saved." }, { status: 500 });
     await db.insert(auditLogs).values({
       actorId: actor.id,
       action: "update_news_post",
       entityType: "news_post",
       entityId: updated.id,
-      before: { title: existing.title, slug: existing.slug, excerpt: existing.excerpt, body: existing.body, status: existing.status },
-      after: { title: parsed.data.title, slug, excerpt: parsed.data.excerpt || null, body: parsed.data.body, status: updated.status },
+      before: { title: existing.title, slug: existing.slug, excerpt: existing.excerpt, body: existing.body, status: existing.status, coverUrl: existing.coverUrl },
+      after: { title: parsed.data.title, slug, excerpt: parsed.data.excerpt || null, body: parsed.data.body, status: updated.status, coverUrl: updated.coverUrl },
     });
     revalidatePath("/blog");
     revalidateTag("public-content", "max");
@@ -230,4 +240,12 @@ export async function PATCH(request: Request) {
   revalidatePath("/testimonials");
   revalidateTag("public-content", "max");
   return NextResponse.json({ ok: true, published });
+}
+
+function isSiteMediaUrl(value: string) {
+  try {
+    const target = new URL(value);
+    const project = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder-project.supabase.co");
+    return target.protocol === "https:" && target.hostname === project.hostname && target.pathname.includes("/storage/v1/object/public/site-media/news/");
+  } catch { return false; }
 }

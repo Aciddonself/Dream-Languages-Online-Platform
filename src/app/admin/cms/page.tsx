@@ -9,20 +9,21 @@ import { AdminCmsPageCreate, AdminCmsPageEditor, AdminNewsCreate, AdminNewsEdito
 import { AnnouncementCreate } from "@/components/announcement-create";
 import { classes } from "@/db/schema";
 import { isNull } from "drizzle-orm";
-import { AdminTikTokLinksForm } from "@/components/admin-tiktok-links-form";
-import { getTikTokLinks } from "@/lib/social-links";
+import { AdminSocialLinksForm } from "@/components/admin-social-links-form";
+import { getSocialLinks } from "@/lib/social-links";
 import { CmsMediaLibrary } from "@/components/cms-media-library";
 import { SITE_IMAGE_SLOTS } from "@/lib/site-image-slots";
+import { AdminShopControl } from "@/components/admin-shop-control";
 
 const nav = [{ href: "/admin", label: "Dashboard", icon: "🏠" }, { href: "/admin/recordings", label: "Class recordings", icon: "🎬" }, { href: "/admin/cms", label: "CMS", icon: "📝" }, { href: "/admin/sms", label: "Bulk SMS", icon: "✉️" }];
 
 export default async function AdminCms() {
   await requireRole(["super_admin"]);
-  const [pages, posts, reviews, tiktokLinks] = await Promise.all([
+  const [pages, posts, reviews, socialLinks] = await Promise.all([
     db.select().from(cmsPages).orderBy(desc(cmsPages.updatedAt)).limit(50),
     db.select().from(newsPosts).orderBy(desc(newsPosts.createdAt)).limit(50),
     db.select().from(testimonials).orderBy(desc(testimonials.createdAt)).limit(100),
-    getTikTokLinks(),
+    getSocialLinks(),
   ]);
   const schoolClasses = await db.select({ id: classes.id, name: classes.name }).from(classes).where(isNull(classes.deletedAt)).orderBy(classes.name);
   const partnerList = await db.select({ id: partners.id, name: partners.name }).from(partners).orderBy(partners.name);
@@ -44,9 +45,14 @@ export default async function AdminCms() {
           <AdminNewsCreate />
         </GlassCard>
         <GlassCard className="p-5" strong>
-          <h2 className="font-semibold mb-3">Public TikTok accounts</h2>
-          <p className="mb-3 text-sm opacity-65">Update the two TikTok profiles shown to website visitors.</p>
-          <AdminTikTokLinksForm links={tiktokLinks} />
+          <h2 className="font-semibold mb-3">Social media pages</h2>
+          <p className="mb-3 text-sm opacity-65">Manage the social links shown beside Legal in the website footer.</p>
+          <AdminSocialLinksForm links={socialLinks} />
+        </GlassCard>
+        <GlassCard className="p-5 lg:col-span-2" strong>
+          <h2 className="font-semibold mb-3">My DLA Shop</h2>
+          <p className="mb-4 text-sm opacity-70">Add products or student artwork, upload photos, set prices and choose which items visitors can see. Visitors can contact DLA to order.</p>
+          <AdminShopControl />
         </GlassCard>
         <GlassCard className="p-5 lg:col-span-2" strong>
           <h2 className="font-semibold mb-2">Website images and media library</h2>
@@ -70,7 +76,7 @@ export default async function AdminCms() {
         </GlassCard>
         <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">News and stories ({posts.length})</h2>
-          {posts.length ? <div className="space-y-3">{posts.map((post: { id: string; title: string; slug: string; excerpt: string | null; body: string | null; status: string }) => (
+          {posts.length ? <div className="space-y-3">{posts.map((post: { id: string; title: string; slug: string; excerpt: string | null; body: string | null; status: string; coverUrl: string | null }) => (
             <AdminNewsEditor key={post.id} post={post} />
           ))}</div> : <p className="text-sm opacity-65">No news posts have been added yet.</p>}
         </GlassCard>
