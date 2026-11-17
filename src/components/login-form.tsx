@@ -53,6 +53,7 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
   const widgetId = useRef<string | undefined>(undefined);
   const captchaUnavailable = process.env.NODE_ENV === "production" && !siteKey;
   const authNotConfigured = search.get("error") === "auth_not_configured";
+  const serverSessionRejected = search.get("error") === "server_session_rejected";
 
   useEffect(() => {
     let active = true;
@@ -105,15 +106,16 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
     const session = await response.json().catch(() => ({}));
     const expectedRole = isAdmin ? "super_admin" : signInAs;
     if (!response.ok || session.authenticated !== true) {
-      fail("Your credentials were accepted, but this browser did not keep the sign-in session. Refresh this page and try again.");
+      const issue = typeof session.issue === "string" ? session.issue : `http_${response.status}`;
+      fail(`Your credentials were accepted, but the sign-in session check failed (${issue}). Refresh and try again. If it repeats, share this code with support: AUTH_${issue.toUpperCase()}.`);
       return;
     }
     if (session.role !== expectedRole) {
-      fail("Your sign-in reached a different account role. Please use the correct sign-in page for this account.");
+      fail("Your sign-in session belongs to a different account role. Please use the correct sign-in page. Reference: AUTH_ROLE_MISMATCH.");
       return;
     }
     if (isAdmin && session.assuranceLevel !== "aal2") {
-      fail("Your authenticator code was accepted, but the admin session is still awaiting verification. Sign in again and complete the code step.");
+      fail("The authenticator step did not complete the required admin verification. Sign in again and enter the current code. Reference: AUTH_MFA_NOT_VERIFIED.");
       return;
     }
     toast.success("Signed in successfully.");
@@ -170,6 +172,11 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
         {authNotConfigured && (
           <div role="alert" className="mb-4 rounded-lg border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-3 py-2 text-xs text-[var(--warning)]">
             Authentication is not configured yet. Add Supabase URL and anon key in your local environment before signing in.
+          </div>
+        )}
+        {serverSessionRejected && (
+          <div role="alert" className="mb-4 rounded-lg border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]">
+            The password and authenticator step completed, but the admin dashboard could not confirm the server session. Reference: AUTH_SERVER_SESSION_REJECTED.
           </div>
         )}
         <form onSubmit={submit} className="space-y-4">

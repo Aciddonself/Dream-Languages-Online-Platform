@@ -11,13 +11,13 @@ export async function GET() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
-    return NextResponse.json({ authenticated: false }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ authenticated: false, issue: "session_missing" }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
   const [user] = await db.select({ role: users.role, status: users.status, deletedAt: users.deletedAt })
     .from(users).where(eq(users.authId, data.user.id)).limit(1);
   if (!user || user.deletedAt || !ACTIVE_STATUSES.includes(user.status as (typeof ACTIVE_STATUSES)[number])) {
-    return NextResponse.json({ authenticated: false }, { status: 403, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ authenticated: false, issue: "account_inactive" }, { status: 403, headers: { "Cache-Control": "no-store" } });
   }
 
   let assuranceLevel: string | null = null;
@@ -27,7 +27,7 @@ export async function GET() {
   }
 
   return NextResponse.json(
-    { authenticated: true, role: user.role, assuranceLevel },
+    { authenticated: true, role: user.role, assuranceLevel, issue: assuranceLevel === "aal2" || !MFA_REQUIRED_ROLES.includes(user.role) ? null : "mfa_not_verified" },
     { headers: { "Cache-Control": "no-store" } },
   );
 }
