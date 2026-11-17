@@ -55,7 +55,7 @@ export default async function StudentDocumentsPage({ searchParams }: { searchPar
           <GlassCard key={student.id} className="flex flex-wrap items-center justify-between gap-4 p-4">
             <div className="flex items-center gap-3">
               {student.avatarStorageKey ? (
-                <Image src={`/api/portal/profile-photo?userId=${student.id}`} alt={`${student.name ?? "Student"} passport photo`} width={48} height={60} unoptimized className="h-[60px] w-12 rounded-lg object-cover" />
+                <Image src={`/api/portal/profile-photo?userId=${student.id}`} alt={`${student.name ?? "Student"} passport photo`} width={48} height={60} unoptimized className="h-[60px] w-12 rounded-lg bg-[var(--surface)] object-contain" />
               ) : (
                 <div className="grid h-[60px] w-12 place-items-center rounded-lg bg-white/10 text-xs">No photo</div>
               )}

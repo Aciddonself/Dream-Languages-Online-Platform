@@ -3,6 +3,7 @@ import Image from "next/image";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { CountUpStats } from "@/components/count-up-stats";
 import { SocialLinksDisplay } from "@/components/social-links-display";
+import { HomeHeroCarousel } from "@/components/home-hero-carousel";
 import {
   getPublicDepartments,
   getPublishedFaqs,
@@ -29,43 +30,36 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen">
       {/* Hero */}
-      <section className="px-6 pt-10 pb-16 max-w-6xl mx-auto">
-        <GlassCard className="source-hero p-8 md:p-12" strong>
-          <div className="hero-split">
-          <div className="max-w-3xl">
+      <section className="px-4 pt-6 pb-12 sm:px-6 sm:pt-8 sm:pb-14 max-w-6xl mx-auto">
+        <GlassCard className="source-hero p-5 sm:p-7 md:p-9" strong>
+          <div className="mx-auto max-w-5xl">
             <Badge tone="primary">Dream Languages Uganda</Badge>
             <h1 className="hero-heading mt-4">
               Lifelong Training <span>For All Ages</span>
             </h1>
-            <p className="mt-4 text-lg opacity-80 max-w-xl">
+            <p className="mt-4 text-lg opacity-80 max-w-3xl">
               We are a premier language and adult education school offering high-quality education in languages and practical skills to students of all ages and backgrounds.
             </p>
-            <p className="mt-3 opacity-80 max-w-xl">
-              Learn French, German, Chinese, Spanish, English and more from certified tutors, live online or in class. Study at your own pace with small groups, real conversation practice, exam preparation and our Father DLA AI tutor guiding you between lessons.
-            </p>
-            <ul className="mt-4 grid gap-2 max-w-xl text-sm opacity-90">
-              <li>✓ Flexible morning, evening and weekend classes</li>
-              <li>✓ Placement test so you start at exactly the right level</li>
-              <li>✓ Certificates and exam support for study, work and travel abroad</li>
-              <li>✓ A friendly community of learners from every age and background</li>
-            </ul>
-            <p className="mt-4 font-semibold max-w-xl">Join hundreds of students already building their future with DLA. Your first lesson could be this week.</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/apply?intake=next"><GlassButton>Book Now</GlassButton></Link>
-              <Link href="/courses"><GlassButton variant="glass">Explore Courses</GlassButton></Link>
-            </div>
-          </div>
-          <div className="hero-image">
-            <Image
-              src={siteImages.home_hero?.url ?? "/site-media/hero-language-class.jpg"}
-              alt={siteImages.home_hero?.altText ?? "Learners taking part in a classroom lesson at Dream Languages"}
-              fill
-              preload
-              quality={92}
-              sizes="(max-width: 900px) 100vw, 42vw"
-              unoptimized={Boolean(siteImages.home_hero)}
+            <HomeHeroCarousel
+              firstImage={siteImages.home_hero?.url ?? "/site-media/hero-language-class.jpg"}
+              firstAlt={siteImages.home_hero?.altText ?? "Learners taking part in a classroom lesson at Dream Languages"}
             />
-          </div>
+            <div className="mx-auto max-w-4xl">
+              <p className="mt-3 opacity-80">
+                Learn French, German, Chinese, Spanish, English and more from certified tutors, live online or in class. Study at your own pace with small groups, real conversation practice, exam preparation and our Father DLA AI tutor guiding you between lessons.
+              </p>
+              <ul className="mt-4 grid gap-2 text-sm opacity-90">
+                <li>✓ Flexible morning, evening and weekend classes</li>
+                <li>✓ Placement test so you start at exactly the right level</li>
+                <li>✓ Certificates and exam support for study, work and travel abroad</li>
+                <li>✓ A friendly community of learners from every age and background</li>
+              </ul>
+              <p className="mt-4 font-semibold">Join hundreds of students already building their future with DLA. Your first lesson could be this week.</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="https://dreamlanguagesug.online/apply?intake=next"><GlassButton>Book Now</GlassButton></Link>
+                <Link href="/courses"><GlassButton variant="glass">Explore Courses</GlassButton></Link>
+              </div>
+            </div>
           </div>
         </GlassCard>
       </section>

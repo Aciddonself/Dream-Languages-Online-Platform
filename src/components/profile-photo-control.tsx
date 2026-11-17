@@ -37,7 +37,7 @@ export function ProfilePhotoControl() {
 
   return (
     <div className="flex items-center gap-2">
-      {available && <Image src={photoUrl} alt="Your profile" width={36} height={36} unoptimized className="h-9 w-9 rounded-full object-cover" onError={() => setAvailable(false)} />}
+      {available && <Image src={photoUrl} alt="Your profile" width={36} height={36} unoptimized className="h-9 w-9 rounded-full bg-[var(--surface)] object-contain" onError={() => setAvailable(false)} />}
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label="Choose profile photo" onChange={() => void upload()} />
       <button type="button" disabled={busy} className="rounded-xl border border-white/15 px-3 py-2 text-xs font-semibold" onClick={() => inputRef.current?.click()}>
         {busy ? "Uploading…" : available ? "Change photo" : "Add profile photo"}

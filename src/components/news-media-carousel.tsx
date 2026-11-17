@@ -9,7 +9,7 @@ export function NewsMediaCarousel({ slides }: { slides: NewsMediaSlide[] }) {
   const [index, setIndex] = useState(0);
   useEffect(() => {
     if (slides.length < 2 || isVideo(slides[index]?.url)) return;
-    const timer = window.setInterval(() => setIndex((value) => (value + 1) % slides.length), 6_000);
+    const timer = window.setInterval(() => setIndex((value) => (value + 1) % slides.length), 3_000);
     return () => window.clearInterval(timer);
   }, [index, slides]);
   if (!slides.length) return null;
@@ -18,10 +18,10 @@ export function NewsMediaCarousel({ slides }: { slides: NewsMediaSlide[] }) {
   const move = (direction: number) => setIndex((value) => (value + direction + slides.length) % slides.length);
   return (
     <section aria-label="DLA news and community stories" className="news-carousel relative mb-8 overflow-hidden rounded-3xl border border-[var(--border-strong)] bg-[var(--surface-strong)] shadow-[0_8px_30px_rgba(8,38,74,.12)]">
-      <div className="relative aspect-[16/8] min-h-64 max-h-[36rem] w-full bg-[var(--brand-secondary)] sm:aspect-[16/7]">
+      <div className="relative aspect-[16/9] min-h-56 max-h-[28rem] w-full bg-[var(--surface)]">
         {video
           ? <video key={slide.url} src={slide.url} controls playsInline className="h-full w-full object-contain" onEnded={() => move(1)} aria-label={slide.title} />
-          : <img key={slide.url} src={slide.url} alt={slide.title} className="h-full w-full object-cover" />}
+          : <img key={slide.url} src={slide.url} alt={slide.title} className="dla-image-enter h-full w-full object-contain" />}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#061a31]/95 via-[#061a31]/55 to-transparent px-5 pb-5 pt-16 text-white sm:px-8 sm:pb-7">
           <h2 className="text-xl font-bold text-white sm:text-3xl">{slide.title}</h2>
           {slide.excerpt && <p className="mt-2 line-clamp-2 max-w-3xl text-sm text-white/90 sm:text-base">{slide.excerpt}</p>}

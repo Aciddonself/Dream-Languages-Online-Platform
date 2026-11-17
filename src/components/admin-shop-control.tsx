@@ -77,7 +77,7 @@ export function AdminShopControl() {
       {uploading && <p className="text-sm">Uploading photo…</p>}{error && <p role="alert" className="text-sm text-[var(--danger)]">{error}</p>}{message && <p role="status" className="text-sm text-[var(--success)]">{message}</p>}
     </form>
     <div className="grid gap-3 sm:grid-cols-2">{products.map((product) => <article key={product.id} className="grid grid-cols-[5rem_minmax(0,1fr)] gap-3 rounded-xl border border-[var(--border)] p-3">
-      <img src={product.imageUrl} alt={product.name} className="h-20 w-20 rounded-lg object-cover" />
+      <img src={product.imageUrl} alt={product.name} className="h-20 w-20 rounded-lg bg-[var(--surface)] object-contain p-1" />
       <div className="min-w-0"><h3 className="truncate text-base">{product.name}</h3><p className="text-sm">{product.currency} {Number(product.price).toLocaleString()}</p><p className="text-xs text-[var(--text-muted)]">{product.published ? "Published" : "Draft"}</p><div className="mt-2 flex gap-3"><button type="button" className="underline" onClick={() => void edit(product)}>Edit</button><button type="button" className="underline" onClick={() => void remove(product)}>Delete</button></div></div>
     </article>)}</div>
   </div>;

@@ -19,7 +19,7 @@ export default async function BlogPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {isVideo(post.coverUrl ?? "")
               ? <video src={post.coverUrl ?? undefined} controls playsInline className="h-48 w-full bg-[var(--brand-secondary)] object-contain" aria-label={`${post.title} video`} />
-              : <img src={post.coverUrl || "/site-media/learning-community.jpg"} alt={post.coverUrl ? post.title : "DLA learners in a community setting"} className="h-48 w-full object-cover" loading="lazy" />}
+              : <img src={post.coverUrl || "/site-media/learning-community.jpg"} alt={post.coverUrl ? post.title : "DLA learners in a community setting"} className="h-48 w-full bg-[var(--surface)] object-contain p-1" loading="lazy" />}
             <div className="p-5">
               {post.category && <div className="mb-2 text-xs font-semibold uppercase tracking-wide opacity-60">{post.category}</div>}
               <h2 className="font-semibold">{post.title}</h2>

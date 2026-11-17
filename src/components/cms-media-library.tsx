@@ -110,7 +110,7 @@ export function CmsMediaLibrary({ slots: initialSlots }: { slots: typeof SITE_IM
     <div>
       <h3 className="mb-3 font-semibold">Website image locations</h3>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{slots.map((slot) => <article key={slot.id} className="overflow-hidden rounded-2xl border border-white/10">
-        <div className="relative aspect-[16/9] bg-black/10"><Image src={slot.url ?? slot.fallback} alt={slot.altText} fill sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-cover" unoptimized={Boolean(slot.url)} /></div>
+        <div className="relative aspect-[16/9] bg-[var(--surface)]"><Image src={slot.url ?? slot.fallback} alt={slot.altText} fill sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-contain p-2" unoptimized={Boolean(slot.url)} /></div>
         <div className="p-3"><p className="font-semibold">{slot.label}</p><p className="mt-1 text-xs opacity-65">{slot.url ? "Custom image active" : "Using default image"}</p></div>
       </article>)}</div>
     </div>
@@ -118,7 +118,7 @@ export function CmsMediaLibrary({ slots: initialSlots }: { slots: typeof SITE_IM
     <div>
       <div className="mb-3 flex items-center justify-between gap-3"><h3 className="font-semibold">Media library ({assets.length})</h3><GlassButton type="button" variant="glass" onClick={() => void load()} disabled={loading}>Refresh</GlassButton></div>
       {loading ? <p className="text-sm opacity-65">Loading images…</p> : assets.length ? <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{assets.map((asset) => <article key={asset.path} className="overflow-hidden rounded-2xl border border-white/10">
-        <div className="relative aspect-[4/3] bg-black/10"><Image src={asset.url} alt={asset.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw" className="object-cover" unoptimized /></div>
+        <div className="relative aspect-[4/3] bg-[var(--surface)]"><Image src={asset.url} alt={asset.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw" className="object-contain p-2" unoptimized /></div>
         <div className="space-y-2 p-3"><p className="truncate text-xs opacity-70">{asset.name}</p><GlassButton type="button" variant="glass" className="w-full" disabled={busy || selectedSlot === "none"} onClick={() => void assign(asset)}>Use in selected location</GlassButton></div>
       </article>)}</div> : <p className="text-sm opacity-65">No uploaded images yet. Choose an image above to get started.</p>}
       {selectedSlot === "none" && <p className="mt-2 text-xs opacity-65">Choose a website location above to enable “Use in selected location.”</p>}

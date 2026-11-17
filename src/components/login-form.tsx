@@ -200,7 +200,7 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
         </div>
         </div>
         <div className="login-split-image" aria-hidden={false}>
-          <Image src="/site-media/teacher-joseph-mabadiliko.jpg" alt="Mr Joseph Mabadiliko, DLA teacher" fill priority sizes="(min-width: 768px) 480px, 0px" className="object-cover" />
+          <Image src="/site-media/teacher-joseph-mabadiliko.jpg" alt="Mr Joseph Mabadiliko, DLA teacher" fill priority sizes="(min-width: 768px) 480px, 0px" className="object-contain" />
           <div className="login-split-caption">
             <strong>Mr Joseph Mabadiliko</strong>
             <span>Dream Languages Uganda</span>

@@ -175,7 +175,7 @@ export function AttendanceSessionPanel({
                       <tbody>
                         {state.roster.map((student) => (
                           <tr key={student.studentId} className="border-t border-white/10">
-                            <td className="py-2"><span className="flex items-center gap-2">{student.avatarUrl && <Image src={student.avatarUrl} alt="" width={32} height={32} unoptimized className="h-8 w-8 rounded-full object-cover" />} {student.name}</span></td>
+                            <td className="py-2"><span className="flex items-center gap-2">{student.avatarUrl && <Image src={student.avatarUrl} alt="" width={32} height={32} unoptimized className="h-8 w-8 rounded-full bg-[var(--surface)] object-contain" />} {student.name}</span></td>
                             <td>{student.confirmedAt ? student.status : student.checkInAt ? "Needs confirmation" : student.status ?? "Not checked in"}</td>
                             <td>{time(student.checkInAt)}</td>
                             <td>{time(student.checkOutAt)}</td>

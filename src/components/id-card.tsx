@@ -39,7 +39,7 @@ export function StudentIdCard({
           <div             className="w-20 h-24 rounded-lg overflow-hidden glass flex items-center justify-center">
             {photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
+              <img src={photoUrl} alt={name} className="w-full h-full bg-[var(--surface)] object-contain" />
             ) : (
               <span className="text-3xl">👤</span>
             )}
