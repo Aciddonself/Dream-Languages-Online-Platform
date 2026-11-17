@@ -36,7 +36,7 @@ async function upsertAuthIdentity(account: { id: string; email: string; authId: 
   return data.user.id;
 }
 
-export async function POST(req: Request) {
+async function createUserRequest(req: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
@@ -116,18 +116,23 @@ export async function POST(req: Request) {
     if (avatarStorageKey) await deleteStudentPhoto(avatarStorageKey);
     return NextResponse.json({ error: "Email already registered" }, { status: 409 });
   }
-  await db.insert(auditLogs).values({
-    actorId: actor.id,
-    action: "create_user",
-    entityType: "user",
-    entityId: user.id,
-    after: { role: user.role },
-    ip: clientIp(req),
-  });
+  try {
+    await db.insert(auditLogs).values({
+      actorId: actor.id,
+      action: "create_user",
+      entityType: "user",
+      entityId: user.id,
+      after: { role: user.role },
+      ip: clientIp(req),
+    });
+  } catch (error) {
+    // The account is already provisioned. A logging failure must not tell the admin that creation failed.
+    console.error("User created but audit log failed:", error instanceof Error ? error.name : "Unknown error");
+  }
   return NextResponse.json({ ok: true, redirectTo: roleHome(user.role), user }, { status: 201 });
 }
 
-export async function PATCH(req: Request) {
+async function updateUserRequest(req: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
@@ -231,7 +236,17 @@ export async function PATCH(req: Request) {
     });
     if ("error" in outcome) return NextResponse.json({ error: outcome.error }, { status: outcome.status });
     // Blocked statuses are banned at the Auth server so refresh tokens stop working as well.
-    if (outcome.authId) await syncAuthBan(outcome.authId, outcome.user.status);
+    if (outcome.authId) {
+      try {
+        await syncAuthBan(outcome.authId, outcome.user.status);
+      } catch (error) {
+        console.error("Could not synchronize account status with Supabase Auth:", error instanceof Error ? error.name : "Unknown error");
+        return NextResponse.json({
+          error: "The LMS status was saved, but the sign-in block did not sync with Supabase. Refresh and retry, then check Supabase Auth if it continues.",
+          user: outcome.user,
+        }, { status: 502 });
+      }
+    }
     return NextResponse.json({ ok: true, user: outcome.user });
   }
 
@@ -354,4 +369,22 @@ export async function PATCH(req: Request) {
     emailSent: email.sent,
     emailWarning: email.sent ? undefined : email.error,
   });
+}
+
+export async function POST(req: Request) {
+  try {
+    return await createUserRequest(req);
+  } catch (error) {
+    console.error("Admin user creation failed:", error instanceof Error ? error.name : "Unknown error");
+    return NextResponse.json({ error: "Could not create the account. Check Supabase Auth and database availability, then try again." }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    return await updateUserRequest(req);
+  } catch (error) {
+    console.error("Admin user update failed:", error instanceof Error ? error.name : "Unknown error");
+    return NextResponse.json({ error: "Could not update the account. Check Supabase Auth and database availability, then try again." }, { status: 500 });
+  }
 }

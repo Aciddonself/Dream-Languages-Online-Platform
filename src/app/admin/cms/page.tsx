@@ -11,6 +11,8 @@ import { classes } from "@/db/schema";
 import { isNull } from "drizzle-orm";
 import { AdminTikTokLinksForm } from "@/components/admin-tiktok-links-form";
 import { getTikTokLinks } from "@/lib/social-links";
+import { CmsMediaLibrary } from "@/components/cms-media-library";
+import { SITE_IMAGE_SLOTS } from "@/lib/site-image-slots";
 
 const nav = [{ href: "/admin", label: "Dashboard", icon: "🏠" }, { href: "/admin/recordings", label: "Class recordings", icon: "🎬" }, { href: "/admin/cms", label: "CMS", icon: "📝" }, { href: "/admin/sms", label: "Bulk SMS", icon: "✉️" }];
 
@@ -45,6 +47,11 @@ export default async function AdminCms() {
           <h2 className="font-semibold mb-3">Public TikTok accounts</h2>
           <p className="mb-3 text-sm opacity-65">Update the two TikTok profiles shown to website visitors.</p>
           <AdminTikTokLinksForm links={tiktokLinks} />
+        </GlassCard>
+        <GlassCard className="p-5 lg:col-span-2" strong>
+          <h2 className="font-semibold mb-2">Website images and media library</h2>
+          <p className="mb-4 text-sm opacity-70">Upload an image, keep it in the library, or publish it into a website image location. New images replace the current image while previous uploads remain available.</p>
+          <CmsMediaLibrary slots={SITE_IMAGE_SLOTS} />
         </GlassCard>
         <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">Publish a school announcement</h2>

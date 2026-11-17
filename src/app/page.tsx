@@ -11,17 +11,19 @@ import {
   getPublishedTestimonials,
 } from "@/lib/public-content";
 import { getTikTokLinks } from "@/lib/social-links";
+import { getSiteImages } from "@/lib/site-images";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [depts, tests, faqList, partnerList, news, socialLinks] = await Promise.all([
+  const [depts, tests, faqList, partnerList, news, socialLinks, siteImages] = await Promise.all([
     getPublicDepartments(),
     getPublishedTestimonials(),
     getPublishedFaqs(),
     getPublishedPartners(),
     getPublishedNews(),
     getTikTokLinks(),
+    getSiteImages(),
   ]);
 
   return (
@@ -55,12 +57,13 @@ export default async function HomePage() {
           </div>
           <div className="hero-image">
             <Image
-              src="/site-media/hero-language-class.jpg"
-              alt="Learners taking part in a classroom lesson at Dream Languages"
+              src={siteImages.home_hero?.url ?? "/site-media/hero-language-class.jpg"}
+              alt={siteImages.home_hero?.altText ?? "Learners taking part in a classroom lesson at Dream Languages"}
               fill
               preload
               quality={92}
               sizes="(max-width: 900px) 100vw, 42vw"
+              unoptimized={Boolean(siteImages.home_hero)}
             />
           </div>
           </div>
@@ -78,14 +81,13 @@ export default async function HomePage() {
           <Link href="/about" className="text-sm font-semibold text-[var(--brand-secondary-soft)] hover:underline">Learn about DLA →</Link>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          {[
-            { title: "German in 6 Months at DLA", image: "german-class.jpg", alt: "German language learners at DLA" },
-            { title: "Dream Nurses Class 2024", image: "nursing-class.jpg", alt: "DLA nurses learning group" },
-            { title: "Confusing German grammar made easy", image: "language-learning.jpg", alt: "Learners taking part in a language lesson" },
+          {[{ title: "German in 6 Months at DLA", image: "german-class.jpg", alt: "German language learners at DLA", slot: "home_german" as const },
+            { title: "Dream Nurses Class 2024", image: "nursing-class.jpg", alt: "DLA nurses learning group", slot: "home_nursing" as const },
+            { title: "Confusing German grammar made easy", image: "language-learning.jpg", alt: "Learners taking part in a language lesson", slot: "home_learning" as const },
           ].map((item) => (
             <GlassCard className="overflow-hidden" key={item.image}>
               <div className="home-learning-image">
-                <Image src={`/site-media/${item.image}`} alt={item.alt} fill quality={90} sizes="(max-width: 767px) 100vw, 33vw" />
+                <Image src={siteImages[item.slot]?.url ?? `/site-media/${item.image}`} alt={siteImages[item.slot]?.altText ?? item.alt} fill quality={90} sizes="(max-width: 767px) 100vw, 33vw" unoptimized={Boolean(siteImages[item.slot])} />
               </div>
               <div className="p-4 font-semibold">{item.title}</div>
             </GlassCard>
@@ -188,13 +190,13 @@ export default async function HomePage() {
         <h2 className="display-font text-3xl font-bold mb-4">Our Partners</h2>
         <div className="flex flex-wrap gap-4">
           {[
-            { name: "Edu-Tours", image: "edu-tours.jpg" },
-            { name: "Besten Technologies", image: "partner-besten.png" },
-            { name: "Your Way", image: "partner-your-way.jpg" },
-            { name: "Atrsy", image: "partner-atrsy.png" },
+            { name: "Edu-Tours", image: "edu-tours.jpg", slot: "partner_edu_tours" as const },
+            { name: "Besten Technologies", image: "partner-besten.png", slot: "partner_besten" as const },
+            { name: "Your Way", image: "partner-your-way.jpg", slot: "partner_your_way" as const },
+            { name: "Atrsy", image: "partner-atrsy.png", slot: "partner_atrsy" as const },
           ].map((partner) => (
             <GlassCard key={partner.name} className="grid min-h-24 min-w-40 place-items-center p-4">
-              <Image src={`/site-media/${partner.image}`} alt={partner.name} width={288} height={128} quality={90} className="max-h-16 max-w-36 object-contain" />
+              <Image src={siteImages[partner.slot]?.url ?? `/site-media/${partner.image}`} alt={siteImages[partner.slot]?.altText ?? partner.name} width={288} height={128} quality={90} className="max-h-16 max-w-36 object-contain" unoptimized={Boolean(siteImages[partner.slot])} />
             </GlassCard>
           ))}
           {partnerList.map((partner) => <GlassCard key={partner.id} className="px-6 py-4 font-semibold">{partner.name}</GlassCard>)}

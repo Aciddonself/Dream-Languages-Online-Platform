@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { auditLogs, smsCampaigns, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { detectPhoneOrHandle } from "@/lib/phone-filter";
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 const schema = z.object({ message: z.string().trim().min(1).max(480) });
 type ProviderResult = {
@@ -22,14 +23,20 @@ function toE164(value: string) {
 }
 
 export async function POST(request: Request) {
+  try {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   if (actor.role !== "super_admin") return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
+  const limited = await rateLimit("admin-sms", actor.id, 3, "1 h");
+  if (!limited.ok) return tooManyRequests(limited.retryAfter);
   const username = process.env.AFRICASTALKING_USERNAME;
   const apiKey = process.env.AFRICASTALKING_API_KEY;
   const senderId = process.env.AFRICASTALKING_SENDER_ID;
   if (!username || !apiKey) {
     return NextResponse.json({ error: "Africa's Talking is not configured. Set AFRICASTALKING_USERNAME and AFRICASTALKING_API_KEY on the server." }, { status: 503 });
+  }
+  if (process.env.NODE_ENV === "production" && username.toLowerCase() !== "sandbox" && !senderId) {
+    return NextResponse.json({ error: "Live SMS needs an Africa's Talking sender ID approved for Uganda. Add AFRICASTALKING_SENDER_ID after the provider approves it." }, { status: 503 });
   }
 
   let body: unknown;
@@ -83,8 +90,11 @@ export async function POST(request: Request) {
         body: form,
         signal: AbortSignal.timeout(20_000),
       });
-      const result = await response.json() as ProviderResult;
-      const acceptedInBatch = result.SMSMessageData?.Recipients?.filter((recipient) => recipient.statusCode === 100 || recipient.statusCode === 101).length ?? 0;
+      const responseText = await response.text();
+      let result: ProviderResult;
+      try { result = JSON.parse(responseText) as ProviderResult; }
+      catch { throw new Error(`Africa's Talking returned a non-JSON response (${response.status}).`); }
+      const acceptedInBatch = result.SMSMessageData?.Recipients?.filter((recipient) => [100, 101, 102].includes(recipient.statusCode ?? -1)).length ?? 0;
       accepted += Math.min(batch.length, acceptedInBatch);
       if (!response.ok || !result.SMSMessageData?.Recipients || acceptedInBatch < batch.length) {
         failed = true;
@@ -117,6 +127,10 @@ export async function POST(request: Request) {
     campaignId: campaign.id,
     acceptedCount: accepted,
     skippedCount,
-    message: skippedCount ? "Message submitted to valid student numbers. Some registered accounts have no valid Uganda mobile number on file." : undefined,
+    message: skippedCount ? "Message accepted by Africa's Talking for valid student numbers. Some registered accounts have no valid Uganda mobile number on file." : "Message accepted by Africa's Talking. Delivery depends on the mobile network and is not confirmed here.",
   });
+  } catch (error) {
+    console.error("Bulk SMS campaign failed:", error instanceof Error ? error.name : "Unknown error");
+    return NextResponse.json({ error: "Could not submit the SMS campaign. Check the LMS database, Africa's Talking settings, and provider dashboard before retrying." }, { status: 500 });
+  }
 }

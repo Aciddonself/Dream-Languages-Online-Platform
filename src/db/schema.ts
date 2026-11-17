@@ -563,6 +563,15 @@ export const cmsPages = pgTable("cms_pages", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+/** Current public image for each CMS-managed image slot; original uploads stay in Storage as versioned assets. */
+export const siteImages = pgTable("site_images", {
+  slot: varchar("slot", { length: 64 }).primaryKey(),
+  storagePath: text("storage_path").notNull(),
+  altText: text("alt_text").notNull(),
+  updatedBy: uuid("updated_by").notNull().references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const newsPosts = pgTable("news_posts", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: text("title").notNull(),

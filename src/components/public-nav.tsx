@@ -31,12 +31,22 @@ export function PublicNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [logo, setLogo] = useState({ src: "/dla-logo.png", alt: "DLA Logo" });
 
   useEffect(() => {
     const updateScroll = () => setScrolled(window.scrollY > 12);
     updateScroll();
     window.addEventListener("scroll", updateScroll, { passive: true });
     return () => window.removeEventListener("scroll", updateScroll);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/public/site-logo", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => { if (active && typeof data?.src === "string") setLogo({ src: data.src, alt: typeof data.alt === "string" ? data.alt : "DLA Logo" }); })
+      .catch(() => undefined);
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -57,7 +67,7 @@ export function PublicNav() {
         <div className="site-nav-top">
           <Link href="/" className="site-brand" aria-label="DLA Learning Hub home" onClick={() => setOpen(false)}>
             <span className="site-brand-mark">
-              <Image src="/dla-logo.png" alt="DLA Logo" width={136} height={104} loading="eager" quality={90} />
+            <Image src={logo.src} alt={logo.alt} width={136} height={104} loading="eager" quality={90} unoptimized={logo.src.startsWith("https://") && !logo.src.includes("dreamlanguagesug.online")} />
             </span>
             <span className="site-brand-copy">
               <strong>Dream Languages Uganda</strong>

@@ -22,16 +22,16 @@ export function AdminSmsForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: new FormData(form).get("message") }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(data.error ?? "The message could not be submitted.");
+        setError(data.error ?? `The message could not be submitted (HTTP ${response.status}).`);
         return;
       }
-      setResult(`Campaign submitted to ${data.acceptedCount} eligible student accounts. Recipient numbers are not displayed or stored in campaign history.`);
+      setResult(`${data.message ?? `Campaign accepted for ${data.acceptedCount} eligible student accounts.`} Recipient numbers are not displayed or stored in campaign history.`);
       form.reset();
       router.refresh();
     } catch {
-      setError("Unable to submit the campaign. Check your connection.");
+      setError("Unable to submit the campaign. Check your connection and the SMS campaign history before retrying, in case the provider already accepted it.");
     } finally {
       setBusy(false);
     }

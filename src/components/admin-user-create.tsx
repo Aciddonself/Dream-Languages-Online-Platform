@@ -34,9 +34,11 @@ export function AdminUserCreate() {
         method: "POST",
         body: payload,
       });
-      const result = await response.json();
+      const result = await response.json().catch(() => ({})) as { error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[]> }; user?: { registrationNumber?: string } };
       if (!response.ok) {
-        const text = typeof result.error === "string" ? result.error : "Check the account details and try again.";
+        const text = typeof result.error === "string" ? result.error
+          : result.error?.formErrors?.[0] ?? Object.values(result.error?.fieldErrors ?? {}).flat()[0]
+          ?? `The server could not create this account (HTTP ${response.status}). Please try again.`;
         setError(text);
         toast.error(text);
         return;

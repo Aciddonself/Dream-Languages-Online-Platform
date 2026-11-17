@@ -5,32 +5,32 @@ import { GlassCard } from "@/components/ui/glass";
 export const metadata: Metadata = {
   title: "DLA Opportunities",
   description:
-    "Explore how Dream Languages Uganda helps people prepare for international work and study, and helps partners grow their impact in Uganda.",
+    "Explore how Dream Languages supports people across East Africa and Africa as they prepare for work and study abroad, and helps partners grow across the region.",
 };
 
 const opportunities = [
   {
     number: "01",
     eyebrow: "Prepare for your next career move",
-    title: "Work opportunities abroad",
+    title: "Work opportunities across borders",
     description:
-      "For qualified Ugandans looking beyond borders, DLA brings language learning together with practical career preparation. Build communication skills for your destination country, understand the requirements of roles you’re targeting, and get support preparing your CV, interviews, and applications. Where relevant employers, openings, or recruitment partners are available, we can help you explore the pathway and the next steps.",
-    takeaway: "Feel more prepared to pursue international career pathways.",
+      "For qualified people across East Africa and the wider African continent, DLA brings language learning together with practical career preparation. Build communication skills for your destination country, understand the requirements of roles you’re targeting, and get support preparing your CV, interviews, and applications. Where relevant employers, openings, or recruitment partners are available, we can help you explore the pathway and the next steps.",
+    takeaway: "Feel ready to pursue international career pathways from anywhere in Africa.",
   },
   {
     number: "02",
     eyebrow: "Turn your study goal into a plan",
     title: "Study abroad guidance",
     description:
-      "For Ugandan students aiming to study internationally, we help turn a big goal into a clear application plan. Explore suitable courses and universities, prepare for language requirements, organize supporting documents, and understand admissions steps and timelines. We can also help you learn about common study-visa requirements and prepare questions for the relevant institution or authority.",
+      "For students across East Africa and Africa aiming to study internationally, we help turn a big goal into a clear application plan. Explore suitable courses and universities, prepare for language requirements, organize supporting documents, and understand admissions steps and timelines. We can also help you learn about common study-visa requirements and prepare questions for the relevant institution or authority.",
     takeaway: "Move from wondering where to start to knowing your next step.",
   },
   {
     number: "03",
     eyebrow: "Build meaningful growth together",
-    title: "Partnerships that open doors in Uganda",
+    title: "Partnerships that open doors across Africa",
     description:
-      "Are you an education provider, employer, institution, or organization looking to grow in Uganda? Work with Dream Languages to introduce and develop your services through local marketing, student and client recruitment, institutional partnerships, brand awareness, and business development. We’re open to discussing a local representative or strategic-partner role, with clear responsibilities and a transparent model for collaboration.",
+      "Are you an education provider, employer, institution, or organization looking to grow across East Africa and Africa? Work with Dream Languages to introduce and develop your services through regional marketing, student and client recruitment, institutional partnerships, brand awareness, and business development. We’re open to discussing a local representative or strategic-partner role, with clear responsibilities and a transparent model for collaboration.",
     takeaway: "Connect your work with a trusted local learning community.",
   },
 ];
@@ -52,7 +52,7 @@ export default function DlaOpportunitiesPage() {
           Your next chapter can reach beyond borders.
         </h1>
         <p className="mt-5 max-w-3xl text-lg leading-relaxed text-[var(--text-muted)] sm:text-xl">
-          Dream Languages Uganda helps qualified Ugandans prepare for work and study abroad, while helping organizations connect with people and partners here at home. Bring us your ambition or your partnership idea. We’ll help you find a practical place to begin.
+          Dream Languages helps people across East Africa and Africa prepare for work and study abroad, while helping organizations connect with people and partners across the region. Bring us your ambition or partnership idea. We’ll help you find a practical place to begin.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
@@ -82,7 +82,7 @@ export default function DlaOpportunitiesPage() {
             Three ways DLA helps you move forward
           </h2>
           <p className="mt-3 text-[var(--text-muted)]">
-            We’re interested in working across these three areas to create opportunities for Ugandans and help Dream Languages grow its international reach.
+            We’re interested in working across these three areas to create opportunities for Africans and help Dream Languages grow its international reach.
           </p>
         </div>
 
@@ -111,7 +111,7 @@ export default function DlaOpportunitiesPage() {
           ))}
         </div>
         <p className="mt-5 text-sm text-[var(--text-muted)]">
-          We provide preparation and guidance. Employers, schools, and immigration authorities make their own hiring, admission, and visa decisions.
+            We provide preparation and guidance for people across East Africa and Africa. Employers, schools, and immigration authorities make their own hiring, admission, and visa decisions.
         </p>
       </section>
 
@@ -124,10 +124,10 @@ export default function DlaOpportunitiesPage() {
             Let’s create opportunity and grow together.
           </h2>
           <p className="mt-4 max-w-4xl leading-relaxed text-[var(--text-muted)]">
-            Our goal is a mutually beneficial partnership: opening new pathways for Ugandans while helping Dream Languages become a recognized, trusted name and expand its international footprint. We welcome conversations with people and organizations who share that vision.
+            Our goal is a mutually beneficial partnership: opening new pathways for people across East Africa and Africa while helping Dream Languages become a trusted name and expand its international footprint. We welcome conversations with people and organizations who share that vision.
           </p>
           <p className="mt-4 max-w-4xl leading-relaxed text-[var(--text-muted)]">
-            Let’s talk about your goals, our partnership model, collaboration requirements, commission structures, and the possibility of representing or growing DLA services locally. We’ll agree on expectations and responsibilities together before any collaboration begins.
+            Let’s talk about your goals, our partnership model, collaboration requirements, commission structures, and the possibility of representing or growing DLA services across the region. We’ll agree on expectations and responsibilities together before any collaboration begins.
           </p>
         </GlassCard>
       </section>
@@ -141,7 +141,7 @@ export default function DlaOpportunitiesPage() {
             Your idea could be the start of something big.
           </h2>
           <p className="mt-3 text-[var(--text-muted)]">
-            Tell us whether you’re exploring work abroad, planning to study, or ready to partner with DLA in Uganda. Let’s explore the next step together.
+          Tell us whether you’re exploring work abroad, planning to study, or ready to partner with DLA in East Africa. Let’s explore the next step together.
           </p>
         </div>
         <Link

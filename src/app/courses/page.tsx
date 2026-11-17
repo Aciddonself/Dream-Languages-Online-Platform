@@ -3,11 +3,12 @@ import { GlassCard } from "@/components/ui/glass";
 import Link from "next/link";
 import { whatsappContacts } from "@/lib/contacts";
 import { getPublicDepartments } from "@/lib/public-content";
+import { getSiteImages } from "@/lib/site-images";
 
 export const dynamic = "force-dynamic";
 
 export default async function CoursesPage() {
-  const depts = await getPublicDepartments();
+  const [depts, images] = await Promise.all([getPublicDepartments(), getSiteImages()]);
   return (
     <main className="min-h-screen px-6 py-10 max-w-6xl mx-auto">
       <h1 className="display-font text-3xl font-bold mb-2">Courses &amp; Fees</h1>
@@ -27,7 +28,7 @@ export default async function CoursesPage() {
         </GlassCard>
       </div>
       <div className="courses-portrait">
-        <Image src="/site-media/hero-language-class.jpg" alt="Students taking part in a DLA language class" fill quality={90} sizes="100vw" />
+        <Image src={images.courses_hero?.url ?? "/site-media/hero-language-class.jpg"} alt={images.courses_hero?.altText ?? "Students taking part in a DLA language class"} fill quality={90} sizes="100vw" unoptimized={Boolean(images.courses_hero)} />
       </div>
       <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
         {depts.map((d) => (
@@ -110,13 +111,13 @@ export default async function CoursesPage() {
       </section>
       <section className="mt-10 grid gap-4 md:grid-cols-3">
         {[
-          ["German in 6 Months at DLA", "german-class.jpg"],
-          ["Dream Nurses Class 2024", "nursing-class.jpg"],
-          ["Confusing German grammar made easy", "language-learning.jpg"],
-        ].map(([title, image]) => (
+          { title: "German in 6 Months at DLA", image: "german-class.jpg", slot: "home_german" as const },
+          { title: "Dream Nurses Class 2024", image: "nursing-class.jpg", slot: "home_nursing" as const },
+          { title: "Confusing German grammar made easy", image: "language-learning.jpg", slot: "home_learning" as const },
+        ].map(({ title, image, slot }) => (
           <GlassCard className="overflow-hidden" key={title}>
             <div className="course-photo-frame">
-              <Image src={`/site-media/${image}`} alt={title} fill quality={90} sizes="(max-width: 767px) 100vw, 33vw" />
+              <Image src={images[slot]?.url ?? `/site-media/${image}`} alt={images[slot]?.altText ?? title} fill quality={90} sizes="(max-width: 767px) 100vw, 33vw" unoptimized={Boolean(images[slot])} />
             </div>
             <div className="p-4">
               <div className="font-semibold">{title}</div>

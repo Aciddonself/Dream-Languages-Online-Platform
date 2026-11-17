@@ -35,14 +35,15 @@ export function AdminUserStatus({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "set_status", userId, status: nextStatus }),
       });
-      const result = await response.json();
+      const result = await response.json().catch(() => ({})) as { error?: string; user?: { status?: string } };
       if (!response.ok) {
-        setError(typeof result.error === "string" ? result.error : "Could not update account.");
+        setError(typeof result.error === "string" ? result.error : `Could not update account (server returned HTTP ${response.status}).`);
+        if (response.status === 502 && result.user?.status) router.refresh();
         return;
       }
       router.refresh();
-    } catch {
-      setError("Could not update account. Check your connection.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not reach the account service. Check your connection and try again.");
     } finally {
       setBusy(false);
     }

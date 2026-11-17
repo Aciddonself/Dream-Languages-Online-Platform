@@ -1,34 +1,39 @@
 import Image from "next/image";
 import { GlassCard } from "@/components/ui/glass";
+import { getSiteImages } from "@/lib/site-images";
+import { SITE_IMAGE_SLOTS } from "@/lib/site-image-slots";
+
+export const dynamic = "force-dynamic";
 
 const photographs = [
-  { src: "hero-language-class.jpg", title: "Language class", alt: "Students participating in a DLA language class" },
-  { src: "german-class.jpg", title: "German learners", alt: "Learners studying German" },
-  { src: "language-learning.jpg", title: "Learning together", alt: "DLA language learners in class" },
-  { src: "adult-literacy.jpg", title: "Adult literacy", alt: "Adult literacy learners at DLA" },
-  { src: "classroom-learning.jpg", title: "Classroom learning", alt: "Students in a DLA classroom" },
-  { src: "nursing-class.jpg", title: "Dream Nurses Class 2024", alt: "Dream Nurses Class 2024 at DLA" },
-  { src: "learning-community.jpg", title: "DLA learning community", alt: "DLA students learning together" },
-  { src: "course-language.jpg", title: "Language programme", alt: "Learners taking part in a DLA language programme" },
-  { src: "adult-literacy.jpg", title: "Adult literacy", alt: "Adult literacy learners at DLA" },
-  { src: "classroom-learning.jpg", title: "Classroom learning", alt: "Students in a DLA classroom" },
-  { src: "edu-tours.jpg", title: "Edu-Tours", alt: "DLA Edu-Tours partner" },
-];
+  { slot: "gallery_class", title: "Language class" },
+  { slot: "gallery_german", title: "German learners" },
+  { slot: "gallery_learning", title: "Learning together" },
+  { slot: "gallery_literacy", title: "Adult literacy" },
+  { slot: "gallery_classroom", title: "Classroom learning" },
+  { slot: "gallery_nursing", title: "Dream Nurses Class 2024" },
+  { slot: "gallery_community", title: "DLA learning community" },
+  { slot: "gallery_course", title: "Language programme" },
+  { slot: "gallery_edu_tours", title: "Edu-Tours" },
+] as const;
 
-export default function GalleryPage() {
+export default async function GalleryPage() {
+  const images = await getSiteImages();
   return (
     <main className="min-h-screen px-6 py-10 max-w-6xl mx-auto">
       <h1 className="display-font text-3xl font-bold mb-2">DLA Gallery</h1>
       <p className="opacity-70 mb-6">Classes, programmes, and community moments from Dream Languages Uganda.</p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {photographs.map((photo) => (
-          <GlassCard className="overflow-hidden" key={photo.src}>
+        {photographs.map((photo) => {
+          const image = images[photo.slot];
+          const fallback = SITE_IMAGE_SLOTS.find((slot) => slot.id === photo.slot)?.fallback ?? "/site-media/hero-language-class.jpg";
+          return <GlassCard className="overflow-hidden" key={photo.slot}>
             <div className="gallery-photo-frame">
-              <Image className="gallery-photo" src={`/site-media/${photo.src}`} alt={photo.alt} fill quality={90} sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw" />
+              <Image className="gallery-photo" src={image?.url ?? fallback} alt={image?.altText ?? photo.title} fill quality={90} sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw" unoptimized={Boolean(image)} />
             </div>
             <div className="p-4 font-semibold">{photo.title}</div>
-          </GlassCard>
-        ))}
+          </GlassCard>;
+        })}
       </div>
     </main>
   );
