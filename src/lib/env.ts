@@ -12,7 +12,9 @@ const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   APP_URL: z.string().url(),
   CPANEL_WEBMAIL_URL: z.preprocess((value) => value === "" ? undefined : value, z.string().url().optional()),
-  CRON_SECRET: z.string().min(32).optional(),
+  // A missing or short cron secret must disable only cron endpoints. It must
+  // not prevent the Supabase admin client from serving uploads or user flows.
+  CRON_SECRET: z.preprocess((value) => typeof value === "string" && value.trim() === "" ? undefined : value, z.string().optional()),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().optional(),
   AFRICASTALKING_USERNAME: z.string().optional(),

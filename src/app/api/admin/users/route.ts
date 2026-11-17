@@ -28,12 +28,33 @@ async function upsertAuthIdentity(account: { id: string; email: string; authId: 
   const admin = createSupabaseAdminClient();
   if (account.authId) {
     const { error } = await admin.auth.admin.updateUserById(account.authId, { password });
-    if (error) throw new Error("Could not update credentials");
+    if (error) {
+      const failure = new Error(`Supabase Auth password update failed: ${error.message}`);
+      Object.assign(failure, { code: error.code ?? "AUTH_PASSWORD_UPDATE_FAILED", status: error.status ?? null });
+      throw failure;
+    }
     return account.authId;
   }
   const { data, error } = await admin.auth.admin.createUser({ email: account.email, password, email_confirm: true });
-  if (error || !data.user) throw new Error("Could not create credentials");
+  if (error || !data.user) {
+    const failure = new Error(`Supabase Auth user creation failed: ${error?.message ?? "No user returned"}`);
+    Object.assign(failure, { code: error?.code ?? "AUTH_USER_CREATE_FAILED", status: error?.status ?? null });
+    throw failure;
+  }
   return data.user.id;
+}
+
+function logUserManagementError(label: string, error: unknown) {
+  const detail = error && typeof error === "object"
+    ? error as { name?: string; code?: string; status?: number | null; statusCode?: string | null; message?: string }
+    : {};
+  const safeMessage = (detail.message ?? "").replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email]").slice(0, 240);
+  console.error(label, {
+    errorName: detail.name ?? "Error",
+    errorCode: detail.code ?? "unknown",
+    status: detail.status ?? detail.statusCode ?? null,
+    message: safeMessage || undefined,
+  });
 }
 
 async function createUserRequest(req: Request) {
@@ -375,7 +396,7 @@ export async function POST(req: Request) {
   try {
     return await createUserRequest(req);
   } catch (error) {
-    console.error("Admin user creation failed:", error instanceof Error ? error.name : "Unknown error");
+    logUserManagementError("Admin user creation failed", error);
     return NextResponse.json({ error: "Could not create the account. Check Supabase Auth and database availability, then try again." }, { status: 500 });
   }
 }
@@ -384,7 +405,7 @@ export async function PATCH(req: Request) {
   try {
     return await updateUserRequest(req);
   } catch (error) {
-    console.error("Admin user update failed:", error instanceof Error ? error.name : "Unknown error");
+    logUserManagementError("Admin user update failed", error);
     return NextResponse.json({ error: "Could not update the account. Check Supabase Auth and database availability, then try again." }, { status: 500 });
   }
 }

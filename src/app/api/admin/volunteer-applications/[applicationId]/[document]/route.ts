@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { teacherApplications } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { isTeacherApplicationFileReference, readTeacherApplicationFile } from "@/lib/teacher-application-files";
 
 const documents = {
   cv: teacherApplications.cvPath,
@@ -20,7 +21,22 @@ export async function GET(_request: Request, { params }: { params: Promise<{ app
   const key = document as keyof typeof documents;
   const [application] = await db.select({ path: documents[key] }).from(teacherApplications).where(eq(teacherApplications.id, applicationId)).limit(1);
   if (!application?.path) return NextResponse.json({ error: "Application document not found" }, { status: 404 });
-  const file = await readFile(application.path);
+  let file: Buffer;
+  try {
+    file = isTeacherApplicationFileReference(application.path)
+      ? Buffer.from(await readTeacherApplicationFile(application.path))
+      : await readFile(application.path);
+  } catch (error) {
+    const detail = error && typeof error === "object" ? error as { name?: string; code?: string; statusCode?: string | null } : {};
+    console.error("Teacher application document unavailable", {
+      applicationId,
+      document,
+      errorName: detail.name ?? "Error",
+      errorCode: detail.code ?? "unknown",
+      storageStatus: detail.statusCode ?? null,
+    });
+    return NextResponse.json({ error: "This document is not available in durable storage. Ask the applicant to upload it again.", code: "TEACHER_APPLICATION_DOCUMENT_UNAVAILABLE" }, { status: 404 });
+  }
   const extension = application.path.split(".").pop()?.toLowerCase();
   const contentType = extension === "pdf" ? "application/pdf" : extension === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/msword";
   return new Response(file, {

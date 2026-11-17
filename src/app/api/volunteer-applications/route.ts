@@ -1,9 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { teacherApplications } from "@/db/schema";
+import { deleteTeacherApplicationFile, storeTeacherApplicationFile, teacherApplicationFileReference } from "@/lib/teacher-application-files";
 
 export const runtime = "nodejs";
 
@@ -64,14 +63,12 @@ export async function POST(request: Request) {
     files.push({ key, file: value, extension, id: randomUUID() });
   }
 
-  const storageRoot = path.join(process.cwd(), "private_uploads");
   const filePaths = new Map<string, string>();
   try {
-    await mkdir(storageRoot, { recursive: true, mode: 0o700 });
     for (const item of files) {
-      const filePath = path.join(storageRoot, `${item.id}${item.extension}`);
-      await writeFile(filePath, Buffer.from(await item.file.arrayBuffer()), { flag: "wx", mode: 0o600 });
-      filePaths.set(item.key, filePath);
+      const objectKey = `${item.id}${item.extension}`;
+      await storeTeacherApplicationFile(objectKey, new Uint8Array(await item.file.arrayBuffer()), item.file.type);
+      filePaths.set(item.key, teacherApplicationFileReference(objectKey));
     }
     const [application] = await db.insert(teacherApplications).values({
       firstName: field(form, "firstName"),
@@ -97,7 +94,7 @@ export async function POST(request: Request) {
   } catch (error) {
     for (const filePath of filePaths.values()) {
       try {
-        await unlink(filePath);
+        await deleteTeacherApplicationFile(filePath);
       } catch (cleanupError) {
         console.error("Could not clean up failed teacher application upload:", cleanupError);
       }
