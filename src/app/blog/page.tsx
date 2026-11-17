@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { GlassCard, GlassButton } from "@/components/ui/glass";
 import { getPublishedNews } from "@/lib/public-content";
-import { NewsMediaCarousel, isVideo } from "@/components/news-media-carousel";
+import { NewsMediaCarousel } from "@/components/news-media-carousel";
 import { NewsCarouselErrorBoundary } from "@/components/news-carousel-error-boundary";
+import { isVideo } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 

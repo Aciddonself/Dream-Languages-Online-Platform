@@ -71,6 +71,12 @@ export async function proxy(req: NextRequest) {
   const adminPublicPage = pathname === "/admin/sign-in" || pathname === "/admin/login" || pathname.startsWith("/admin/forgot-password");
   if (!protectedArea || adminPublicPage) return response;
 
+  // Admin pages validate the Supabase session, database role, and MFA assurance in
+  // requireRole/getSession at the server-render boundary. Avoid a second token
+  // refresh/verification in the proxy, which can race the freshly written MFA
+  // cookies and send a successfully authenticated admin back to sign-in.
+  if (protectedArea === "/admin" && !pathname.startsWith("/api/")) return response;
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const loginPath = protectedArea === "/admin" ? "/admin/sign-in" : "/login";

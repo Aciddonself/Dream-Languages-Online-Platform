@@ -136,8 +136,14 @@ export async function POST(request: Request) {
       message: "Application received. The administrator will review it and provide login credentials if accepted.",
     }, { status: 201 });
   } catch (error) {
-    const detail = error && typeof error === "object" ? error as { name?: string; code?: string } : {};
-    console.error("Applicant submission failed", { stage, errorName: detail.name ?? "Error", errorCode: detail.code ?? "unknown" });
+    const detail = error && typeof error === "object" ? error as { name?: string; code?: string; statusCode?: string | null; message?: string } : {};
+    console.error("Applicant submission failed", {
+      stage,
+      errorName: detail.name ?? "Error",
+      errorCode: detail.code ?? "unknown",
+      storageStatus: detail.statusCode ?? null,
+      storageMessage: stage === "photo_storage" ? detail.message?.slice(0, 240) ?? "No provider message" : undefined,
+    });
     if (photoStored) {
       try {
         await deleteStudentPhoto(avatarStorageKey);

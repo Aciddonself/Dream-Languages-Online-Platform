@@ -6,6 +6,25 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 const bucket = "student-photos";
 
+export class StudentPhotoStorageError extends Error {
+  readonly code: string;
+  readonly statusCode: string | null;
+
+  constructor(message: string, statusCode: string | null) {
+    const code = statusCode === "401" || statusCode === "403"
+      ? "STORAGE_UNAUTHORIZED"
+      : statusCode === "404"
+        ? "STORAGE_BUCKET_NOT_FOUND"
+        : statusCode === "413" || statusCode === "415"
+          ? "STORAGE_FILE_REJECTED"
+          : "STORAGE_UPLOAD_FAILED";
+    super(message);
+    this.name = "StudentPhotoStorageError";
+    this.code = code;
+    this.statusCode = statusCode;
+  }
+}
+
 export async function storeStudentPhoto(key: string, bytes: Uint8Array) {
   const storage = createSupabaseAdminClient().storage;
   const upload = () => storage.from(bucket).upload(key, bytes, {
@@ -25,7 +44,7 @@ export async function storeStudentPhoto(key: string, bytes: Uint8Array) {
       ({ error } = await upload());
     }
   }
-  if (error) throw new Error(`Could not save the student photo: ${error.message}`);
+  if (error) throw new StudentPhotoStorageError(error.message, error.statusCode ?? null);
 }
 
 export async function deleteStudentPhoto(key: string) {

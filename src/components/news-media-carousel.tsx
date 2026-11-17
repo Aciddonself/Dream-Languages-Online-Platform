@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { isVideo } from "@/lib/media";
 
 export type NewsMediaSlide = { title: string; url: string; excerpt?: string | null };
 
@@ -68,5 +69,3 @@ export function NewsMediaCarousel({ slides }: { slides: NewsMediaSlide[] }) {
     </section>
   );
 }
-
-export function isVideo(url: string) { return typeof url === "string" && /\.(mp4|webm|mov)(\?|$)/i.test(url); }
