@@ -5,7 +5,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { ACTIVE_STATUSES, MFA_REQUIRED_ROLES } from "@/lib/auth";
 import { roleHome } from "@/lib/rbac";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { adminHostAllowed } from "@/lib/admin-host";
@@ -53,14 +53,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Authentication is not configured. Add Supabase URL and anon key to continue." }, { status: 503 });
   }
 
-  const supabase = await createSupabaseServerClient();
+  const { supabase, applyAuthCookies } = await createSupabaseRouteClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error || !data.user) return invalid();
+  if (error || !data.user) return applyAuthCookies(invalid());
 
   const [user] = await db.select().from(users).where(eq(users.authId, data.user.id)).limit(1);
   if (!user || user.deletedAt || !ACTIVE_STATUSES.includes(user.status as (typeof ACTIVE_STATUSES)[number])) {
     await supabase.auth.signOut({ scope: "local" });
-    return invalid();
+    return applyAuthCookies(invalid());
   }
 
   // Administrators sign in only through the dedicated admin portal; everyone else only through the public form.
@@ -68,14 +68,14 @@ export async function POST(req: Request) {
   const portalMismatch = portal === "admin" ? !isAdmin || !adminHostAllowed(req) : isAdmin || (as !== undefined && as !== user.role);
   if (portalMismatch || (portal === "public" && !as)) {
     await supabase.auth.signOut({ scope: "local" });
-    return invalid();
+    return applyAuthCookies(invalid());
   }
 
   if (MFA_REQUIRED_ROLES.includes(user.role)) {
     const { data: factors } = await supabase.auth.mfa.listFactors();
     const totp = factors?.totp.find((factor) => factor.status === "verified");
-    return NextResponse.json({ ok: true, mfa: totp ? "verify" : "enroll", factorId: totp?.id ?? null });
+    return applyAuthCookies(NextResponse.json({ ok: true, mfa: totp ? "verify" : "enroll", factorId: totp?.id ?? null }));
   }
 
-  return NextResponse.json({ ok: true, redirectTo: roleHome(user.role), user: { role: user.role } });
+  return applyAuthCookies(NextResponse.json({ ok: true, redirectTo: roleHome(user.role), user: { role: user.role } }));
 }

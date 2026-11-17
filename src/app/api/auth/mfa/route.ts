@@ -5,7 +5,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { ACTIVE_STATUSES, MFA_REQUIRED_ROLES } from "@/lib/auth";
 import { roleHome } from "@/lib/rbac";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { adminHostAllowed } from "@/lib/admin-host";
 
@@ -22,16 +22,16 @@ export async function POST(req: Request) {
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 
-  const supabase = await createSupabaseServerClient();
+  const { supabase, applyAuthCookies } = await createSupabaseRouteClient();
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  if (!auth.user) return applyAuthCookies(NextResponse.json({ error: "Authentication required" }, { status: 401 }));
   const [user] = await db.select().from(users).where(eq(users.authId, auth.user.id)).limit(1);
   if (!user || user.deletedAt || !ACTIVE_STATUSES.includes(user.status as (typeof ACTIVE_STATUSES)[number]) || !MFA_REQUIRED_ROLES.includes(user.role)) {
-    return NextResponse.json({ error: "Not permitted" }, { status: 403 });
+    return applyAuthCookies(NextResponse.json({ error: "Not permitted" }, { status: 403 }));
   }
   if (user.role === "super_admin" && !adminHostAllowed(req)) {
     await supabase.auth.signOut({ scope: "local" });
-    return NextResponse.json({ error: "Not permitted" }, { status: 403 });
+    return applyAuthCookies(NextResponse.json({ error: "Not permitted" }, { status: 403 }));
   }
 
   if (parsed.data.action === "enroll") {
@@ -41,11 +41,11 @@ export async function POST(req: Request) {
       if (factor.status === "unverified") await supabase.auth.mfa.unenroll({ factorId: factor.id });
     }
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "DLA authenticator" });
-    if (error || !data) return NextResponse.json({ error: "Could not start 2FA enrolment" }, { status: 400 });
-    return NextResponse.json({ ok: true, factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret });
+    if (error || !data) return applyAuthCookies(NextResponse.json({ error: "Could not start 2FA enrolment" }, { status: 400 }));
+    return applyAuthCookies(NextResponse.json({ ok: true, factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret }));
   }
 
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: parsed.data.factorId, code: parsed.data.code });
-  if (error) return NextResponse.json({ error: "Invalid code" }, { status: 401 });
-  return NextResponse.json({ ok: true, redirectTo: roleHome(user.role) });
+  if (error) return applyAuthCookies(NextResponse.json({ error: "Invalid code" }, { status: 401 }));
+  return applyAuthCookies(NextResponse.json({ ok: true, redirectTo: roleHome(user.role) }));
 }
