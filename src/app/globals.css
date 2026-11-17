@@ -1059,7 +1059,7 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; }
 @media (min-width: 900px) { .hero-split { grid-template-columns: 1.15fr .85fr; } }
 .hero-image { position: relative; overflow: hidden; border-radius: 28px; aspect-ratio: 16 / 9; max-height: 460px; border: 0; box-shadow: 0 18px 44px rgba(8, 38, 74, .18), 0 0 0 4px rgba(255,255,255,.28); }
 .hero-image img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; image-rendering: auto; }
-.home-hero-carousel { height: auto; aspect-ratio: 16 / 9; max-height: 460px; background: color-mix(in srgb, var(--surface) 88%, #d9d3c5); border: 1px solid color-mix(in srgb, var(--brand-secondary) 20%, var(--border)); box-shadow: 0 12px 34px rgba(8,38,74,.15); }
+.home-hero-carousel { height: auto; width: 100%; max-width: 840px; aspect-ratio: 3 / 2; max-height: 560px; background: color-mix(in srgb, var(--surface) 88%, #d9d3c5); border: 1px solid color-mix(in srgb, var(--brand-secondary) 20%, var(--border)); box-shadow: 0 12px 34px rgba(8,38,74,.15); }
 .dla-image-enter { animation: dlaImageEnter 700ms ease both; }
 @keyframes dlaImageEnter { from { opacity: .45; } to { opacity: 1; } }
 .home-learning-image { position: relative; width: 100%; max-height: 260px; aspect-ratio: 16 / 10; overflow: hidden; background: var(--surface); }
@@ -1272,5 +1272,5 @@ p, li, td, th, label, summary, blockquote { font-weight: 600; }
   font-family: Georgia, "Times New Roman", serif !important;
   font-weight: 700 !important;
 }
-.dla-photo-frame { aspect-ratio: 16 / 9; max-height: 420px; min-height: 220px; background: color-mix(in srgb, var(--surface) 88%, #d9d3c5); border: 1px solid color-mix(in srgb, var(--brand-secondary) 24%, var(--border)); box-shadow: 0 8px 26px rgba(8,38,74,.11), 0 0 12px rgba(201,156,59,.045); }
+.dla-photo-frame { aspect-ratio: 3 / 2; width: 100%; max-width: 840px; max-height: 560px; min-height: 220px; margin-inline: auto; background: color-mix(in srgb, var(--surface) 88%, #d9d3c5); border: 1px solid color-mix(in srgb, var(--brand-secondary) 24%, var(--border)); box-shadow: 0 8px 26px rgba(8,38,74,.11), 0 0 12px rgba(201,156,59,.045); }
 @media (max-width: 640px) { .dla-photo-frame { min-height: 200px; } }

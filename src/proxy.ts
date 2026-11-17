@@ -97,6 +97,9 @@ export async function proxy(req: NextRequest) {
       getAll: () => req.cookies.getAll(),
       setAll(items) {
         for (const { name, value } of items) req.cookies.set(name, value);
+        // Pass refreshed Supabase auth cookies to the route handler and Server Components
+        // for this same request, as well as setting them on the browser response below.
+        requestHeaders.set("cookie", req.cookies.toString());
         response = NextResponse.next({ request: { headers: requestHeaders } });
         response.headers.set("Content-Security-Policy", csp);
         for (const { name, value, options } of items) {

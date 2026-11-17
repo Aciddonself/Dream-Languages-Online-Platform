@@ -200,7 +200,7 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
                   <p className="opacity-70 break-all">Manual key: {step.secret}</p>
                 </div>
               )}
-              <GlassInput inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="123456" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} required />
+              <GlassInput inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="6-digit authenticator code" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} required />
             </>
           )}
           {error && <div role="alert" className="text-sm text-[var(--danger)]">{error}</div>}
