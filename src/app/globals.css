@@ -442,6 +442,9 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; }
 .site-nav-booking:hover { color: #101c30 !important; transform: translateY(-1px); filter: brightness(1.04); }
 .site-menu-booking-label strong { color: var(--brand-accent-soft); }
 .light .site-nav-booking { color: #17263b !important; }
+.site-nav nav[aria-label="Primary navigation"] a,
+.site-nav nav[aria-label="Secondary navigation"] a,
+.site-menu-link .site-menu-label strong { font-weight: 800 !important; }
 .site-menu-index { width: 30px; color: var(--brand-accent); font: 600 0.75rem/1 var(--font-display); }
 .site-menu-label { display: grid; flex: 1; gap: 4px; }
 .site-menu-label strong { font-size: 1.02rem; font-weight: 650; }
