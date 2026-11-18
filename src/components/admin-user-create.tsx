@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import { GlassButton, GlassInput } from "@/components/ui/glass";
 import { prepareProfilePhoto } from "@/lib/prepare-profile-photo";
 
-export function AdminUserCreate({ canCreateAdmin = false }: { canCreateAdmin?: boolean }) {
+type DepartmentOption = { id: string; name: string };
+
+export function AdminUserCreate({ canCreateAdmin = false, departments = [] }: { canCreateAdmin?: boolean; departments?: DepartmentOption[] }) {
   const router = useRouter();
   const photoInput = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -15,6 +17,7 @@ export function AdminUserCreate({ canCreateAdmin = false }: { canCreateAdmin?: b
     firstName: "",
     lastName: "",
     role: "student",
+    departmentId: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -50,7 +53,7 @@ export function AdminUserCreate({ canCreateAdmin = false }: { canCreateAdmin?: b
         : `${roleLabel} ${name} created successfully.`;
       setSuccess(message);
       toast.success(message);
-      setForm({ email: "", password: "", firstName: "", lastName: "", role: "student" });
+      setForm({ email: "", password: "", firstName: "", lastName: "", role: "student", departmentId: "" });
       if (photoInput.current) photoInput.current.value = "";
       router.refresh();
     } catch (createError) {
@@ -64,7 +67,7 @@ export function AdminUserCreate({ canCreateAdmin = false }: { canCreateAdmin?: b
 
   return (
     <div className="admin-user-create-scroll -mx-4 overflow-x-auto px-4 pb-3" role="region" aria-label="Add user form. Scroll horizontally to see all fields." tabIndex={0}>
-      <form onSubmit={submit} className="grid min-w-[1220px] grid-cols-[150px_150px_230px_230px_180px_220px] items-end gap-3">
+      <form onSubmit={submit} className="grid min-w-[1540px] grid-cols-[150px_150px_230px_230px_180px_240px_220px] items-end gap-3">
         <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
           <span>First name</span>
           <GlassInput placeholder="First name" value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} required />
@@ -83,7 +86,7 @@ export function AdminUserCreate({ canCreateAdmin = false }: { canCreateAdmin?: b
         </label>
         <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
           <span>Account role</span>
-          <select className="glass min-w-0 w-full px-3 py-2.5" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>
+          <select className="glass min-w-0 w-full px-3 py-2.5" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, departmentId: event.target.value === "student" || event.target.value === "applicant" ? form.departmentId : "" })}>
             <option value="student">Student</option>
             <option value="applicant">Applicant</option>
             <option value="teacher">Teacher</option>
@@ -92,6 +95,15 @@ export function AdminUserCreate({ canCreateAdmin = false }: { canCreateAdmin?: b
             {canCreateAdmin && <option value="admin">Admin</option>}
           </select>
         </label>
+        {["student", "applicant"].includes(form.role) && (
+          <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
+            <span>Language department <span className="font-normal">(required)</span></span>
+            <select className="glass min-w-0 w-full px-3 py-2.5" value={form.departmentId} onChange={(event) => setForm({ ...form, departmentId: event.target.value })} required>
+              <option value="">Choose a language</option>
+              {departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+            </select>
+          </label>
+        )}
         {form.role === "student" && (
           <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
             <span>Passport photo <span className="font-normal">(required)</span></span>
@@ -101,8 +113,8 @@ export function AdminUserCreate({ canCreateAdmin = false }: { canCreateAdmin?: b
         <GlassButton type="submit" className="min-h-11 w-full" disabled={loading}>
           {loading ? "Creating..." : "Create user"}
         </GlassButton>
-        {error && <p className="col-span-6 text-sm text-[var(--danger)]" role="alert">{String(error)}</p>}
-        {success && <p className="col-span-6 text-sm text-[var(--success)]" role="status">{success}</p>}
+        {error && <p className="col-span-full text-sm text-[var(--danger)]" role="alert">{String(error)}</p>}
+        {success && <p className="col-span-full text-sm text-[var(--success)]" role="status">{success}</p>}
       </form>
     </div>
   );

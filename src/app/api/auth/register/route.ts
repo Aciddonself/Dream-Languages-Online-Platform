@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { departments, users } from "@/db/schema";
 import { nextRegistrationNumber } from "@/lib/registration";
 import { isProfilePhotoJpeg } from "@/lib/pdf";
 import { deleteStudentPhoto, storeStudentPhoto } from "@/lib/student-photos";
@@ -15,7 +16,7 @@ const schema = z.object({
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
   phone: z.string().trim().max(32).optional(),
-  departmentId: z.string().uuid().optional().or(z.literal("")),
+  departmentId: z.string().uuid(),
   address: z.string().trim().max(500).optional(),
   dateOfBirth: z.string().optional(),
   nationality: z.string().trim().max(100).optional(),
@@ -83,6 +84,13 @@ export async function POST(request: Request) {
   const photoBytes = photo ? new Uint8Array(await photo.arrayBuffer()) : null;
   if (!photoBytes || !isProfilePhotoJpeg(photoBytes)) {
     return NextResponse.json({ error: "The profile photo could not be read as a JPEG. Please reselect the image and try again." }, { status: 415 });
+  }
+
+  const [selectedDepartment] = await db.select({ id: departments.id }).from(departments)
+    .where(and(eq(departments.id, parsed.data.departmentId), eq(departments.isLanguage, true), isNull(departments.deletedAt)))
+    .limit(1);
+  if (!selectedDepartment) {
+    return NextResponse.json({ error: "Choose an active language department before submitting your application." }, { status: 400 });
   }
 
   const {

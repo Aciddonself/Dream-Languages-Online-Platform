@@ -15,11 +15,13 @@ const name = (u: { displayName?: string | null; firstName?: string | null; lastN
   u.displayName ?? ([u.firstName, u.lastName].filter(Boolean).join(" ") || u.email || "Unnamed");
 
 async function people(role: "student" | "teacher" | "head_academics" | "finance" | "super_admin" | "applicant" | "admin", description: string): Promise<SectionData> {
-  const list = await db.select().from(users).where(and(eq(users.role, role), isNull(users.deletedAt))).orderBy(users.registrationNumber, desc(users.createdAt)).limit(200);
+  const list = await db.select({ user: users, departmentName: departments.name }).from(users)
+    .leftJoin(departments, eq(users.departmentId, departments.id))
+    .where(and(eq(users.role, role), isNull(users.deletedAt))).orderBy(users.registrationNumber, desc(users.createdAt)).limit(200);
   return {
     description,
     links: [{ href: `/admin/users?role=${role}`, label: "Search, filter and create accounts" }],
-    rows: list.map((u) => ({ title: name(u), detail: `${u.registrationNumber ? `${u.registrationNumber} · ` : ""}${u.email}`, status: u.status })),
+    rows: list.map(({ user: u, departmentName }) => ({ title: name(u), detail: `${departmentName ? `${departmentName} · ` : "Unassigned department · "}${u.registrationNumber ? `${u.registrationNumber} · ` : ""}${u.email}`, status: u.status })),
   };
 }
 

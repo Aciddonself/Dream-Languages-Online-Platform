@@ -21,6 +21,7 @@ const createUserSchema = z.object({
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
   role: z.enum(["admin", "head_academics", "teacher", "finance", "student", "applicant"]),
+  departmentId: z.string().uuid().optional().or(z.literal("")),
 }).strict();
 
 /** Creates (or updates) the Supabase Auth identity for a profile row. Returns the auth user id. */
@@ -73,13 +74,21 @@ async function createUserRequest(req: Request) {
   } catch {
     return NextResponse.json({ error: "Could not read the new user form" }, { status: 400 });
   }
-  const body = Object.fromEntries(["email", "password", "firstName", "lastName", "role"].map((key) => [key, form.get(key)]));
+  const body = Object.fromEntries(["email", "password", "firstName", "lastName", "role", "departmentId"].map((key) => [key, form.get(key)]));
   const parsed = createUserSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { email, password, firstName, lastName, role } = parsed.data;
+  const { email, password, firstName, lastName, role, departmentId } = parsed.data;
+  if (["student", "applicant"].includes(role) && !departmentId) {
+    return NextResponse.json({ error: "Choose the student's language department before creating the account." }, { status: 400 });
+  }
+  if (departmentId) {
+    const [department] = await db.select({ id: departments.id }).from(departments)
+      .where(and(eq(departments.id, departmentId), eq(departments.isLanguage, true), isNull(departments.deletedAt))).limit(1);
+    if (!department) return NextResponse.json({ error: "Choose an active language department." }, { status: 400 });
+  }
   if (role === "admin") {
     if (actor.role !== "super_admin") return NextResponse.json({ error: "Only the super admin can create the administrator account" }, { status: 403 });
     const [existingAdmin] = await db.select({ id: users.id }).from(users)
@@ -115,6 +124,7 @@ async function createUserRequest(req: Request) {
         email,
         authId,
         role,
+        departmentId: departmentId || null,
         status: role === "applicant" ? "applicant" : "registered",
         firstName,
         lastName,
@@ -173,6 +183,7 @@ async function updateUserRequest(req: Request) {
   const parsed = z.discriminatedUnion("action", [
     z.object({ action: z.literal("archive_others"), confirmation: z.literal("ARCHIVE OTHER ACCOUNTS") }),
     z.object({ userId: z.string().uuid(), action: z.literal("admit_applicant") }),
+    z.object({ userId: z.string().uuid(), action: z.literal("set_department"), departmentId: z.string().uuid() }),
     z.object({
       userId: z.string().uuid(),
       action: z.literal("set_status"),
@@ -186,6 +197,29 @@ async function updateUserRequest(req: Request) {
   ]).safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const action = parsed.data;
+
+  if (action.action === "set_department") {
+    const [account] = await db.select().from(users).where(eq(users.id, action.userId)).limit(1);
+    if (!account || account.deletedAt) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    if (!["student", "applicant"].includes(account.role)) return NextResponse.json({ error: "Only student and applicant accounts can be assigned to a language department" }, { status: 400 });
+    if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) return NextResponse.json({ error: "Administrator accounts cannot be edited here" }, { status: 403 });
+    const [department] = await db.select({ id: departments.id }).from(departments)
+      .where(and(eq(departments.id, action.departmentId), eq(departments.isLanguage, true), isNull(departments.deletedAt))).limit(1);
+    if (!department) return NextResponse.json({ error: "Choose an active language department" }, { status: 400 });
+    await db.transaction(async (tx: any) => {
+      await tx.update(users).set({ departmentId: department.id, updatedAt: new Date() }).where(eq(users.id, account.id));
+      await tx.insert(auditLogs).values({
+        actorId: actor.id,
+        action: "assign_language_department",
+        entityType: "user",
+        entityId: account.id,
+        before: { departmentId: account.departmentId },
+        after: { departmentId: department.id },
+        ip: clientIp(req),
+      });
+    });
+    return NextResponse.json({ ok: true });
+  }
 
   if (action.action === "archive_others") {
     if (actor.role !== "super_admin") return NextResponse.json({ error: "Only the super admin can archive accounts in bulk" }, { status: 403 });

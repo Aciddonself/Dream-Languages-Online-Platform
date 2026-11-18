@@ -172,8 +172,8 @@ export function ApplyForm({
         <Link href="/services" className="underline text-[var(--brand-primary)]">View our services</Link>
       </p>
       {success && <div className="text-sm text-[var(--success)]" role="status">{success}</div>}
-      <GlassButton type="submit" className="w-full" loading={loading}>
-        {loading ? "Submitting application..." : "Submit application"}
+      <GlassButton type="submit" className="w-full" loading={loading} disabled={departments.length === 0}>
+        {loading ? "Submitting application..." : departments.length ? "Submit application" : "Applications unavailable"}
       </GlassButton>
     </form>
   );

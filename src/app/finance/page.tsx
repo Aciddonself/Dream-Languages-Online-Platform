@@ -9,6 +9,7 @@ import { count, desc, eq, sql } from "drizzle-orm";
 const nav = [
   { href: "/finance", label: "Dashboard", icon: "🏠" },
   { href: "/finance/payments", label: "Payments", icon: "💳" },
+  { href: "/finance/students", label: "Students by language", icon: "👥" },
   { href: "/finance/holds", label: "Holds", icon: "⏸️" },
   { href: "/finance/reports", label: "Reports", icon: "📊" },
 ];

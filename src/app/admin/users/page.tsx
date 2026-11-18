@@ -9,11 +9,12 @@ import { AdminApplicantPromote } from "@/components/admin-applicant-promote";
 import { AdminUserStatus } from "@/components/admin-user-status";
 import { AdminUserCredentials } from "@/components/admin-user-credentials";
 import { AdminUserMfaReset } from "@/components/admin-user-mfa-reset";
+import { AdminUserDepartment } from "@/components/admin-user-department";
 import { AdminStudentPhotoControl } from "@/components/admin-student-photo-control";
 import { StudentDocumentStampControl } from "@/components/student-document-stamp-control";
 import { and, asc, eq, ilike, isNull, ne, or } from "drizzle-orm";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { departments, users } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -22,21 +23,26 @@ const nav = [
   { href: "/admin/users", label: "Users", icon: "👥" },
 ];
 
-export default async function AdminUsers({ searchParams }: { searchParams: Promise<{ q?: string; role?: string; archived?: string }> }) {
-  const actor = await requireRole(["super_admin"]);
-  const { q = "", role = "", archived } = await searchParams;
+export default async function AdminUsers({ searchParams }: { searchParams: Promise<{ q?: string; role?: string; archived?: string; departmentId?: string }> }) {
+  const actor = await requireRole(["super_admin", "admin"]);
+  const { q = "", role = "", archived, departmentId = "" } = await searchParams;
   const includeArchived = archived === "1";
   const term = q.trim().slice(0, 80);
+  const languageDepartments = await db.select({ id: departments.id, name: departments.name }).from(departments)
+    .where(and(isNull(departments.deletedAt), eq(departments.isLanguage, true))).orderBy(asc(departments.name));
   const filters = [
     includeArchived ? undefined : isNull(users.deletedAt),
     term ? or(ilike(users.registrationNumber, `%${term}%`), ilike(users.displayName, `%${term}%`), ilike(users.email, `%${term}%`)) : undefined,
     role ? eq(users.role, role as typeof users.$inferSelect.role) : undefined,
+    departmentId === "unassigned" ? isNull(users.departmentId) : departmentId ? eq(users.departmentId, departmentId) : undefined,
     includeArchived ? undefined : ne(users.status, "archived"),
   ].filter(Boolean);
   const all = await db
     .select({
       id: users.id,
       displayName: users.displayName,
+      departmentName: departments.name,
+      departmentId: users.departmentId,
       email: users.email,
       role: users.role,
       status: users.status,
@@ -53,6 +59,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
       documentStamperTitle: users.documentStamperTitle,
     })
     .from(users)
+    .leftJoin(departments, eq(users.departmentId, departments.id))
     .where(filters.length ? and(...filters) : undefined)
     .orderBy(asc(users.registrationNumber), asc(users.createdAt));
   return (
@@ -60,7 +67,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
       <h1 className="display-font text-2xl font-bold mb-4">User accounts</h1>
       <GlassCard className="p-4 mb-4 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm">{all.length} {includeArchived ? "account" : "active account"}{all.length === 1 ? "" : "s"}{term || role ? " matching your filter" : ""}</p>
+          <p className="text-sm">{all.length} {includeArchived ? "account" : "active account"}{all.length === 1 ? "" : "s"}{term || role || departmentId ? " matching your filter" : ""}</p>
           <Link href={includeArchived ? "/admin/users" : "/admin/users?archived=1"} className="font-semibold underline underline-offset-4">
             {includeArchived ? "Hide archived accounts" : "Show archived accounts"}
           </Link>
@@ -83,23 +90,34 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
             <option value="admin">Admin</option>
             <option value="super_admin">Super Admin</option>
           </select>
+          <select name="departmentId" defaultValue={departmentId} className="glass min-w-48 px-3 py-2.5">
+            <option value="">All language departments</option>
+            <option value="unassigned">Department unassigned</option>
+            {languageDepartments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+          </select>
           <button type="submit" className="glass px-4 py-2.5 font-semibold">Filter</button>
-          {(term || role) && <Link href={includeArchived ? "/admin/users?archived=1" : "/admin/users"} className="glass px-4 py-2.5">Clear filters</Link>}
+          {(term || role || departmentId) && <Link href={includeArchived ? "/admin/users?archived=1" : "/admin/users"} className="glass px-4 py-2.5">Clear filters</Link>}
         </form>
-        <AdminUserCreate canCreateAdmin={actor.role === "super_admin"} />
+        <AdminUserCreate
+          canCreateAdmin={actor.role === "super_admin"}
+          departments={languageDepartments}
+        />
       </GlassCard>
       <GlassCard className="overflow-hidden">
         <p className="px-4 pt-3 text-xs opacity-70">Scroll the table horizontally to reach password, authenticator, admission, photo, and document controls.</p>
         <div className="admin-user-create-scroll w-full overflow-x-auto px-3 pb-3" role="region" aria-label="User account table. Scroll horizontally to see all controls." tabIndex={0}>
-          <table className="w-full min-w-[1600px] text-sm">
+          <table className="w-full min-w-[1720px] text-sm">
           <thead className="bg-white/5">
-            <tr><th className="text-left p-3">Name / photo</th><th className="text-left p-3">Registration no.</th><th className="text-left p-3">Email / login</th><th className="text-left p-3">Role held</th><th className="text-left p-3">Status</th><th className="min-w-[240px] text-left p-3">Issue credentials</th><th className="text-left p-3">Authenticator</th><th className="text-left p-3">Admission</th><th className="text-left p-3">Passport photo</th><th className="text-left p-3">Official student documents</th></tr>
+            <tr><th className="text-left p-3">Name / photo</th><th className="text-left p-3">Registration no.</th><th className="text-left p-3">Language department</th><th className="text-left p-3">Email / login</th><th className="text-left p-3">Role held</th><th className="text-left p-3">Status</th><th className="min-w-[240px] text-left p-3">Issue credentials</th><th className="text-left p-3">Authenticator</th><th className="text-left p-3">Admission</th><th className="text-left p-3">Passport photo</th><th className="text-left p-3">Official student documents</th></tr>
           </thead>
           <tbody>
-            {all.map((u: { id: string; displayName: string | null; role: string; status: string; registrationNumber: string | null; address: string | null; nextOfKinName: string | null; nextOfKinPhone: string | null; studyFormat: string | null; studyDurationMonths: number | null; requestedIntake: string | null; email: string; avatarStorageKey: string | null; documentStampedAt: Date | null; documentStamperName: string | null; documentStamperTitle: string | null; }) => (
+            {all.map((u: { id: string; displayName: string | null; role: string; status: string; registrationNumber: string | null; address: string | null; nextOfKinName: string | null; nextOfKinPhone: string | null; studyFormat: string | null; studyDurationMonths: number | null; requestedIntake: string | null; email: string; departmentName: string | null; departmentId: string | null; avatarStorageKey: string | null; documentStampedAt: Date | null; documentStamperName: string | null; documentStamperTitle: string | null; }) => (
               <tr key={u.id} className="border-t border-white/10">
                 <td className="p-3"><span className="flex items-center gap-2">{["student", "applicant"].includes(u.role) && u.avatarStorageKey && <Image src={`/api/portal/profile-photo?userId=${u.id}`} alt={`${u.displayName ?? "Student"} passport photo`} width={40} height={48} unoptimized className="h-12 w-10 rounded object-cover" />}{u.displayName}</span>{u.role === "applicant" && <div className="max-w-xs text-xs opacity-65">{u.requestedIntake ? `Requested intake: ${u.requestedIntake} · ` : ""}{u.address ?? "Address missing"} · Next of kin: {u.nextOfKinName ?? "Not provided"} {u.nextOfKinPhone ?? ""} · {u.studyFormat?.replaceAll("_", " ") ?? "Format pending"} {u.studyDurationMonths === 0 ? "Full level" : u.studyDurationMonths ? `${u.studyDurationMonths} month(s)` : ""}</div>}</td>
                 <td className="p-3 font-mono text-xs">{u.registrationNumber ?? "Not assigned"}</td>
+                <td className="p-3">{["student", "applicant"].includes(u.role)
+                  ? <AdminUserDepartment userId={u.id} departmentId={u.departmentId} departments={languageDepartments} />
+                  : u.departmentName ?? <span className="opacity-50">Not assigned</span>}</td>
                 <td className="p-3 opacity-70">{u.email}</td>
                         <td className="p-3">
                           {u.status === "archived" && ["teacher", "finance", "head_academics"].includes(u.role)

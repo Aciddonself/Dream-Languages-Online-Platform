@@ -14,6 +14,7 @@ const nav = [
   { href: "/admin", label: "Dashboard", icon: "🏠" },
   { href: "/admin/calendar", label: "Calendar", icon: "🗓️" },
   { href: "/admin/users", label: "Users", icon: "👥" },
+  { href: "/admin/users?role=applicant", label: "Admission applications", icon: "📨" },
   { href: "/admin/volunteers", label: "Teacher applications", icon: "🧑‍🏫" },
   { href: "/admin/academic", label: "Academic", icon: "🎓" },
   { href: "/admin/recordings", label: "Class recordings", icon: "🎬" },
@@ -25,7 +26,7 @@ const nav = [
 ];
 
 export default async function AdminDashboard() {
-  await requireRole(["super_admin"]);
+  await requireRole(["super_admin", "admin"]);
   const monthWindowStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 11, 1));
   const [[studentCount], [teacherCount], [applicantCount], [financeCount], depts, monthlyStudentRows, recentActivity] = await Promise.all([
     db.select({ c: count() }).from(users).where(and(eq(users.role, "student"), inArray(users.status, ["active", "registered", "applicant"]))),
@@ -86,6 +87,11 @@ export default async function AdminDashboard() {
             <div className="text-3xl font-bold" style={{ color: s.color }}>{s.value}</div>
           </GlassCard>
         ))}
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-3">
+        <Link className="btn-glass inline-flex items-center px-4 py-2" href="/admin/users?role=applicant">Review admission applications</Link>
+        <Link className="btn-glass inline-flex items-center px-4 py-2" href="/admin/users?role=student">Browse enrolled students by language</Link>
       </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-6">

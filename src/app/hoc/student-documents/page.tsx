@@ -5,7 +5,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { StudentDocumentStampControl } from "@/components/student-document-stamp-control";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { departments, users } from "@/db/schema";
 import { requireRole } from "@/lib/rbac";
 import type { NavItem } from "@/lib/portal-nav";
 
@@ -14,10 +14,12 @@ const nav: NavItem[] = [
   { href: "/hoc/student-documents", label: "Student IDs and document stamps", icon: "🪪" },
 ];
 
-export default async function StudentDocumentsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function StudentDocumentsPage({ searchParams }: { searchParams: Promise<{ q?: string; departmentId?: string }> }) {
   await requireRole(["head_academics", "super_admin"]);
-  const { q = "" } = await searchParams;
+  const { q = "", departmentId = "" } = await searchParams;
   const term = q.trim().slice(0, 80);
+  const languageDepartments = await db.select({ id: departments.id, name: departments.name }).from(departments)
+    .where(and(eq(departments.isLanguage, true), isNull(departments.deletedAt))).orderBy(asc(departments.name));
   const students = await db.select({
     id: users.id,
     name: users.displayName,
@@ -27,11 +29,14 @@ export default async function StudentDocumentsPage({ searchParams }: { searchPar
     documentStampedAt: users.documentStampedAt,
     documentStamperName: users.documentStamperName,
     documentStamperTitle: users.documentStamperTitle,
+    departmentName: departments.name,
   }).from(users)
+    .leftJoin(departments, eq(users.departmentId, departments.id))
     .where(and(
       eq(users.role, "student"),
       inArray(users.status, ["active", "registered"]),
       isNull(users.deletedAt),
+      departmentId === "unassigned" ? isNull(users.departmentId) : departmentId ? eq(users.departmentId, departmentId) : undefined,
       term ? or(
         ilike(users.displayName, `%${term}%`),
         ilike(users.email, `%${term}%`),
@@ -47,8 +52,13 @@ export default async function StudentDocumentsPage({ searchParams }: { searchPar
       <p className="mb-5 text-sm opacity-70">Stamping saves your name, role and current Uganda date to the student record. Students can then download the official digital ID and report cards. Search by name, email or registration number; at most 100 matches are shown.</p>
       <form method="get" className="mb-5 flex flex-wrap gap-2">
         <input name="q" defaultValue={term} placeholder="Search students" className="glass min-w-0 flex-1 px-4 py-2.5 outline-none" />
+        <select name="departmentId" defaultValue={departmentId} className="glass min-w-48 px-3 py-2.5">
+          <option value="">All language departments</option>
+          <option value="unassigned">Department unassigned</option>
+          {languageDepartments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+        </select>
         <button type="submit" className="glass rounded-xl px-4 py-2.5 font-semibold">Search</button>
-        {term && <Link href="/hoc/student-documents" className="glass rounded-xl px-4 py-2.5">Clear</Link>}
+        {(term || departmentId) && <Link href="/hoc/student-documents" className="glass rounded-xl px-4 py-2.5">Clear</Link>}
       </form>
       <div className="grid gap-3">
         {students.length ? students.map((student) => (
@@ -61,7 +71,7 @@ export default async function StudentDocumentsPage({ searchParams }: { searchPar
               )}
               <div>
                 <h2 className="font-semibold">{student.name ?? "Student"}</h2>
-                <p className="font-mono text-xs opacity-70">{student.registrationNumber ?? "Registration number pending"} · {student.status}</p>
+                <p className="font-mono text-xs opacity-70">{student.registrationNumber ?? "Registration number pending"} · {student.departmentName ?? "Department unassigned"} · {student.status}</p>
                 {!student.avatarStorageKey && <p className="text-xs text-[var(--warning)]">Student must upload a passport photo before downloading an ID.</p>}
               </div>
             </div>
