@@ -1050,6 +1050,8 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; }
 .site-footer-col h3 { margin: 0 0 .75rem; font-size: 1.1rem; color: var(--brand-accent); }
 .site-footer-col nav { display: flex; flex-direction: column; gap: .25rem; }
 .site-footer a { display: block; width: fit-content; padding: .3rem .7rem; margin-left: -.7rem; border: 1px solid transparent; border-radius: 999px; color: inherit; text-decoration: none; }
+.site-footer .cookie-settings-button { display: block; width: fit-content; padding: .3rem .7rem; margin-left: -.7rem; border: 1px solid transparent; border-radius: 999px; color: inherit; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.site-footer .cookie-settings-button:hover, .site-footer .cookie-settings-button:focus-visible { border-color: var(--border); background: var(--surface); outline: none; }
 .site-footer-bottom { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: .9rem; }
 @media (max-width: 900px) { .site-footer-inner { grid-template-columns: 1fr 1fr; } .site-footer-brand { grid-column: 1 / -1; } }
 @media (max-width: 520px) { .site-footer-inner { grid-template-columns: 1fr; } }

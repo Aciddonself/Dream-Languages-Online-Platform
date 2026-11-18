@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { SocialLinksDisplay } from "@/components/social-links-display";
+import { CookieSettingsButton } from "@/components/cookie-consent";
 import { DEFAULT_SOCIAL_LINKS, type SocialLinks } from "@/lib/social-link-types";
 import { whatsappContacts } from "@/lib/contacts";
 
@@ -86,6 +87,7 @@ export function SiteFooter() {
             {legal.map((link) => (
               <Link key={link.href} href={link.href}>{link.label}</Link>
             ))}
+            <CookieSettingsButton />
           </nav>
         </div>
         <div className="site-footer-col">
