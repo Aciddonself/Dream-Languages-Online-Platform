@@ -87,9 +87,11 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
         <AdminUserCreate />
       </GlassCard>
       <GlassCard className="overflow-hidden">
-        <table className="w-full text-sm">
+        <p className="px-4 pt-3 text-xs opacity-70">Scroll the table horizontally to reach password, admission, photo, and document controls.</p>
+        <div className="admin-user-create-scroll w-full overflow-x-auto px-3 pb-3" role="region" aria-label="User account table. Scroll horizontally to see all controls." tabIndex={0}>
+          <table className="w-full min-w-[1600px] text-sm">
           <thead className="bg-white/5">
-            <tr><th className="text-left p-3">Name / photo</th><th className="text-left p-3">Registration no.</th><th className="text-left p-3">Email / login</th><th className="text-left p-3">Role held</th><th className="text-left p-3">Status</th><th className="text-left p-3">Issue credentials</th><th className="text-left p-3">Admission</th><th className="text-left p-3">Passport photo</th><th className="text-left p-3">Official student documents</th></tr>
+            <tr><th className="text-left p-3">Name / photo</th><th className="text-left p-3">Registration no.</th><th className="text-left p-3">Email / login</th><th className="text-left p-3">Role held</th><th className="text-left p-3">Status</th><th className="min-w-[240px] text-left p-3">Issue credentials</th><th className="text-left p-3">Admission</th><th className="text-left p-3">Passport photo</th><th className="text-left p-3">Official student documents</th></tr>
           </thead>
           <tbody>
             {all.map((u: { id: string; displayName: string | null; role: string; status: string; registrationNumber: string | null; address: string | null; nextOfKinName: string | null; nextOfKinPhone: string | null; studyFormat: string | null; studyDurationMonths: number | null; requestedIntake: string | null; email: string; avatarStorageKey: string | null; documentStampedAt: Date | null; documentStamperName: string | null; documentStamperTitle: string | null; }) => (
@@ -111,7 +113,9 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
             ))}
           </tbody>
         </table>
+        </div>
       </GlassCard>
     </PortalShell>
   );
 }
+
