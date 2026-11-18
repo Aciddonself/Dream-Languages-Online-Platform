@@ -7,9 +7,27 @@ import { GlassCard, GlassButton } from "@/components/ui/glass";
 const STORAGE_KEY = "dla-cookie-consent";
 const COOKIE_NAME = "dla_cookie_consent";
 const CONSENT_EVENT = "dla:open-cookie-preferences";
-type ConsentChoice = "accepted" | "rejected";
+const CONSENT_CHANGE_EVENT = "dla:cookie-preferences-changed";
 
-function readChoice(): ConsentChoice | null {
+export type CookiePreferences = { analytics: boolean; advertising: boolean };
+
+function parseChoice(value?: string | null): CookiePreferences | null {
+  if (value === "all") return { analytics: true, advertising: true };
+  if (value === "accepted" || value === "analytics") return { analytics: true, advertising: false };
+  if (value === "analytics") return { analytics: true, advertising: false };
+  if (value === "advertising") return { analytics: false, advertising: true };
+  if (value === "essential" || value === "rejected") return { analytics: false, advertising: false };
+  return null;
+}
+
+function serializeChoice(preferences: CookiePreferences) {
+  if (preferences.analytics && preferences.advertising) return "all";
+  if (preferences.analytics) return "analytics";
+  if (preferences.advertising) return "advertising";
+  return "essential";
+}
+
+export function readCookiePreferences(): CookiePreferences | null {
   let cookieChoice: string | undefined;
   try {
     cookieChoice = document.cookie
@@ -20,21 +38,22 @@ function readChoice(): ConsentChoice | null {
   } catch {
     // Fall back to browser storage when cookies are disabled.
   }
-  if (cookieChoice === "accepted" || cookieChoice === "rejected") return cookieChoice;
+  const fromCookie = parseChoice(cookieChoice);
+  if (fromCookie) return fromCookie;
 
   try {
-    const storedChoice = localStorage.getItem(STORAGE_KEY);
-    return storedChoice === "accepted" || storedChoice === "rejected" ? storedChoice : null;
+    return parseChoice(localStorage.getItem(STORAGE_KEY));
   } catch {
     return null;
   }
 }
 
-function saveChoice(choice: ConsentChoice) {
+function savePreferences(preferences: CookiePreferences) {
+  const choice = serializeChoice(preferences);
   try {
     localStorage.setItem(STORAGE_KEY, choice);
   } catch {
-    // The consent banner still works for the current page when browser storage is blocked.
+    // The cookie remains the persistent preference when browser storage is blocked.
   }
 
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
@@ -43,26 +62,47 @@ function saveChoice(choice: ConsentChoice) {
   } catch {
     // Browser storage remains the fallback when cookies are disabled.
   }
+  window.dispatchEvent(new CustomEvent(CONSENT_CHANGE_EVENT, { detail: preferences }));
 }
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(false);
+  const [preferences, setPreferences] = useState<CookiePreferences>({ analytics: false, advertising: false });
 
   useEffect(() => {
-    const choice = readChoice();
-    if (choice) {
-      saveChoice(choice);
+    const saved = readCookiePreferences();
+    if (saved) {
+      setPreferences(saved);
+      savePreferences(saved);
     } else {
       setVisible(true);
     }
 
-    const openPreferences = () => setVisible(true);
+    const openPreferences = () => {
+      const current = readCookiePreferences();
+      if (current) setPreferences(current);
+      setVisible(true);
+    };
     window.addEventListener(CONSENT_EVENT, openPreferences);
     return () => window.removeEventListener(CONSENT_EVENT, openPreferences);
   }, []);
 
-  function choose(choice: ConsentChoice) {
-    saveChoice(choice);
+  function save() {
+    savePreferences(preferences);
+    setVisible(false);
+  }
+
+  function rejectOptional() {
+    const essentialOnly = { analytics: false, advertising: false };
+    setPreferences(essentialOnly);
+    savePreferences(essentialOnly);
+    setVisible(false);
+  }
+
+  function acceptAll() {
+    const allOptional = { analytics: true, advertising: true };
+    setPreferences(allOptional);
+    savePreferences(allOptional);
     setVisible(false);
   }
 
@@ -74,12 +114,23 @@ export function CookieConsent() {
         <div>
           <h2 id="cookie-consent-title" className="font-bold">Cookie preferences</h2>
           <p id="cookie-consent-description" className="text-sm">
-            Essential cookies keep sign in and security working. Optional analytics and advertising cookies are currently disabled on this site.
+            Essential cookies keep sign in and security working. Choose separately whether to allow Google Analytics and Google Ads tracking. Optional tags load only when the relevant ID is configured and you opt in.
           </p>
         </div>
-        <div className="flex gap-2 justify-end">
-          <GlassButton variant="ghost" onClick={() => choose("rejected")}>Reject optional</GlassButton>
-          <GlassButton variant="primary" onClick={() => choose("accepted")}>Accept optional</GlassButton>
+        <div className="space-y-2 text-sm">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={preferences.analytics} onChange={(event) => setPreferences((current) => ({ ...current, analytics: event.target.checked }))} />
+            <span>Google Analytics 4, to understand website usage</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={preferences.advertising} onChange={(event) => setPreferences((current) => ({ ...current, advertising: event.target.checked }))} />
+            <span>Google Ads, to measure and improve advertising</span>
+          </label>
+        </div>
+        <div className="flex flex-wrap justify-end gap-2">
+          <GlassButton variant="ghost" onClick={rejectOptional}>Reject optional</GlassButton>
+          <GlassButton variant="ghost" onClick={save}>Save choices</GlassButton>
+          <GlassButton variant="primary" onClick={acceptAll}>Accept all</GlassButton>
         </div>
         <p className="text-xs opacity-60">
           <Link href="/cookie-policy" className="underline">Cookie Policy</Link>

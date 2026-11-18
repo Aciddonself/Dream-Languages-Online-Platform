@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppToaster } from "@/components/app-toaster";
 import { CookieConsent } from "@/components/cookie-consent";
+import { GoogleTracking } from "@/components/google-tracking";
 import { SiteChrome } from "@/components/site-chrome";
 
 // The proxy creates a per-request CSP nonce and Next.js copies it onto its
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SiteChrome>{children}</SiteChrome>
           <AppToaster />
           <CookieConsent />
+          <GoogleTracking />
         </ThemeProvider>
       </body>
     </html>
