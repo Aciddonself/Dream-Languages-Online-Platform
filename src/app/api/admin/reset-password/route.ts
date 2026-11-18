@@ -11,7 +11,7 @@ const schema = z.object({ userId: z.string().uuid() }).strict();
 
 export async function POST(req: Request) {
   const session = await getSession();
-  if (!session || session.user.role !== "super_admin") {
+  if (!session || (session.user.role !== "super_admin" && session.user.role !== "admin")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -22,6 +22,9 @@ export async function POST(req: Request) {
 
   const [user] = await db.select().from(users).where(eq(users.id, parsed.data.userId)).limit(1);
   if (!user || !user.authId) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (session.user.role === "admin" && ["admin", "super_admin"].includes(user.role)) {
+    return NextResponse.json({ error: "Only the super admin can reset another administrator's password" }, { status: 403 });
+  }
 
   const newPassword = randomBytes(12).toString("base64url").slice(0, 16);
   const admin = createSupabaseAdminClient();

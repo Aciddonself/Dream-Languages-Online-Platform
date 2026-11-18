@@ -6,6 +6,7 @@ type User = typeof users.$inferSelect;
 
 const ROLE_PERMS: Record<string, string[]> = {
   super_admin: ["*"],
+  admin: ["*"],
   head_academics: [
     "academic.read", "academic.update", "exam.approve", "exam.reopen", "grade.read",
     "teacher.supervise", "content.read",
@@ -36,9 +37,14 @@ export async function requireUser() {
 
 export async function requireRole(roles: string[]) {
   const user = await getCurrentUser();
-  if (!user) redirect(roles.length === 1 && roles[0] === "super_admin" ? "/admin/sign-in?error=server_session_rejected" : "/login");
-  if (!roles.includes(user.role)) redirect(roleHome(user.role));
+  const adminOnlyArea = roles.length === 1 && roles[0] === "super_admin";
+  if (!user) redirect(adminOnlyArea ? "/admin/sign-in?error=server_session_rejected" : "/login");
+  if (!roles.includes(user.role) && !(roles.includes("super_admin") && user.role === "admin")) redirect(roleHome(user.role));
   return user;
+}
+
+export function isAdministrator(role: string) {
+  return role === "super_admin" || role === "admin";
 }
 
 export function canDelete(role: string) {
@@ -48,6 +54,7 @@ export function canDelete(role: string) {
 export function roleHome(role: string) {
   switch (role) {
     case "super_admin": return "/admin";
+    case "admin": return "/admin";
     case "head_academics": return "/hoc";
     case "teacher": return "/teacher";
     case "finance": return "/finance";

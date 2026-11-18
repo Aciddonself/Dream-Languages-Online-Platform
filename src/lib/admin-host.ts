@@ -21,6 +21,18 @@ export function adminHostAllowed(req: Request) {
   return requestHost(req) === configured;
 }
 
+export function isAdminRole(role: string) {
+  return role === "super_admin" || role === "admin";
+}
+
+/** Only the two explicitly designated DLA administrator identities may use admin privileges. */
+export function isDesignatedAdministrator(role: string, email: string) {
+  const address = email.trim().toLowerCase();
+  if (role === "super_admin") return address === "dreamlanguagesuganda@gmail.com";
+  if (role === "admin") return address === "mabadilikojoseph300@gmail.com";
+  return true;
+}
+
 export function adminOrigin(fallback: string) {
   const configured = adminHost();
   if (!configured) return fallback;

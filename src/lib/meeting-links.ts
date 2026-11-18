@@ -1,5 +1,3 @@
-import { isJitsiMeetingUrl } from "@/lib/jitsi-meet";
-
 /** Accept Google Meet links for new sessions and existing configured Jitsi rooms. */
 export function isSupportedMeetingUrl(value: string) {
   try {
@@ -9,7 +7,12 @@ export function isSupportedMeetingUrl(value: string) {
       && url.username === ""
       && url.password === ""
       && /^\/[a-z]{3}-[a-z]{4}-[a-z]{3}\/?$/i.test(url.pathname);
-    return isGoogleMeet || isJitsiMeetingUrl(url.href);
+    const isLegacyJitsi = url.protocol === "https:"
+      && url.hostname === "meet.jit.si"
+      && url.username === ""
+      && url.password === ""
+      && url.pathname.split("/").filter(Boolean).length === 1;
+    return isGoogleMeet || isLegacyJitsi;
   } catch {
     return false;
   }

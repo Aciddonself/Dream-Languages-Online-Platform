@@ -105,13 +105,13 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
   async function finishSignIn(redirectTo?: string) {
     const response = await fetch("/api/auth/session-status", { cache: "no-store" });
     const session = await response.json().catch(() => ({}));
-    const expectedRole = isAdmin ? "super_admin" : signInAs;
+    const expectedRole = isAdmin ? ["super_admin", "admin"].includes(session.role) : session.role === signInAs;
     if (!response.ok || session.authenticated !== true) {
       const issue = typeof session.issue === "string" ? session.issue : `http_${response.status}`;
       fail(`Your credentials were accepted, but the sign-in session check failed (${issue}). Refresh and try again. If it repeats, share this code with support: AUTH_${issue.toUpperCase()}.`);
       return;
     }
-    if (session.role !== expectedRole) {
+    if (!expectedRole) {
       fail("Your sign-in session belongs to a different account role. Please use the correct sign-in page. Reference: AUTH_ROLE_MISMATCH.");
       return;
     }

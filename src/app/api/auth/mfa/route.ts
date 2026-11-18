@@ -7,7 +7,7 @@ import { ACTIVE_STATUSES, MFA_REQUIRED_ROLES } from "@/lib/auth";
 import { roleHome } from "@/lib/rbac";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
-import { adminHostAllowed } from "@/lib/admin-host";
+import { adminHostAllowed, isAdminRole, isDesignatedAdministrator } from "@/lib/admin-host";
 
 const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("enroll") }).strict(),
@@ -29,7 +29,11 @@ export async function POST(req: Request) {
   if (!user || user.deletedAt || !ACTIVE_STATUSES.includes(user.status as (typeof ACTIVE_STATUSES)[number]) || !MFA_REQUIRED_ROLES.includes(user.role)) {
     return applyAuthCookies(NextResponse.json({ error: "Not permitted" }, { status: 403 }));
   }
-  if (user.role === "super_admin" && !adminHostAllowed(req)) {
+  if (!isDesignatedAdministrator(user.role, user.email)) {
+    await supabase.auth.signOut({ scope: "local" });
+    return applyAuthCookies(NextResponse.json({ error: "Not permitted" }, { status: 403 }));
+  }
+  if (isAdminRole(user.role) && !adminHostAllowed(req)) {
     await supabase.auth.signOut({ scope: "local" });
     return applyAuthCookies(NextResponse.json({ error: "Not permitted" }, { status: 403 }));
   }

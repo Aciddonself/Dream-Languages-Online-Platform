@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { classes, departments, discussionRooms, roomMembers } from "@/db/schema";
 
 export async function getDiscussionHubData(userId: string, role: string) {
-  const canCreate = ["teacher", "head_academics", "super_admin"].includes(role);
+  const canCreate = ["teacher", "head_academics", "super_admin", "admin"].includes(role);
   const schoolClasses = canCreate
     ? await db.select({ id: classes.id, name: classes.name, departmentId: classes.departmentId }).from(classes)
         .where(role === "teacher" ? and(eq(classes.teacherId, userId), isNull(classes.deletedAt)) : isNull(classes.deletedAt))
@@ -16,7 +16,7 @@ export async function getDiscussionHubData(userId: string, role: string) {
     ? await db.select({ id: departments.id, name: departments.name }).from(departments)
         .where(and(...languageConditions)).orderBy(departments.name)
     : [];
-  const rooms = role === "super_admin"
+  const rooms = role === "super_admin" || role === "admin"
     ? await db.select({
         id: discussionRooms.id,
         title: discussionRooms.title,

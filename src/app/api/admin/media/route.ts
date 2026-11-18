@@ -27,7 +27,7 @@ export async function GET() {
   try {
     const actor = await getCurrentUser();
     if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    if (actor.role !== "super_admin") return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
+    if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
     const storage = createSupabaseAdminClient().storage.from(BUCKET);
     const [{ data: files, error: listError }, currentRows] = await Promise.all([
       storage.list("media", { limit: 100, sortBy: { column: "created_at", order: "desc" } }),
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   try {
     const actor = await getCurrentUser();
     if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    if (actor.role !== "super_admin") return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
+    if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
     const limited = await rateLimit("admin-media", actor.id, 20, "10 m");
     if (!limited.ok) return tooManyRequests(limited.retryAfter);
 
@@ -137,7 +137,7 @@ export async function PATCH(request: Request) {
   try {
     const actor = await getCurrentUser();
     if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    if (actor.role !== "super_admin") return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
+    if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
     const limited = await rateLimit("admin-media", actor.id, 30, "10 m");
     if (!limited.ok) return tooManyRequests(limited.retryAfter);
     const parsed = assignSchema.safeParse(await request.json().catch(() => null));

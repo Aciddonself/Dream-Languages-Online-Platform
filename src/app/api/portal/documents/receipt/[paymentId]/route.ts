@@ -33,7 +33,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pay
   if (actor.role === "student" && payment.studentId !== actor.id) {
     return NextResponse.json({ error: "You can only download your own receipts" }, { status: 403 });
   }
-  if (!["student", "finance", "super_admin"].includes(actor.role)) {
+  if (!["student", "finance", "super_admin", "admin"].includes(actor.role)) {
     return NextResponse.json({ error: "Finance portal access required" }, { status: 403 });
   }
   if (payment.status !== "verified" || !payment.studentId) {

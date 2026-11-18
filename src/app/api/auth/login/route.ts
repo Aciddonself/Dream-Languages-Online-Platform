@@ -8,7 +8,7 @@ import { roleHome } from "@/lib/rbac";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
-import { adminHostAllowed } from "@/lib/admin-host";
+import { adminHostAllowed, isAdminRole, isDesignatedAdministrator } from "@/lib/admin-host";
 
 const PUBLIC_ROLES = ["student", "teacher", "head_academics", "finance", "applicant"] as const;
 
@@ -64,8 +64,10 @@ export async function POST(req: Request) {
   }
 
   // Administrators sign in only through the dedicated admin portal; everyone else only through the public form.
-  const isAdmin = user.role === "super_admin";
-  const portalMismatch = portal === "admin" ? !isAdmin || !adminHostAllowed(req) : isAdmin || (as !== undefined && as !== user.role);
+  const isAdmin = isAdminRole(user.role);
+  const portalMismatch = portal === "admin"
+    ? !isAdmin || !isDesignatedAdministrator(user.role, user.email) || !adminHostAllowed(req)
+    : isAdmin || (as !== undefined && as !== user.role);
   if (portalMismatch || (portal === "public" && !as)) {
     await supabase.auth.signOut({ scope: "local" });
     return applyAuthCookies(invalid());

@@ -45,7 +45,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ses
     if (session.teacherId !== user.id && schoolClass?.teacherId !== user.id) {
       return NextResponse.json({ error: "You are not assigned to this class" }, { status: 403 });
     }
-  } else if (!["head_academics", "super_admin"].includes(user.role)) {
+  } else if (!["head_academics", "super_admin", "admin"].includes(user.role)) {
     return NextResponse.json({ error: "Portal access required" }, { status: 403 });
   }
   return NextResponse.redirect(meetUrl, 302);

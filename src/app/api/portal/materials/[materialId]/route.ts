@@ -24,7 +24,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mat
   } else if (user.role === "teacher") {
     const [schoolClass] = await db.select({ id: classes.id }).from(classes).where(and(eq(classes.id, material.classId), eq(classes.teacherId, user.id))).limit(1);
     if (!schoolClass) return NextResponse.json({ error: "You cannot access this class material" }, { status: 403 });
-  } else if (!["head_academics", "super_admin"].includes(user.role)) {
+  } else if (!["head_academics", "super_admin", "admin"].includes(user.role)) {
     return NextResponse.json({ error: "Portal access required" }, { status: 403 });
   }
 

@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ rec
   } else if (user.role === "teacher") {
     const [schoolClass] = await db.select({ id: classes.id }).from(classes).where(and(eq(classes.id, recording.classId), eq(classes.teacherId, user.id))).limit(1);
     if (!schoolClass) return NextResponse.json({ error: "You cannot access this class recording" }, { status: 403 });
-  } else if (!["super_admin", "head_academics"].includes(user.role)) {
+  } else if (!["super_admin", "head_academics", "admin"].includes(user.role)) {
     return NextResponse.json({ error: "Portal access required" }, { status: 403 });
   }
   const signedUrl = await createMaterialDownload(recording.storagePath);

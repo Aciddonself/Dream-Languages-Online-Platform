@@ -81,7 +81,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["finance", "super_admin"].includes(actor.role)) return NextResponse.json({ error: "Finance access required" }, { status: 403 });
+  if (!["finance", "super_admin", "admin"].includes(actor.role)) return NextResponse.json({ error: "Finance access required" }, { status: 403 });
 
   let body: unknown;
   try { body = await request.json(); } catch {

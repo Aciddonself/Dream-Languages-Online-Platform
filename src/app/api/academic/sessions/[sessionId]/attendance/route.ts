@@ -17,7 +17,7 @@ const actionSchema = z.object({
 
 type RouteContext = { params: Promise<{ sessionId: string }> };
 async function canManageSession(userId: string, role: string, session: { teacherId: string | null; classId: string | null }) {
-  if (role === "super_admin" || role === "head_academics") return true;
+  if (role === "super_admin" || role === "admin" || role === "head_academics") return true;
   if (role !== "teacher") return false;
   if (session.teacherId === userId) return true;
   if (!session.classId) return false;

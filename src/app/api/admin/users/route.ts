@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "@/db";
@@ -8,7 +8,7 @@ import { getCurrentUser, syncAuthBan } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { validateNewPassword } from "@/lib/password-policy";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
-import { roleHome } from "@/lib/rbac";
+import { isAdministrator, roleHome } from "@/lib/rbac";
 import { nextRegistrationNumber } from "@/lib/registration";
 import { createTextPdf, isProfilePhotoJpeg, readProfilePhotoJpeg } from "@/lib/pdf";
 import { deleteStudentPhoto, storeStudentPhoto } from "@/lib/student-photos";
@@ -20,7 +20,7 @@ const createUserSchema = z.object({
   password: z.string().min(10).max(256),
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
-  role: z.enum(["super_admin", "head_academics", "teacher", "finance", "student", "applicant"]),
+  role: z.enum(["admin", "head_academics", "teacher", "finance", "student", "applicant"]),
 }).strict();
 
 /** Creates (or updates) the Supabase Auth identity for a profile row. Returns the auth user id. */
@@ -60,7 +60,7 @@ function logUserManagementError(label: string, error: unknown) {
 async function createUserRequest(req: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+  if (!isAdministrator(actor.role)) return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
   const limited = await rateLimit("admin-users", actor.id, 30, "10 m");
   if (!limited.ok) return tooManyRequests(limited.retryAfter);
 
@@ -80,6 +80,12 @@ async function createUserRequest(req: Request) {
   }
 
   const { email, password, firstName, lastName, role } = parsed.data;
+  if (role === "admin") {
+    if (actor.role !== "super_admin") return NextResponse.json({ error: "Only the super admin can create the administrator account" }, { status: 403 });
+    const [existingAdmin] = await db.select({ id: users.id }).from(users)
+      .where(and(eq(users.role, "admin"), ne(users.status, "archived"), isNull(users.deletedAt))).limit(1);
+    if (existingAdmin) return NextResponse.json({ error: "The administrator account already exists. Only one admin account is allowed." }, { status: 409 });
+  }
   if (role === "student" && (!photo || photo.size < 1 || photo.size > 5 * 1024 * 1024 || photo.type !== "image/jpeg")) {
     return NextResponse.json({ error: "Upload a passport photo in JPG format (up to 5 MB) when creating a student." }, { status: 400 });
   }
@@ -156,7 +162,7 @@ async function createUserRequest(req: Request) {
 async function updateUserRequest(req: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+  if (!isAdministrator(actor.role)) return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
 
   let body: unknown;
   try {
@@ -182,6 +188,7 @@ async function updateUserRequest(req: Request) {
   const action = parsed.data;
 
   if (action.action === "archive_others") {
+    if (actor.role !== "super_admin") return NextResponse.json({ error: "Only the super admin can archive accounts in bulk" }, { status: 403 });
     const archived = await db.transaction(async (tx: any) => {
       const accounts = await tx.update(users)
         .set({ status: "archived", deletedAt: new Date(), updatedAt: new Date() })
@@ -218,6 +225,9 @@ async function updateUserRequest(req: Request) {
     if (passwordProblem) return NextResponse.json({ error: passwordProblem }, { status: 400 });
     const [account] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (!account || account.deletedAt) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) {
+      return NextResponse.json({ error: "Only the super admin can manage another administrator's credentials" }, { status: 403 });
+    }
     const authId = await upsertAuthIdentity(account, password);
     await db.transaction(async (tx: any) => {
       await tx.update(users).set({ authId, updatedAt: new Date() }).where(eq(users.id, account.id));
@@ -241,6 +251,9 @@ async function updateUserRequest(req: Request) {
     const outcome = await db.transaction(async (tx: any) => {
       const [account] = await tx.select().from(users).where(eq(users.id, action.userId)).limit(1);
       if (!account) return { error: "Account not found", status: 404 as const };
+      if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) {
+        return { error: "Only the super admin can change an administrator account", status: 403 as const };
+      }
       const [updated] = await tx.update(users)
         .set({ status, deletedAt: status === "active" ? null : account.deletedAt, updatedAt: new Date() })
         .where(eq(users.id, account.id))

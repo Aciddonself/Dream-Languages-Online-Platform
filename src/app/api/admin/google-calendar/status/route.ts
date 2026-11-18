@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 async function authorize() {
   const user = await getCurrentUser();
-  return user?.role === "super_admin";
+  return user?.role === "super_admin" || user?.role === "admin";
 }
 
 export async function GET() {

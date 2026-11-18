@@ -22,7 +22,7 @@ const removeSchema = z.object({ action: z.literal("delete"), id: z.string().uuid
 export async function GET() {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+  if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
   const products = await db.select().from(shopProducts).orderBy(desc(shopProducts.createdAt)).limit(100);
   return NextResponse.json({ products });
 }
@@ -30,7 +30,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+  if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
   let body: unknown; try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 }); }
   const action = (body as { action?: unknown } | null)?.action;
   if (action === "delete") {

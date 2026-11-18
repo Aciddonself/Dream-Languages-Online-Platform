@@ -11,7 +11,7 @@ export async function POST(
 ) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["super_admin", "head_academics"].includes(actor.role)) {
+  if (!["super_admin", "head_academics", "admin"].includes(actor.role)) {
     return NextResponse.json({ error: "Administrator or Head of Academics access required" }, { status: 403 });
   }
   const limited = await rateLimit("student-document-stamp", actor.id, 30, "10 m");
@@ -33,7 +33,7 @@ export async function POST(
 
   const stampedAt = new Date();
   const stamperName = actor.displayName || [actor.firstName, actor.lastName].filter(Boolean).join(" ") || actor.email;
-  const stamperTitle = actor.role === "super_admin" ? "School Administrator" : "Head of Academics";
+  const stamperTitle = actor.role === "super_admin" || actor.role === "admin" ? "School Administrator" : "Head of Academics";
   await db.transaction(async (tx) => {
     await tx.update(users).set({
       documentStampedAt: stampedAt,

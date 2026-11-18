@@ -8,6 +8,7 @@ import { AdminUserArchiveOthers } from "@/components/admin-user-archive-others";
 import { AdminApplicantPromote } from "@/components/admin-applicant-promote";
 import { AdminUserStatus } from "@/components/admin-user-status";
 import { AdminUserCredentials } from "@/components/admin-user-credentials";
+import { AdminUserMfaReset } from "@/components/admin-user-mfa-reset";
 import { AdminStudentPhotoControl } from "@/components/admin-student-photo-control";
 import { StudentDocumentStampControl } from "@/components/student-document-stamp-control";
 import { and, asc, eq, ilike, isNull, ne, or } from "drizzle-orm";
@@ -66,8 +67,8 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
         </div>
         <div className="rounded-xl border border-[var(--border-strong)] p-4">
           <h2 className="mb-2 font-bold">Account access reset</h2>
-          <p className="mb-3 text-sm">Archive everyone except the super admin signed in now. Archived users can no longer sign in. Their learning, payment, and attendance history is retained, and archived accounts can be reactivated individually.</p>
-          <AdminUserArchiveOthers />
+          <p className="mb-3 text-sm">Only the super admin can archive all other accounts. Archived accounts cannot sign in, and their learning, payment, and attendance history is retained.</p>
+          {actor.role === "super_admin" && <AdminUserArchiveOthers />}
         </div>
         <form method="get" className="flex flex-wrap gap-2">
           {includeArchived && <input type="hidden" name="archived" value="1" />}
@@ -79,19 +80,20 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
             <option value="teacher">Teacher</option>
             <option value="finance">Finance</option>
             <option value="head_academics">Head of Academics</option>
-            <option value="super_admin">Administrator</option>
+            <option value="admin">Admin</option>
+            <option value="super_admin">Super Admin</option>
           </select>
           <button type="submit" className="glass px-4 py-2.5 font-semibold">Filter</button>
           {(term || role) && <Link href={includeArchived ? "/admin/users?archived=1" : "/admin/users"} className="glass px-4 py-2.5">Clear filters</Link>}
         </form>
-        <AdminUserCreate />
+        <AdminUserCreate canCreateAdmin={actor.role === "super_admin"} />
       </GlassCard>
       <GlassCard className="overflow-hidden">
-        <p className="px-4 pt-3 text-xs opacity-70">Scroll the table horizontally to reach password, admission, photo, and document controls.</p>
+        <p className="px-4 pt-3 text-xs opacity-70">Scroll the table horizontally to reach password, authenticator, admission, photo, and document controls.</p>
         <div className="admin-user-create-scroll w-full overflow-x-auto px-3 pb-3" role="region" aria-label="User account table. Scroll horizontally to see all controls." tabIndex={0}>
           <table className="w-full min-w-[1600px] text-sm">
           <thead className="bg-white/5">
-            <tr><th className="text-left p-3">Name / photo</th><th className="text-left p-3">Registration no.</th><th className="text-left p-3">Email / login</th><th className="text-left p-3">Role held</th><th className="text-left p-3">Status</th><th className="min-w-[240px] text-left p-3">Issue credentials</th><th className="text-left p-3">Admission</th><th className="text-left p-3">Passport photo</th><th className="text-left p-3">Official student documents</th></tr>
+            <tr><th className="text-left p-3">Name / photo</th><th className="text-left p-3">Registration no.</th><th className="text-left p-3">Email / login</th><th className="text-left p-3">Role held</th><th className="text-left p-3">Status</th><th className="min-w-[240px] text-left p-3">Issue credentials</th><th className="text-left p-3">Authenticator</th><th className="text-left p-3">Admission</th><th className="text-left p-3">Passport photo</th><th className="text-left p-3">Official student documents</th></tr>
           </thead>
           <tbody>
             {all.map((u: { id: string; displayName: string | null; role: string; status: string; registrationNumber: string | null; address: string | null; nextOfKinName: string | null; nextOfKinPhone: string | null; studyFormat: string | null; studyDurationMonths: number | null; requestedIntake: string | null; email: string; avatarStorageKey: string | null; documentStampedAt: Date | null; documentStamperName: string | null; documentStamperTitle: string | null; }) => (
@@ -106,6 +108,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                         </td>
                         <td className="p-3"><AdminUserStatus userId={u.id} status={u.status} isSelf={u.id === actor.id} /></td>
                         <td className="p-3">{u.id === actor.id ? "Use administrator recovery" : <AdminUserCredentials userId={u.id} />}</td>
+                        <td className="p-3">{u.id !== actor.id && <AdminUserMfaReset userId={u.id} />}</td>
                 <td className="p-3">{u.role === "applicant" ? <AdminApplicantPromote userId={u.id} /> : "Not applicable"}</td>
                         <td className="p-3">{["student", "applicant"].includes(u.role) ? <AdminStudentPhotoControl userId={u.id} hasPhoto={Boolean(u.avatarStorageKey)} /> : "Not applicable"}</td>
                         <td className="p-3">{u.role === "student" ? <StudentDocumentStampControl studentId={u.id} stampedAt={u.documentStampedAt ? new Intl.DateTimeFormat("en-UG", { dateStyle: "medium", timeZone: "Africa/Kampala" }).format(u.documentStampedAt) : null} stamperName={u.documentStamperName} stamperTitle={u.documentStamperTitle} /> : "Not applicable"}</td>

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { GlassButton, GlassInput } from "@/components/ui/glass";
 import { prepareProfilePhoto } from "@/lib/prepare-profile-photo";
 
-export function AdminUserCreate() {
+export function AdminUserCreate({ canCreateAdmin = false }: { canCreateAdmin?: boolean }) {
   const router = useRouter();
   const photoInput = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -43,7 +43,7 @@ export function AdminUserCreate() {
         toast.error(text);
         return;
       }
-      const roleLabel = ({ student: "Student", applicant: "Applicant", teacher: "Teacher", finance: "Finance officer", head_academics: "Head of Academics", super_admin: "Administrator" } as Record<string, string>)[form.role] ?? "User";
+      const roleLabel = ({ admin: "Admin", student: "Student", applicant: "Applicant", teacher: "Teacher", finance: "Finance officer", head_academics: "Head of Academics" } as Record<string, string>)[form.role] ?? "User";
       const name = `${form.firstName} ${form.lastName}`.trim();
       const message = result.user?.registrationNumber
         ? `${roleLabel} ${name} created. Registration number: ${result.user.registrationNumber}`
@@ -89,7 +89,7 @@ export function AdminUserCreate() {
             <option value="teacher">Teacher</option>
             <option value="finance">Finance</option>
             <option value="head_academics">Head of Academics</option>
-            <option value="super_admin">Administrator</option>
+            {canCreateAdmin && <option value="admin">Admin</option>}
           </select>
         </label>
         {form.role === "student" && (

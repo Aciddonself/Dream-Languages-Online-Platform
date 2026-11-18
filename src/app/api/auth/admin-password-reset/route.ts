@@ -7,7 +7,7 @@ import { auditLogs, users } from "@/db/schema";
 import { destroyAllSessions, getCurrentUser } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 import { serverEnv } from "@/lib/env";
-import { adminOrigin } from "@/lib/admin-host";
+import { adminOrigin, isDesignatedAdministrator } from "@/lib/admin-host";
 import { validateNewPassword } from "@/lib/password-policy";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     if (!parsed.success) return NextResponse.json({ error: "Enter your administrator email" }, { status: 400 });
 
     const [admin] = await db.select().from(users).where(sql`lower(${users.email}) = ${parsed.data.identifier}`).limit(1);
-    if (admin?.role === "super_admin" && admin.authId && !admin.deletedAt && ["active", "registered"].includes(admin.status)) {
+    if (admin?.authId && isDesignatedAdministrator(admin.role, admin.email) && !admin.deletedAt && ["active", "registered"].includes(admin.status)) {
       const { data, error } = await createSupabaseAdminClient().auth.admin.generateLink({ type: "recovery", email: admin.email });
       if (error || !data.properties?.hashed_token) {
         console.error("Administrator recovery link could not be generated");
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     const parsed = changeSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: "Enter your current password and a new password of at least 10 characters" }, { status: 400 });
     const admin = await getCurrentUser();
-    if (!admin || admin.role !== "super_admin" || !admin.authId) {
+    if (!admin || !["super_admin", "admin"].includes(admin.role) || !isDesignatedAdministrator(admin.role, admin.email) || !admin.authId) {
       return NextResponse.json({ error: "Administrator sign-in is required" }, { status: 403 });
     }
     const problem = await validateNewPassword(parsed.data.newPassword);
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase.auth.verifyOtp({ type: "recovery", token_hash: parsed.data.token });
     if (error || !data.user) return NextResponse.json({ error: "This reset link is invalid or expired. Request a new one." }, { status: 400 });
     const [admin] = await db.select().from(users).where(eq(users.authId, data.user.id)).limit(1);
-    if (!admin || admin.role !== "super_admin" || admin.deletedAt) {
+    if (!admin || !["super_admin", "admin"].includes(admin.role) || !isDesignatedAdministrator(admin.role, admin.email) || admin.deletedAt) {
       await supabase.auth.signOut({ scope: "global" });
       return NextResponse.json({ error: "This reset link is invalid or expired. Request a new one." }, { status: 400 });
     }

@@ -13,7 +13,7 @@ const messageSchema = z.object({
 });
 
 async function canOpenRoom(userId: string, role: string, roomId: string) {
-  if (role === "super_admin") return true;
+  if (role === "super_admin" || role === "admin") return true;
   const [member] = await db.select({ roomId: roomMembers.roomId }).from(roomMembers).where(and(
     eq(roomMembers.roomId, roomId),
     eq(roomMembers.userId, userId),

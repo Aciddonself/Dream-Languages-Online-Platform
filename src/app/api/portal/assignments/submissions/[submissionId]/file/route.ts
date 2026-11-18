@@ -31,7 +31,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sub
     if (!enrollment) return NextResponse.json({ error: "Active class enrollment is required" }, { status: 403 });
   } else if (actor.role === "teacher") {
     if (row.teacherId !== actor.id) return NextResponse.json({ error: "You cannot access this submission" }, { status: 403 });
-  } else if (!["head_academics", "super_admin"].includes(actor.role)) {
+  } else if (!["head_academics", "super_admin", "admin"].includes(actor.role)) {
     return NextResponse.json({ error: "Academic portal access required" }, { status: 403 });
   }
 

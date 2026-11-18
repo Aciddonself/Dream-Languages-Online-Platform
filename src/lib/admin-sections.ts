@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   announcements, attendance, certificates, classes, communityGroups, departments, discussionRooms, emailLogs, exams, faqs, feeStructures,
@@ -14,7 +14,7 @@ const when = (d: Date | string | null | undefined) => (d ? new Date(d).toLocaleS
 const name = (u: { displayName?: string | null; firstName?: string | null; lastName?: string | null; email?: string | null }) =>
   u.displayName ?? ([u.firstName, u.lastName].filter(Boolean).join(" ") || u.email || "Unnamed");
 
-async function people(role: "student" | "teacher" | "head_academics" | "finance" | "super_admin" | "applicant", description: string): Promise<SectionData> {
+async function people(role: "student" | "teacher" | "head_academics" | "finance" | "super_admin" | "applicant" | "admin", description: string): Promise<SectionData> {
   const list = await db.select().from(users).where(and(eq(users.role, role), isNull(users.deletedAt))).orderBy(users.registrationNumber, desc(users.createdAt)).limit(200);
   return {
     description,
@@ -28,7 +28,10 @@ const loaders: Record<string, () => Promise<SectionData>> = {
   teachers: () => people("teacher", "Teaching staff accounts."),
   "head-of-academics": () => people("head_academics", "Heads of Academics."),
   "finance-staff": () => people("finance", "Finance team accounts."),
-  admins: () => people("super_admin", "School administrator accounts."),
+  admins: async () => {
+    const list = await db.select().from(users).where(and(inArray(users.role, ["super_admin", "admin"]), isNull(users.deletedAt))).orderBy(desc(users.createdAt)).limit(200);
+    return { description: "Super admin and admin accounts.", links: [{ href: "/admin/users?role=admin", label: "Search, filter and create accounts" }], rows: list.map((u) => ({ title: name(u), detail: u.email, status: u.status })) };
+  },
   applications: () => people("applicant", "Applicants waiting to be reviewed and promoted to students."),
 
   volunteers: async () => {

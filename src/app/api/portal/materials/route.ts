@@ -26,7 +26,7 @@ const completeSchema = z.object({ action: z.literal("complete_upload"), material
 async function getUploader() {
   const user = await getCurrentUser();
   if (!user) return { error: NextResponse.json({ error: "Authentication required" }, { status: 401 }) };
-  if (!["teacher", "head_academics", "super_admin"].includes(user.role)) {
+  if (!["teacher", "head_academics", "super_admin", "admin"].includes(user.role)) {
     return { error: NextResponse.json({ error: "Teacher or academic administrator access required" }, { status: 403 }) };
   }
   return { user };
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["teacher", "head_academics", "super_admin"].includes(user.role)) return NextResponse.json({ error: "Staff access required" }, { status: 403 });
+  if (!["teacher", "head_academics", "super_admin", "admin"].includes(user.role)) return NextResponse.json({ error: "Staff access required" }, { status: 403 });
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 }); }
   const id = z.string().uuid().safeParse((body as { materialId?: unknown })?.materialId);

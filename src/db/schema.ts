@@ -19,6 +19,7 @@ import { relations } from "drizzle-orm";
 // ---------- Enums ----------
 export const roleEnum = pgEnum("role", [
   "super_admin",
+  "admin",
   "head_academics",
   "teacher",
   "finance",

@@ -43,7 +43,7 @@ async function assignmentAccess(assignmentId: string, actor: { id: string; role:
     if (assignment.teacherId !== actor.id) return { error: NextResponse.json({ error: "You cannot access this assignment" }, { status: 403 }) };
     return { assignment, isStudent: false as const };
   }
-  if (["head_academics", "super_admin"].includes(actor.role)) return { assignment, isStudent: false as const };
+  if (["head_academics", "super_admin", "admin"].includes(actor.role)) return { assignment, isStudent: false as const };
   return { error: NextResponse.json({ error: "Academic portal access required" }, { status: 403 }) };
 }
 
@@ -131,7 +131,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ass
 export async function PATCH(request: Request, { params }: { params: Promise<{ assignmentId: string }> }) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["teacher", "head_academics", "super_admin"].includes(actor.role)) return NextResponse.json({ error: "Academic staff access required" }, { status: 403 });
+  if (!["teacher", "head_academics", "super_admin", "admin"].includes(actor.role)) return NextResponse.json({ error: "Academic staff access required" }, { status: 403 });
   const { assignmentId } = await params;
   const access = await assignmentAccess(assignmentId, actor);
   if ("error" in access) return access.error;

@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   try {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
+  if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
   const limited = await rateLimit("admin-sms", actor.id, 3, "1 h");
   if (!limited.ok) return tooManyRequests(limited.retryAfter);
   const username = process.env.AFRICASTALKING_USERNAME;

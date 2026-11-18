@@ -13,7 +13,7 @@ function csvCell(value: unknown) {
 export async function GET() {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+  if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
 
   const records = await db.select({
     registrationNumber: users.registrationNumber,

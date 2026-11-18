@@ -27,7 +27,7 @@ const correctionSchema = z.object({
 export async function PATCH(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["head_academics", "super_admin"].includes(actor.role)) {
+  if (!["head_academics", "super_admin", "admin"].includes(actor.role)) {
     return NextResponse.json({ error: "Only the Head of Academics or school administrator can correct published marks" }, { status: 403 });
   }
   let body: unknown;
@@ -83,7 +83,7 @@ export async function PATCH(request: Request) {
 export async function POST(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["teacher", "head_academics", "super_admin"].includes(actor.role)) {
+  if (!["teacher", "head_academics", "super_admin", "admin"].includes(actor.role)) {
     return NextResponse.json({ error: "Academic staff access required" }, { status: 403 });
   }
   let body: unknown;
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { examId, studentId, score, grade, comments, specialCase, specialCaseReason } = parsed.data;
-  if (specialCase && !["head_academics", "super_admin"].includes(actor.role)) {
+  if (specialCase && !["head_academics", "super_admin", "admin"].includes(actor.role)) {
     return NextResponse.json({ error: "Only the Head of Academics or school administrator can record a promotion exception" }, { status: 403 });
   }
   if (specialCase && !specialCaseReason) {

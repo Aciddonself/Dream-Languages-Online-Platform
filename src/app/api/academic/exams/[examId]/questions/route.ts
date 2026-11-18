@@ -19,7 +19,7 @@ const questionsSchema = z.object({ questions: z.array(questionSchema).min(1).max
 async function getAuthorizedExam(examId: string, actor: { id: string; role: string }) {
   const [exam] = await db.select({ id: exams.id, teacherId: exams.teacherId }).from(exams).where(eq(exams.id, examId)).limit(1);
   if (!exam) return { error: NextResponse.json({ error: "Assessment not found" }, { status: 404 }) };
-  if (!["teacher", "head_academics", "super_admin"].includes(actor.role)) {
+  if (!["teacher", "head_academics", "super_admin", "admin"].includes(actor.role)) {
     return { error: NextResponse.json({ error: "Academic staff access required" }, { status: 403 }) };
   }
   if (actor.role === "teacher" && exam.teacherId !== actor.id) {

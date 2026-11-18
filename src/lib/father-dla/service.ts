@@ -37,7 +37,7 @@ export type ClientEvent =
 
 export type Actor = { id: string; role: string; firstName: string | null } | null;
 
-const STAFF_ROLES = ["teacher", "head_academics", "super_admin", "finance"];
+const STAFF_ROLES = ["teacher", "head_academics", "super_admin", "admin", "finance"];
 const LOOKAHEAD = 24;
 const CONFIG_KEY = "father_dla_config";
 

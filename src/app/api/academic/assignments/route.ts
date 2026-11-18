@@ -16,7 +16,7 @@ const schema = z.object({
 export async function POST(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["teacher", "head_academics", "super_admin"].includes(actor.role)) return NextResponse.json({ error: "Academic staff access required" }, { status: 403 });
+  if (!["teacher", "head_academics", "super_admin", "admin"].includes(actor.role)) return NextResponse.json({ error: "Academic staff access required" }, { status: 403 });
   let body: unknown;
   try { body = await request.json(); } catch {
     return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 });

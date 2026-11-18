@@ -16,7 +16,7 @@ const schema = z.object({ name: z.string().trim().min(1).max(180), contentType: 
 export async function POST(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "Only an administrator can add website media" }, { status: 403 });
+  if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "Only an administrator can add website media" }, { status: 403 });
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 }); }
   const parsed = schema.safeParse(body);

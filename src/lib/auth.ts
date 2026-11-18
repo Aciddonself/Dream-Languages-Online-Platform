@@ -4,10 +4,11 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureStudentRegistrationNumber } from "@/lib/registration";
+import { isDesignatedAdministrator } from "@/lib/admin-host";
 
 export const ACTIVE_STATUSES = ["active", "registered", "applicant"] as const;
 // Every portal account must enroll a TOTP factor before receiving dashboard access.
-export const MFA_REQUIRED_ROLES = ["super_admin", "finance", "head_academics", "teacher", "student", "applicant"];
+export const MFA_REQUIRED_ROLES = ["super_admin", "admin", "finance", "head_academics", "teacher", "student", "applicant"];
 
 /**
  * Identity comes from Supabase Auth (getUser re-validates the JWT with the Auth server).
@@ -20,6 +21,7 @@ export async function getSession() {
 
   let [user] = await db.select().from(users).where(eq(users.authId, data.user.id)).limit(1);
   if (!user || user.deletedAt || !ACTIVE_STATUSES.includes(user.status as (typeof ACTIVE_STATUSES)[number])) return null;
+  if (!isDesignatedAdministrator(user.role, user.email)) return null;
 
   if (MFA_REQUIRED_ROLES.includes(user.role)) {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();

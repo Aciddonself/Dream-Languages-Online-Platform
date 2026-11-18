@@ -24,7 +24,7 @@ const completeSchema = z.object({ action: z.literal("complete_upload"), recordin
 async function admin() {
   const user = await getCurrentUser();
   if (!user) return { error: NextResponse.json({ error: "Authentication required" }, { status: 401 }) };
-  if (user.role !== "super_admin") return { error: NextResponse.json({ error: "Only a super administrator can manage class recordings" }, { status: 403 }) };
+  if ((user.role !== "super_admin" && user.role !== "admin")) return { error: NextResponse.json({ error: "Only a super administrator can manage class recordings" }, { status: 403 }) };
   return { user };
 }
 
