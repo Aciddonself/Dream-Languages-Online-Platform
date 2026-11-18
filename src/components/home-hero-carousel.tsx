@@ -38,7 +38,7 @@ export function HomeHeroCarousel({ firstImage, firstAlt }: { firstImage: string;
 
   return (
     <div className="home-hero-carousel relative mx-auto my-6 w-full max-w-5xl overflow-hidden rounded-3xl" role="region" aria-label="Dream Languages school photos">
-      <Image key={visibleSlides[active].src} src={visibleSlides[active].src} alt={visibleSlides[active].alt} fill priority={active === 0} sizes="(max-width: 900px) 100vw, 840px" className="dla-image-enter object-cover" unoptimized={visibleSlides[active].src.startsWith("https://")} />
+      <Image key={visibleSlides[active].src} src={visibleSlides[active].src} alt={visibleSlides[active].alt} fill priority={active === 0} sizes="(max-width: 900px) 100vw, 840px" className="dla-image-enter bg-[var(--surface)] object-contain object-center" unoptimized={visibleSlides[active].src.startsWith("https://")} />
       <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 bg-gradient-to-t from-slate-950/70 to-transparent px-4 pb-4 pt-10 text-white sm:px-6">
         <span className="text-sm font-bold">Dream Languages Uganda</span>
         <span className="text-xs font-bold" aria-live="polite">Photo {active + 1} of {visibleSlides.length}</span>

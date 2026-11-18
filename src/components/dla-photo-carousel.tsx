@@ -33,7 +33,7 @@ export function DlaPhotoCarousel() {
         </div>
       </div>
       <div className="dla-photo-frame relative overflow-hidden rounded-3xl" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-        <Image key={photos[active]} src={photos[active]} alt={`Dream Languages Uganda community moment ${active + 1}`} fill sizes="(max-width: 768px) 100vw, 840px" className="dla-image-enter object-cover" priority={active === 0} />
+        <Image key={photos[active]} src={photos[active]} alt={`Dream Languages Uganda community moment ${active + 1}`} fill sizes="(max-width: 768px) 100vw, 840px" className="dla-image-enter bg-[var(--surface)] object-contain object-center" priority={active === 0} />
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-slate-950/75 to-transparent px-5 pb-5 pt-12 text-white">
           <span className="font-bold">Dream Languages Uganda</span>
           <span className="text-sm font-semibold" aria-live="polite">{active + 1} / {photos.length}</span>
