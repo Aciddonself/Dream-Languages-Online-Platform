@@ -41,15 +41,14 @@ export function AdminSessionCreate({
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
-  const [room, setRoom] = useState("Google Meet Online Room");
+  const [room, setRoom] = useState("Google Meet Online Class");
   const [meetUrl, setMeetUrl] = useState("");
-  const [generateMeet, setGenerateMeet] = useState(false);
   const [recurring, setRecurring] = useState(false);
   const [recurrenceCount, setRecurrenceCount] = useState(8);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [calendarUrl, setCalendarUrl] = useState("");
+  const [createdMeetUrl, setCreatedMeetUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // Filter classes by selected department
@@ -84,7 +83,7 @@ export function AdminSessionCreate({
     event.preventDefault();
     setError("");
     setSuccess("");
-    setCalendarUrl("");
+    setCreatedMeetUrl("");
     setSubmitting(true);
 
     try {
@@ -100,7 +99,6 @@ export function AdminSessionCreate({
           endsAt: endsAt ? new Date(endsAt).toISOString() : "",
           room,
           meetUrl: meetUrl || undefined,
-          generateMeet,
           recurring,
           recurrenceCount,
         }),
@@ -116,8 +114,7 @@ export function AdminSessionCreate({
         ? `${data.createdCount} weekly class sessions successfully scheduled.`
         : "Live class successfully scheduled.");
 
-      setCalendarUrl(data.calendarEventUrl ?? "");
-      if (data.session?.meetUrl) setMeetUrl(data.session.meetUrl);
+      setCreatedMeetUrl(data.session?.meetUrl ?? "");
 
       // Reset
       setTitle("");
@@ -233,7 +230,7 @@ export function AdminSessionCreate({
           id={`${formId}-room`}
           value={room}
           onChange={(e) => setRoom(e.target.value)}
-          placeholder="Google Meet Online Room"
+          placeholder="Google Meet Online Class"
         />
       </div>
 
@@ -272,28 +269,25 @@ export function AdminSessionCreate({
               🎥
             </span>
             <div>
-              <h4 className="text-sm font-semibold text-white">Google Meet Connection</h4>
+              <h4 className="text-sm font-semibold text-white">Google Meet link</h4>
               <p className="text-xs opacity-70">
-                Create a meeting from the school Calendar connection, or paste an existing Google Meet link.
+                Create the meeting in Google Meet, then paste its link here. Students and assigned staff will see it in their DLA portals.
               </p>
             </div>
           </div>
-          <label
-            htmlFor={`${formId}-generate-meet`}
-            className="flex items-center gap-2 text-xs font-semibold"
-          ><input id={`${formId}-generate-meet`} type="checkbox" checked={generateMeet} onChange={(event) => setGenerateMeet(event.target.checked)} /> Create Google Meet automatically</label>
+          <a className="text-xs font-semibold underline" href="https://meet.google.com/new" target="_blank" rel="noreferrer">Create a Google Meet link ↗</a>
         </div>
 
         <GlassInput
           type="url"
           value={meetUrl}
           onChange={(e) => setMeetUrl(e.target.value)}
-          placeholder="https://meet.google.com/xxx-yyyy-zzz"
-          required={!generateMeet}
+          placeholder="https://meet.google.com/abc-defg-hij"
+          required
         />
 
         <div className="flex flex-wrap items-center justify-between text-xs opacity-75">
-          <span>Enable automatic creation above or paste an existing Meet link.</span>
+          <span>Room links are shared with enrolled students and assigned staff in their portals.</span>
         </div>
       </div>
 
@@ -334,7 +328,7 @@ export function AdminSessionCreate({
           disabled={submitting}
           className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-indigo-500/25"
         >
-          {submitting ? "Scheduling Live Class..." : "Schedule Live Class on Google Meet"}
+          {submitting ? "Scheduling Live Class..." : "Schedule Live Class with Google Meet"}
         </GlassButton>
       </div>
 
@@ -347,14 +341,14 @@ export function AdminSessionCreate({
       {success && (
         <div className="md:col-span-2 text-sm text-[var(--success)] bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl space-y-2" role="status">
           <p className="font-semibold">{success}</p>
-          {calendarUrl && (
+          {createdMeetUrl && (
             <a
               className="inline-flex items-center gap-1.5 font-semibold text-emerald-300 underline hover:text-emerald-200"
-              href={calendarUrl}
+              href={createdMeetUrl}
               target="_blank"
               rel="noreferrer"
             >
-              📅 Add the first class to Google Calendar ↗
+              🎥 Open the Google Meet link ↗
             </a>
           )}
         </div>
