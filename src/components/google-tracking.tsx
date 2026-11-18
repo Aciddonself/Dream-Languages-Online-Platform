@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { readCookiePreferences, type CookiePreferences } from "@/components/cookie-consent";
 
-const GA4_ID = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID?.trim() ?? "";
-const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID?.trim() ?? "";
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_CONTAINER_ID?.trim() ?? "";
 const CONSENT_CHANGE_EVENT = "dla:cookie-preferences-changed";
 const DENIED = {
   analytics_storage: "denied",
@@ -13,8 +12,9 @@ const DENIED = {
   ad_user_data: "denied",
   ad_personalization: "denied",
 } as const;
-const configuredIds = new Set<string>();
-const lastTrackedPath = new Map<string, string>();
+let loadedContainer = "";
+let consentInitialized = false;
+let lastTrackedPath = "";
 
 function isValidPreferences(value: unknown): value is CookiePreferences {
   return typeof value === "object" && value !== null
@@ -24,30 +24,46 @@ function isValidPreferences(value: unknown): value is CookiePreferences {
 
 declare global {
   interface Window {
-    dataLayer?: unknown[][];
+    dataLayer?: unknown[];
     gtag?: (...args: unknown[]) => void;
-    [key: `ga-disable-${string}`]: boolean | undefined;
   }
 }
 
-function ensureGoogleTag(firstId: string) {
+function setConsent(preferences: CookiePreferences) {
   window.dataLayer ??= [];
-  if (!window.gtag) {
-    window.gtag = (...args: unknown[]) => window.dataLayer?.push(args);
-    window.gtag("consent", "default", DENIED);
-    window.gtag("js", new Date());
-  }
+  window.gtag ??= (...args: unknown[]) => window.dataLayer?.push(args);
 
-  if (!document.querySelector('script[data-dla-google-tag="true"]')) {
-    const script = document.createElement("script");
-    script.async = true;
-    script.dataset.dlaGoogleTag = "true";
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(firstId)}`;
-    document.head.appendChild(script);
+  // Queue defaults before GTM so tags cannot read or write optional storage
+  // until the visitor has chosen the matching category.
+  if (!consentInitialized) {
+    window.gtag("consent", "default", DENIED);
+    consentInitialized = true;
   }
+  window.gtag("consent", "update", {
+    analytics_storage: preferences.analytics ? "granted" : "denied",
+    ad_storage: preferences.advertising ? "granted" : "denied",
+    ad_user_data: preferences.advertising ? "granted" : "denied",
+    ad_personalization: preferences.advertising ? "granted" : "denied",
+  });
 }
 
-function clearCookies(prefixes: string[]) {
+function loadContainer() {
+  if (!/^GTM-[A-Z0-9]+$/.test(GTM_ID) || loadedContainer === GTM_ID) return;
+
+  window.dataLayer ??= [];
+  window.gtag ??= (...args: unknown[]) => window.dataLayer?.push(args);
+  window.gtag("js", new Date());
+  window.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
+
+  const script = document.createElement("script");
+  script.async = true;
+  script.dataset.dlaGoogleTagManager = GTM_ID;
+  script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GTM_ID)}`;
+  document.head.appendChild(script);
+  loadedContainer = GTM_ID;
+}
+
+function clearGoogleCookies(prefixes: string[]) {
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
   const names = document.cookie
     .split(";")
@@ -87,50 +103,25 @@ export function GoogleTracking() {
   useEffect(() => {
     if (!preferences) return;
 
-    const useAnalytics = preferences.analytics && /^G-[A-Z0-9]+$/.test(GA4_ID);
-    const useAds = preferences.advertising && /^AW-\d+$/.test(GOOGLE_ADS_ID);
-    const enabledIds = [useAnalytics ? GA4_ID : "", useAds ? GOOGLE_ADS_ID : ""].filter(Boolean);
-
-    if (GA4_ID) window[`ga-disable-${GA4_ID}`] = !useAnalytics;
-    if (!useAnalytics) {
-      clearCookies(["_ga", "_gid"]);
-      if (GA4_ID) lastTrackedPath.delete(GA4_ID);
-    }
-    if (!useAds) {
-      clearCookies(["_gcl", "_gac"]);
-      if (GOOGLE_ADS_ID) lastTrackedPath.delete(GOOGLE_ADS_ID);
-    }
-
-    if (enabledIds.length === 0) {
-      window.gtag?.("consent", "update", DENIED);
+    const hasOptionalConsent = preferences.analytics || preferences.advertising;
+    if (!hasOptionalConsent) {
+      setConsent({ analytics: false, advertising: false });
+      clearGoogleCookies(["_ga", "_gid", "_gcl", "_gac"]);
+      lastTrackedPath = "";
       return;
     }
 
-    ensureGoogleTag(enabledIds[0]);
-    window.gtag?.("consent", "update", {
-      analytics_storage: useAnalytics ? "granted" : "denied",
-      ad_storage: useAds ? "granted" : "denied",
-      ad_user_data: useAds ? "granted" : "denied",
-      ad_personalization: useAds ? "granted" : "denied",
-    });
+    setConsent(preferences);
+    loadContainer();
 
-    for (const id of enabledIds) {
-      if (configuredIds.has(id)) continue;
-      window.gtag?.("config", id, { send_page_view: false });
-      configuredIds.add(id);
-    }
-
-    if (!isPrivatePath(pathname)) {
-      const freshDestinations = enabledIds.filter((id) => lastTrackedPath.get(id) !== pathname);
-      if (freshDestinations.length > 0) {
-        window.gtag?.("event", "page_view", {
-          page_title: document.title,
-          page_location: `${window.location.origin}${pathname}`,
-          page_path: pathname,
-          send_to: freshDestinations,
-        });
-        for (const id of freshDestinations) lastTrackedPath.set(id, pathname);
-      }
+    if (!isPrivatePath(pathname) && lastTrackedPath !== pathname) {
+      window.dataLayer?.push({
+        event: "page_view",
+        page_title: document.title,
+        page_location: `${window.location.origin}${pathname}`,
+        page_path: pathname,
+      });
+      lastTrackedPath = pathname;
     }
   }, [pathname, preferences]);
 

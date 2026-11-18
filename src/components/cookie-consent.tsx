@@ -114,7 +114,7 @@ export function CookieConsent() {
         <div>
           <h2 id="cookie-consent-title" className="font-bold">Cookie preferences</h2>
           <p id="cookie-consent-description" className="text-sm">
-            Essential cookies keep sign in and security working. Choose separately whether to allow Google Analytics and Google Ads tracking. Optional tags load only when the relevant ID is configured and you opt in.
+            Essential cookies keep sign in and security working. Choose separately whether to allow Google Analytics and Google Ads tracking. The Google Tag Manager container loads only after you allow either optional category.
           </p>
         </div>
         <div className="space-y-2 text-sm">
