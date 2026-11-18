@@ -116,6 +116,9 @@ export function ApplyForm({
           <option value="" disabled>Choose duration</option>
           <option value="1">1 month</option>
           <option value="2">2 months</option>
+          <option value="3">3 months</option>
+          <option value="4">4 months</option>
+          <option value="full_level">Full level</option>
         </select>
       </div>
       <label className="flex items-center gap-2 text-sm">
@@ -175,3 +178,4 @@ export function ApplyForm({
     </form>
   );
 }
+

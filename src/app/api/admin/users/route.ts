@@ -355,7 +355,7 @@ async function updateUserRequest(req: Request) {
     `Nationality: ${admitted.nationality ?? "Not provided"}`,
     `Preferred language or programme: ${admitted.departmentName ?? "To be confirmed"}`,
     `Study format: ${admitted.studyFormat?.replaceAll("_", " ") ?? "To be confirmed"}`,
-    `Duration: ${admitted.studyDurationMonths ? `${admitted.studyDurationMonths} month(s)` : "To be confirmed"}`,
+    `Duration: ${admitted.studyDurationMonths === 0 ? "Full level" : admitted.studyDurationMonths ? `${admitted.studyDurationMonths} month(s)` : "To be confirmed"}`,
     `Study mode: ${admitted.studyMode ?? "To be confirmed"}`,
     `Fee currency: ${admitted.isInternational ? "USD" : "UGX"}`,
     `Next of kin: ${admitted.nextOfKinName ?? "Not provided"}`,
@@ -409,3 +409,5 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Could not update the account. Check Supabase Auth and database availability, then try again." }, { status: 500 });
   }
 }
+
+

@@ -24,7 +24,7 @@ const schema = z.object({
   nextOfKinPhone: z.string().trim().max(32).optional(),
   nextOfKinAddress: z.string().trim().max(500).optional(),
   studyFormat: z.enum(["regular", "intensive", "super_intensive"]).optional(),
-  studyDurationMonths: z.coerce.number().int().min(1).max(2).optional(),
+  studyDurationMonths: z.preprocess((value) => { if (value === "full_level") return 0; if (value === "" || value === null || value === undefined) return undefined; return Number(value); }, z.number().int().min(0).max(4).optional()),
   studyMode: z.enum(["physical", "online"]).optional(),
   requestedIntake: z.string().trim().max(64).optional(),
   isInternational: z.boolean().optional(),
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     !photo || photo.size < 1 || photo.size > maxPhotoBytes || !photoExtensions[photo.type] ||
     !parsed.data.address || !parsed.data.dateOfBirth || !parsed.data.nationality ||
     !parsed.data.nextOfKinName || !parsed.data.nextOfKinRelationship || !parsed.data.nextOfKinPhone ||
-    !parsed.data.nextOfKinAddress || !parsed.data.studyFormat || !parsed.data.studyDurationMonths || !parsed.data.studyMode
+    !parsed.data.nextOfKinAddress || !parsed.data.studyFormat || parsed.data.studyDurationMonths === undefined || !parsed.data.studyMode
   ) {
     return NextResponse.json({ error: "Complete all student and next-of-kin details and upload a JPG, PNG, or WebP profile photo up to 5 MB" }, { status: 400 });
   }
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       nextOfKinPhone: nextOfKinPhone || null,
       nextOfKinAddress: nextOfKinAddress || null,
       studyFormat: studyFormat || null,
-      studyDurationMonths: studyDurationMonths || null,
+      studyDurationMonths: studyDurationMonths ?? null,
       studyMode: studyMode || null,
       requestedIntake: requestedIntake || null,
       isInternational: isInternational ?? false,
@@ -160,3 +160,4 @@ export async function POST(request: Request) {
     );
   }
 }
+
