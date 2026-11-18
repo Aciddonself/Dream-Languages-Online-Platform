@@ -3,12 +3,11 @@ import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { db } from "@/db";
 import { cmsPages, newsPosts, partners, teacherRatings, testimonials, users } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { PartnerAdd, PartnerRemove, TeacherRatingDecision } from "@/components/content-controls";
 import { AdminCmsPageCreate, AdminCmsPageEditor, AdminNewsCreate, AdminNewsEditor, AdminReviewDecision } from "@/components/admin-cms-controls";
 import { AnnouncementCreate } from "@/components/announcement-create";
-import { classes } from "@/db/schema";
-import { isNull } from "drizzle-orm";
+import { classes, departments } from "@/db/schema";
 import { AdminSocialLinksForm } from "@/components/admin-social-links-form";
 import { getSocialLinks } from "@/lib/social-links";
 import { CmsMediaLibrary } from "@/components/cms-media-library";
@@ -25,7 +24,10 @@ export default async function AdminCms() {
     db.select().from(testimonials).orderBy(desc(testimonials.createdAt)).limit(100),
     getSocialLinks(),
   ]);
-  const schoolClasses = await db.select({ id: classes.id, name: classes.name }).from(classes).where(isNull(classes.deletedAt)).orderBy(classes.name);
+  const [schoolClasses, languages] = await Promise.all([
+    db.select({ id: classes.id, name: classes.name }).from(classes).where(isNull(classes.deletedAt)).orderBy(classes.name),
+    db.select({ id: departments.id, name: departments.name }).from(departments).where(and(isNull(departments.deletedAt), eq(departments.isLanguage, true))).orderBy(departments.name),
+  ]);
   const partnerList = await db.select({ id: partners.id, name: partners.name }).from(partners).orderBy(partners.name);
   const ratingRows = await db
     .select({ id: teacherRatings.id, rating: teacherRatings.rating, comment: teacherRatings.comment, firstName: users.firstName, lastName: users.lastName, displayName: users.displayName })
@@ -61,7 +63,7 @@ export default async function AdminCms() {
         </GlassCard>
         <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">Publish a school announcement</h2>
-          <AnnouncementCreate classes={schoolClasses} allowAll />
+          <AnnouncementCreate classes={schoolClasses} languages={languages} allowAll />
         </GlassCard>
         <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">Create a website page</h2>

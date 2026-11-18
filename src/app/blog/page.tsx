@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { GlassCard, GlassButton } from "@/components/ui/glass";
 import { getPublishedNews } from "@/lib/public-content";
 import { NewsMediaCarousel } from "@/components/news-media-carousel";
@@ -6,6 +7,11 @@ import { NewsCarouselErrorBoundary } from "@/components/news-carousel-error-boun
 import { isVideo } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Language Learning News and Stories",
+  description: "Read language learning tips, learner stories, school news and community updates from Dream Languages Uganda.",
+  alternates: { canonical: "/blog" },
+};
 
 export default async function BlogPage() {
   let posts: Awaited<ReturnType<typeof getPublishedNews>> = [];

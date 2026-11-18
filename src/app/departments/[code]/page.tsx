@@ -1,12 +1,26 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { db } from "@/db";
 import { classes, departments, levels, timetableSessions } from "@/db/schema";
 import { eq, or, ilike, asc, and, gt, sql } from "drizzle-orm";
-import { DEFAULT_DEPARTMENTS } from "@/lib/public-content";
+import { DEFAULT_DEPARTMENTS, getPublicDepartments } from "@/lib/public-content";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ code: string }> }): Promise<Metadata> {
+  const { code } = await params;
+  const departments = await getPublicDepartments();
+  const department = departments.find((item) => item.code.toLowerCase() === code.trim().toLowerCase());
+  const name = department?.name ?? code.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const canonicalCode = department?.code.toLowerCase() ?? code.toLowerCase();
+  return {
+    title: `${name} Language Classes in Uganda`,
+    description: `Explore ${name} classes at Dream Languages Uganda. Review course levels, study options and upcoming lessons, then apply for an intake.`,
+    alternates: { canonical: `/departments/${canonicalCode}` },
+  };
+}
 
 const CEFR_LEVELS = [
   { code: "A1", name: "Beginner", desc: "Basic greetings, everyday phrases, pronunciation, self-introduction, and numbers." },

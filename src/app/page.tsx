@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { Metadata } from "next";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { CountUpStats } from "@/components/count-up-stats";
 import { SocialLinksDisplay } from "@/components/social-links-display";
@@ -15,6 +16,11 @@ import { getSocialLinks } from "@/lib/social-links";
 import { getSiteImages } from "@/lib/site-images";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Language School in Uganda | French, German, English and More",
+  description: "Study French, German, English, Spanish, Mandarin, Kiswahili and other languages with Dream Languages Uganda. Compare programmes, study online or in class, and apply for an intake.",
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
   const [depts, tests, faqList, partnerList, news, socialLinks, siteImages] = await Promise.all([
@@ -26,9 +32,27 @@ export default async function HomePage() {
     getSocialLinks(),
     getSiteImages(),
   ]);
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    name: "Dream Languages and Adult Literacy",
+    alternateName: "Dream Languages Uganda",
+    url: "https://dreamlanguagesug.online",
+    description: "Language learning, adult literacy and practical education with online and in-person study options in Uganda.",
+    areaServed: ["Uganda", "East Africa", "Africa", "Worldwide"],
+    knowsAbout: depts.filter((department) => department.isLanguage).map((department) => department.name),
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Bbunga, Ggaba Road, at St. Karoli Lwanga Catholic Church",
+      addressLocality: "Kampala",
+      addressCountry: "UG",
+    },
+  };
+  const organizationJson = JSON.stringify(organizationSchema).replace(/</g, "\\u003c");
 
   return (
     <main className="min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: organizationJson }} />
       {/* Hero */}
       <section className="px-4 pt-6 pb-12 sm:px-6 sm:pt-8 sm:pb-14 max-w-6xl mx-auto">
         <GlassCard className="source-hero p-5 sm:p-7 md:p-9" strong>

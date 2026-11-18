@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { Metadata } from "next";
 import { GlassCard } from "@/components/ui/glass";
 import Link from "next/link";
 import { whatsappContacts } from "@/lib/contacts";
@@ -6,6 +7,11 @@ import { getPublicDepartments } from "@/lib/public-content";
 import { getSiteImages } from "@/lib/site-images";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Language Courses and Fees in Uganda",
+  description: "Compare Dream Languages Uganda programmes in French, German, English, Spanish, Mandarin, Kiswahili and more. Review study formats and apply for an upcoming intake.",
+  alternates: { canonical: "/courses" },
+};
 
 export default async function CoursesPage() {
   const [depts, images] = await Promise.all([getPublicDepartments(), getSiteImages()]);

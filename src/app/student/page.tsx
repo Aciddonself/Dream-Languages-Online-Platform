@@ -41,10 +41,11 @@ const nav = [
 
 export default async function StudentDashboard() {
   const user = await requireRole(["student", "super_admin"]);
-  const [enrollment] = await db
+  const studentEnrollments = await db
     .select({
       classId: classes.id,
       className: classes.name,
+      departmentId: departments.id,
       departmentName: departments.name,
       levelName: levels.name,
     })
@@ -52,8 +53,15 @@ export default async function StudentDashboard() {
     .innerJoin(classes, eq(enrolments.classId, classes.id))
     .leftJoin(departments, eq(classes.departmentId, departments.id))
     .leftJoin(levels, eq(classes.levelId, levels.id))
-    .where(eq(enrolments.studentId, user.id))
-    .limit(1);
+    .where(and(eq(enrolments.studentId, user.id), eq(enrolments.status, "active"), isNull(classes.deletedAt)));
+  const enrollment = studentEnrollments[0];
+  const enrolledClassIds: string[] = Array.from(new Set<string>(studentEnrollments.map((item) => item.classId)));
+  const enrolledLanguageIds: string[] = Array.from(new Set<string>(studentEnrollments.map((item) => item.departmentId).filter((id): id is string => Boolean(id))));
+  const announcementFilters = [
+    ...(studentEnrollments.length ? [eq(announcements.audience, "all"), eq(announcements.audience, "students")] : []),
+    ...(enrolledClassIds.length ? [and(eq(announcements.audience, "class"), inArray(announcements.classId, enrolledClassIds))] : []),
+    ...(enrolledLanguageIds.length ? [and(eq(announcements.audience, "language"), inArray(announcements.departmentId, enrolledLanguageIds))] : []),
+  ];
 
   const [attendanceSummary, feeSummary, activeHold, assignmentSummary, announcementRows, completedAttendanceSessions, portalNotifications] = await Promise.all([
     db.select({ total: count() }).from(attendance).where(eq(attendance.studentId, user.id)),
@@ -72,11 +80,9 @@ export default async function StudentDashboard() {
           .from(assignments)
           .where(and(eq(assignments.classId, enrollment.classId), gt(assignments.dueAt, new Date())))
       : Promise.resolve([{ total: 0 }]),
-    db.select().from(announcements).where(or(
-      eq(announcements.audience, "all"),
-      eq(announcements.audience, "students"),
-      ...(enrollment ? [eq(announcements.classId, enrollment.classId)] : []),
-    )).orderBy(desc(announcements.publishedAt)).limit(8),
+    announcementFilters.length
+      ? db.select().from(announcements).where(or(...announcementFilters)).orderBy(desc(announcements.publishedAt)).limit(8)
+      : Promise.resolve([]),
     enrollment
       ? db.select({
           id: timetableSessions.id,

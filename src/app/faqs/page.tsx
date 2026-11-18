@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { GlassCard } from "@/components/ui/glass";
 import { getPublishedFaqs } from "@/lib/public-content";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Language Course Questions and Answers",
+  description: "Find answers about Dream Languages Uganda courses, language levels, online classes, admissions, placement and learner support.",
+  alternates: { canonical: "/faqs" },
+};
 
 export default async function FaqsPage() {
   const list = await getPublishedFaqs();

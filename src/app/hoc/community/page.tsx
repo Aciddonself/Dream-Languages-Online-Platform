@@ -22,7 +22,7 @@ export default async function HeadAcademicsCommunityPage() {
     <PortalShell title="Head of Academics" nav={nav}>
       <h1 className="display-font text-3xl font-bold mb-2">Academic Discussions</h1>
       <p className="text-sm opacity-65 mb-5">Organize private class discussions and communicate with enrolled learners and teachers.</p>
-      <GlassCard className="mb-5 p-5"><h2 className="font-semibold mb-3">Post an announcement</h2><AnnouncementCreate classes={data.classes} allowAll /></GlassCard>
+      <GlassCard className="mb-5 p-5"><h2 className="font-semibold mb-3">Post an announcement</h2><AnnouncementCreate classes={data.classes} languages={data.languages} allowAll /></GlassCard>
       <DiscussionHub rooms={data.rooms} classes={data.classes} canCreate={data.canCreate} canTeachNumbers={false} currentUserId={user.id} />
     </PortalShell>
   );

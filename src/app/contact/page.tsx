@@ -1,6 +1,13 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { GlassCard } from "@/components/ui/glass";
 import { whatsappContacts } from "@/lib/contacts";
+
+export const metadata: Metadata = {
+  title: "Contact Dream Languages Uganda",
+  description: "Contact Dream Languages in Kampala about language classes, admissions, online learning, partnerships and student support.",
+  alternates: { canonical: "/contact" },
+};
 
 export default async function ContactPage({ searchParams }: { searchParams?: Promise<{ shopItem?: string }> }) {
   const item = (await searchParams)?.shopItem?.slice(0, 120);

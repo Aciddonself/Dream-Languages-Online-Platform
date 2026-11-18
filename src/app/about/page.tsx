@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { GlassCard } from "@/components/ui/glass";
 import { getSiteImages } from "@/lib/site-images";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "About Dream Languages Uganda",
+  description: "Learn about Dream Languages and Adult Literacy, our teaching approach, language programmes and support for learners in Uganda and beyond.",
+  alternates: { canonical: "/about" },
+};
 
 export default async function AboutPage() {
   const images = await getSiteImages();

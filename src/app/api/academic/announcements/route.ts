@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { announcements, auditLogs, classes } from "@/db/schema";
+import { announcements, auditLogs, classes, departments } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { detectPhoneOrHandle } from "@/lib/phone-filter";
 
 const schema = z.object({
   title: z.string().trim().min(1).max(180),
   body: z.string().trim().min(1).max(5000),
+  audience: z.enum(["all", "language", "class"]),
   classId: z.string().uuid().optional().or(z.literal("")),
+  departmentId: z.string().uuid().optional().or(z.literal("")),
 });
 
 export async function POST(request: Request) {
@@ -33,21 +35,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Announcements cannot contain personal phone numbers or contact handles." }, { status: 400 });
   }
   const classId = parsed.data.classId || null;
-  if (!classId && user.role === "teacher") {
-    return NextResponse.json({ error: "Teachers can only make announcements to a class they teach" }, { status: 403 });
+  const departmentId = parsed.data.departmentId || null;
+  if (parsed.data.audience === "all" && user.role === "teacher") {
+    return NextResponse.json({ error: "Teachers cannot send announcements to all enrolled students" }, { status: 403 });
+  }
+  if (parsed.data.audience === "class" && !classId) return NextResponse.json({ error: "Select a class for this announcement" }, { status: 400 });
+  if (parsed.data.audience === "language" && !departmentId) return NextResponse.json({ error: "Select a language for this announcement" }, { status: 400 });
+  if ((parsed.data.audience === "class" && departmentId) || (parsed.data.audience === "language" && classId) || (parsed.data.audience === "all" && (classId || departmentId))) {
+    return NextResponse.json({ error: "Choose only one announcement audience" }, { status: 400 });
   }
   if (classId) {
-    const [schoolClass] = await db.select({ id: classes.id, teacherId: classes.teacherId }).from(classes).where(eq(classes.id, classId)).limit(1);
+    const [schoolClass] = await db.select({ id: classes.id, teacherId: classes.teacherId }).from(classes).where(and(eq(classes.id, classId), isNull(classes.deletedAt))).limit(1);
     if (!schoolClass) return NextResponse.json({ error: "Class not found" }, { status: 404 });
     if (user.role === "teacher" && schoolClass.teacherId !== user.id) {
       return NextResponse.json({ error: "You can only post announcements to your own classes" }, { status: 403 });
     }
   }
+  if (departmentId) {
+    const [language] = await db.select({ id: departments.id }).from(departments).where(and(
+      eq(departments.id, departmentId), eq(departments.isLanguage, true), isNull(departments.deletedAt),
+    )).limit(1);
+    if (!language) return NextResponse.json({ error: "Language programme not found" }, { status: 404 });
+    if (user.role === "teacher") {
+      const [teachingClass] = await db.select({ id: classes.id }).from(classes).where(and(
+        eq(classes.teacherId, user.id), eq(classes.departmentId, departmentId), isNull(classes.deletedAt),
+      )).limit(1);
+      if (!teachingClass) return NextResponse.json({ error: "You can only address learners in a language you teach" }, { status: 403 });
+    }
+  }
   const [announcement] = await db.insert(announcements).values({
     title: parsed.data.title,
     body: parsed.data.body,
-    audience: classId ? "class" : "all",
+    audience: parsed.data.audience,
     classId,
+    departmentId,
     createdBy: user.id,
   }).returning({ id: announcements.id, title: announcements.title });
   await db.insert(auditLogs).values({
@@ -55,7 +76,7 @@ export async function POST(request: Request) {
     action: "publish_announcement",
     entityType: "announcement",
     entityId: announcement.id,
-    after: { title: announcement.title, classId },
+    after: { title: announcement.title, audience: parsed.data.audience, classId, departmentId },
   });
   return NextResponse.json({ ok: true, announcement }, { status: 201 });
 }
