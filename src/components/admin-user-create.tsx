@@ -63,61 +63,47 @@ export function AdminUserCreate() {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-3 md:grid-cols-6">
-      <GlassInput
-        className="md:col-span-1"
-        placeholder="First name"
-        value={form.firstName}
-        onChange={(event) => setForm({ ...form, firstName: event.target.value })}
-        required
-      />
-      <GlassInput
-        className="md:col-span-1"
-        placeholder="Last name"
-        value={form.lastName}
-        onChange={(event) => setForm({ ...form, lastName: event.target.value })}
-        required
-      />
-      <GlassInput
-        className="md:col-span-1"
-        type="email"
-        placeholder="Email"
-        value={form.email}
-        onChange={(event) => setForm({ ...form, email: event.target.value })}
-        required
-      />
-      <GlassInput
-        className="md:col-span-1"
-        type="password"
-        placeholder="Temporary password"
-        value={form.password}
-        onChange={(event) => setForm({ ...form, password: event.target.value })}
-        minLength={10}
-        required
-      />
-      <select
-        className="glass min-w-0 px-3 py-2.5 md:col-span-1"
-        value={form.role}
-        onChange={(event) => setForm({ ...form, role: event.target.value })}
-      >
-        <option value="student">Student</option>
-        <option value="applicant">Applicant</option>
-        <option value="teacher">Teacher</option>
-        <option value="finance">Finance</option>
-        <option value="head_academics">Head of Academics</option>
-        <option value="super_admin">Administrator</option>
-      </select>
-      {form.role === "student" && (
-        <label className="grid gap-1 text-xs md:col-span-2">
-          <span>Passport-sized student photo (required)</span>
-          <input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp" required />
+    <div className="admin-user-create-scroll -mx-4 overflow-x-auto px-4 pb-3" role="region" aria-label="Add user form. Scroll horizontally to see all fields." tabIndex={0}>
+      <form onSubmit={submit} className="grid min-w-[1220px] grid-cols-[150px_150px_230px_230px_180px_220px] items-end gap-3">
+        <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
+          <span>First name</span>
+          <GlassInput placeholder="First name" value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} required />
         </label>
-      )}
-      <GlassButton type="submit" className="md:col-span-2" disabled={loading}>
-        {loading ? "Creating..." : "Create user"}
-      </GlassButton>
-      {error && <p className="text-sm text-[var(--danger)] md:col-span-6" role="alert">{String(error)}</p>}
-      {success && <p className="text-sm text-[var(--success)] md:col-span-6" role="status">{success}</p>}
-    </form>
+        <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
+          <span>Last name</span>
+          <GlassInput placeholder="Last name" value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} required />
+        </label>
+        <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
+          <span>Email address</span>
+          <GlassInput type="email" placeholder="name@example.com" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
+        </label>
+        <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
+          <span>Temporary password</span>
+          <GlassInput type="password" placeholder="At least 10 characters" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} minLength={10} required />
+        </label>
+        <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
+          <span>Account role</span>
+          <select className="glass min-w-0 w-full px-3 py-2.5" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>
+            <option value="student">Student</option>
+            <option value="applicant">Applicant</option>
+            <option value="teacher">Teacher</option>
+            <option value="finance">Finance</option>
+            <option value="head_academics">Head of Academics</option>
+            <option value="super_admin">Administrator</option>
+          </select>
+        </label>
+        {form.role === "student" && (
+          <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
+            <span>Passport photo <span className="font-normal">(required)</span></span>
+            <input ref={photoInput} className="min-w-0 max-w-full text-sm" type="file" accept="image/jpeg,image/png,image/webp" required />
+          </label>
+        )}
+        <GlassButton type="submit" className="min-h-11 w-full" disabled={loading}>
+          {loading ? "Creating..." : "Create user"}
+        </GlassButton>
+        {error && <p className="col-span-6 text-sm text-[var(--danger)]" role="alert">{String(error)}</p>}
+        {success && <p className="col-span-6 text-sm text-[var(--success)]" role="status">{success}</p>}
+      </form>
+    </div>
   );
 }

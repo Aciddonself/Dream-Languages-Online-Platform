@@ -1276,3 +1276,14 @@ p, li, td, th, label, summary, blockquote { font-weight: 600; }
 }
 .dla-photo-frame { aspect-ratio: 3 / 2; width: 100%; max-width: 840px; max-height: 560px; min-height: 220px; margin-inline: auto; background: color-mix(in srgb, var(--surface) 88%, #d9d3c5); border: 1px solid color-mix(in srgb, var(--brand-secondary) 24%, var(--border)); box-shadow: 0 8px 26px rgba(8,38,74,.11), 0 0 12px rgba(201,156,59,.045); }
 @media (max-width: 640px) { .dla-photo-frame { min-height: 200px; } }
+
+/* Keep the admin Add User fields readable and provide a clear horizontal scrollbar when needed. */
+.admin-user-create-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: var(--brand-secondary) color-mix(in srgb, var(--surface) 78%, #9aa8ba);
+  scroll-behavior: smooth;
+}
+.admin-user-create-scroll::-webkit-scrollbar { height: 12px; }
+.admin-user-create-scroll::-webkit-scrollbar-track { border-radius: 999px; background: color-mix(in srgb, var(--surface) 78%, #9aa8ba); }
+.admin-user-create-scroll::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: var(--brand-secondary); background-clip: padding-box; }
+.admin-user-create-scroll:focus-visible { outline: 2px solid var(--brand-accent); outline-offset: 2px; }
