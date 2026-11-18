@@ -14,7 +14,7 @@ const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("verify"), factorId: z.string().uuid(), code: z.string().regex(/^\d{6}$/) }).strict(),
 ]);
 
-/** TOTP enrolment/verification for Admin, Finance and Head of Academics. Requires a password-authenticated (aal1) session. */
+/** TOTP enrollment and verification for every active portal account. */
 export async function POST(req: Request) {
   const limited = await rateLimit("mfa", clientIp(req), 15, "10 m");
   if (!limited.ok) return tooManyRequests(limited.retryAfter);

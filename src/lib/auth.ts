@@ -6,7 +6,8 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/sup
 import { ensureStudentRegistrationNumber } from "@/lib/registration";
 
 export const ACTIVE_STATUSES = ["active", "registered", "applicant"] as const;
-export const MFA_REQUIRED_ROLES = ["super_admin", "finance", "head_academics"];
+// Every portal account must enroll a TOTP factor before receiving dashboard access.
+export const MFA_REQUIRED_ROLES = ["super_admin", "finance", "head_academics", "teacher", "student", "applicant"];
 
 /**
  * Identity comes from Supabase Auth (getUser re-validates the JWT with the Auth server).

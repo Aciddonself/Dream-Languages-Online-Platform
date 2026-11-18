@@ -115,8 +115,8 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
       fail("Your sign-in session belongs to a different account role. Please use the correct sign-in page. Reference: AUTH_ROLE_MISMATCH.");
       return;
     }
-    if (isAdmin && session.assuranceLevel !== "aal2") {
-      fail("The authenticator step did not complete the required admin verification. Sign in again and enter the current code. Reference: AUTH_MFA_NOT_VERIFIED.");
+    if (session.assuranceLevel !== "aal2") {
+      fail("The authenticator step did not complete verification. Sign in again and enter the current code. Reference: AUTH_MFA_NOT_VERIFIED.");
       return;
     }
     toast.success("Signed in successfully.");
