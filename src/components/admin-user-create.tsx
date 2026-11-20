@@ -7,8 +7,9 @@ import { GlassButton, GlassInput } from "@/components/ui/glass";
 import { prepareProfilePhoto } from "@/lib/prepare-profile-photo";
 
 type DepartmentOption = { id: string; name: string };
+type ClassOption = { id: string; name: string; departmentName: string | null };
 
-export function AdminUserCreate({ canCreateAdmin = false, departments = [] }: { canCreateAdmin?: boolean; departments?: DepartmentOption[] }) {
+export function AdminUserCreate({ canCreateAdmin = false, departments = [], classes = [] }: { canCreateAdmin?: boolean; departments?: DepartmentOption[]; classes?: ClassOption[] }) {
   const router = useRouter();
   const photoInput = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -18,6 +19,7 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [] }: { 
     lastName: "",
     role: "student",
     departmentId: "",
+    classId: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -53,7 +55,7 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [] }: { 
         : `${roleLabel} ${name} created successfully.`;
       setSuccess(message);
       toast.success(message);
-      setForm({ email: "", password: "", firstName: "", lastName: "", role: "student", departmentId: "" });
+      setForm({ email: "", password: "", firstName: "", lastName: "", role: "student", departmentId: "", classId: "" });
       if (photoInput.current) photoInput.current.value = "";
       router.refresh();
     } catch (createError) {
@@ -67,7 +69,7 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [] }: { 
 
   return (
     <div className="admin-user-create-scroll -mx-4 overflow-x-auto px-4 pb-3" role="region" aria-label="Add user form. Scroll horizontally to see all fields." tabIndex={0}>
-      <form onSubmit={submit} className="grid min-w-[1540px] grid-cols-[150px_150px_230px_230px_180px_240px_220px] items-end gap-3">
+      <form onSubmit={submit} className="grid min-w-[1790px] grid-cols-[150px_150px_230px_230px_180px_260px_250px_220px] items-end gap-3">
         <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
           <span>First name</span>
           <GlassInput placeholder="First name" value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} required />
@@ -108,6 +110,16 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [] }: { 
           <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
             <span>Passport photo <span className="font-normal">(required)</span></span>
             <input ref={photoInput} className="min-w-0 max-w-full text-sm" type="file" accept="image/jpeg,image/png,image/webp" required />
+          </label>
+        )}
+        {form.role === "teacher" && (
+          <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
+            <span>Assigned class <span className="font-normal">(required)</span></span>
+            <select className="glass min-w-0 w-full px-3 py-2.5" value={form.classId} onChange={(event) => setForm({ ...form, classId: event.target.value })} required>
+              <option value="">Choose an available class</option>
+              {classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.name}{schoolClass.departmentName ? ` · ${schoolClass.departmentName}` : ""}</option>)}
+            </select>
+            {!classes.length && <span className="text-xs font-normal opacity-70">All existing classes already have a teacher. Reassign one in the user list first.</span>}
           </label>
         )}
         <GlassButton type="submit" className="min-h-11 w-full" disabled={loading}>

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { classes, timetableSessions, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { and, eq, gt, lt, or } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, or } from "drizzle-orm";
 import { isSupportedMeetingUrl } from "@/lib/meeting-links";
 
 const schema = z.object({
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   let schoolClass: { id: string; teacherId: string | null; departmentId: string | null } | undefined;
   if (classId) {
     [schoolClass] = await db.select({ id: classes.id, teacherId: classes.teacherId, departmentId: classes.departmentId })
-      .from(classes).where(eq(classes.id, classId)).limit(1);
+      .from(classes).where(and(eq(classes.id, classId), isNull(classes.deletedAt))).limit(1);
     if (!schoolClass) return NextResponse.json({ error: "Class not found" }, { status: 404 });
     if (departmentId && schoolClass.departmentId !== departmentId) {
       return NextResponse.json({ error: "Choose a class within the selected department" }, { status: 400 });
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   let sessionTeacherId: string | null = null;
   if (user.role === "teacher") {
     if (!schoolClass) {
-      return NextResponse.json({ error: "Teachers can only schedule a class they are assigned to" }, { status: 400 });
+      return NextResponse.json({ error: "Select one of your assigned classes before scheduling. If your class list is empty, ask an administrator to assign your account to a class in Admin → Users." }, { status: 400 });
     }
     if (schoolClass.teacherId !== user.id) {
       return NextResponse.json({ error: "You can only schedule your own assigned classes" }, { status: 403 });

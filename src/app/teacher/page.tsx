@@ -5,7 +5,7 @@ import { AdminSessionCreate } from "@/components/admin-session-create";
 import Link from "next/link";
 import { db } from "@/db";
 import { classes, enrolments, exams, timetableSessions } from "@/db/schema";
-import { and, count, eq, gt } from "drizzle-orm";
+import { and, count, eq, gt, isNull } from "drizzle-orm";
 import { formatSchoolDateTime } from "@/lib/school-time";
 
 const nav = [
@@ -23,7 +23,7 @@ const nav = [
 export default async function TeacherDashboard() {
   const user = await requireRole(["teacher", "head_academics", "super_admin"]);
   const [teacherClasses, studentCount, pendingExams, upcomingSessions] = await Promise.all([
-    db.select().from(classes).where(eq(classes.teacherId, user.id)),
+    db.select().from(classes).where(and(eq(classes.teacherId, user.id), isNull(classes.deletedAt))),
     db.select({ total: count() })
       .from(enrolments)
       .innerJoin(classes, eq(enrolments.classId, classes.id))
@@ -88,7 +88,7 @@ export default async function TeacherDashboard() {
       <GlassCard className="mt-6 p-6" strong>
         <h2 className="mb-2 font-semibold">Schedule a class or meeting</h2>
         <p className="mb-4 text-sm opacity-70">Schedule a session for one of your assigned classes and add its Google Meet URL for enrolled students.</p>
-        <AdminSessionCreate classes={teacherClasses.map(({ id, name }) => ({ id, name }))} />
+        <AdminSessionCreate classes={teacherClasses.map(({ id, name }) => ({ id, name }))} classRequired={user.role === "teacher"} />
       </GlassCard>
     </PortalShell>
   );

@@ -12,9 +12,10 @@ import { AdminUserMfaReset } from "@/components/admin-user-mfa-reset";
 import { AdminUserDepartment } from "@/components/admin-user-department";
 import { AdminStudentPhotoControl } from "@/components/admin-student-photo-control";
 import { StudentDocumentStampControl } from "@/components/student-document-stamp-control";
-import { and, asc, eq, ilike, isNull, ne, or } from "drizzle-orm";
+import { AdminUserClassAssignment } from "@/components/admin-user-class-assignment";
+import { and, asc, eq, ilike, inArray, isNull, ne, or } from "drizzle-orm";
 import { db } from "@/db";
-import { departments, users } from "@/db/schema";
+import { classes, departments, users } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,28 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
   const term = q.trim().slice(0, 80);
   const languageDepartments = await db.select({ id: departments.id, name: departments.name }).from(departments)
     .where(and(isNull(departments.deletedAt), eq(departments.isLanguage, true))).orderBy(asc(departments.name));
+  const activeClasses = await db.select({
+    id: classes.id,
+    name: classes.name,
+    departmentName: departments.name,
+    teacherId: classes.teacherId,
+  }).from(classes)
+    .leftJoin(departments, eq(classes.departmentId, departments.id))
+    .where(isNull(classes.deletedAt))
+    .orderBy(asc(departments.name), asc(classes.name));
+  const assignedTeacherIds: string[] = Array.from(new Set(activeClasses.flatMap((schoolClass) => schoolClass.teacherId ? [schoolClass.teacherId] : [])));
+  const activeTeacherRows = assignedTeacherIds.length
+    ? await db.select({ id: users.id }).from(users).where(and(
+      inArray(users.id, assignedTeacherIds), eq(users.role, "teacher"), ne(users.status, "archived"), isNull(users.deletedAt),
+    ))
+    : [];
+  const activeTeacherIds = new Set(activeTeacherRows.map((teacher) => teacher.id));
+  const classOptions = activeClasses.map((schoolClass) => ({
+    ...schoolClass,
+    teacherId: schoolClass.teacherId && activeTeacherIds.has(schoolClass.teacherId) ? schoolClass.teacherId : null,
+  }));
+  const classByTeacher = new Map<string, (typeof classOptions)[number]>(classOptions.filter((schoolClass) => schoolClass.teacherId)
+    .map((schoolClass) => [schoolClass.teacherId as string, schoolClass] as const));
   const filters = [
     includeArchived ? undefined : isNull(users.deletedAt),
     term ? or(ilike(users.registrationNumber, `%${term}%`), ilike(users.displayName, `%${term}%`), ilike(users.email, `%${term}%`)) : undefined,
@@ -101,6 +124,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
         <AdminUserCreate
           canCreateAdmin={actor.role === "super_admin"}
           departments={languageDepartments}
+          classes={classOptions.filter((schoolClass) => !schoolClass.teacherId)}
         />
       </GlassCard>
       <GlassCard className="overflow-hidden">
@@ -108,7 +132,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
         <div className="admin-user-create-scroll w-full overflow-x-auto px-3 pb-3" role="region" aria-label="User account table. Scroll horizontally to see all controls." tabIndex={0}>
           <table className="w-full min-w-[1720px] text-sm">
           <thead className="bg-white/5">
-            <tr><th className="text-left p-3">Name / photo</th><th className="text-left p-3">Registration no.</th><th className="text-left p-3">Language department</th><th className="text-left p-3">Email / login</th><th className="text-left p-3">Role held</th><th className="text-left p-3">Status</th><th className="min-w-[240px] text-left p-3">Issue credentials</th><th className="text-left p-3">Authenticator</th><th className="text-left p-3">Admission</th><th className="text-left p-3">Passport photo</th><th className="text-left p-3">Official student documents</th></tr>
+            <tr><th className="text-left p-3">Name / photo</th><th className="text-left p-3">Registration no.</th><th className="text-left p-3">Language department</th><th className="text-left p-3">Assigned class</th><th className="text-left p-3">Email / login</th><th className="text-left p-3">Role held</th><th className="text-left p-3">Status</th><th className="min-w-[240px] text-left p-3">Issue credentials</th><th className="text-left p-3">Authenticator</th><th className="text-left p-3">Admission</th><th className="text-left p-3">Passport photo</th><th className="text-left p-3">Official student documents</th></tr>
           </thead>
           <tbody>
             {all.map((u: { id: string; displayName: string | null; role: string; status: string; registrationNumber: string | null; address: string | null; nextOfKinName: string | null; nextOfKinPhone: string | null; studyFormat: string | null; studyDurationMonths: number | null; requestedIntake: string | null; email: string; departmentName: string | null; departmentId: string | null; avatarStorageKey: string | null; documentStampedAt: Date | null; documentStamperName: string | null; documentStamperTitle: string | null; }) => (
@@ -118,6 +142,9 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                 <td className="p-3">{["student", "applicant"].includes(u.role)
                   ? <AdminUserDepartment userId={u.id} departmentId={u.departmentId} departments={languageDepartments} />
                   : u.departmentName ?? <span className="opacity-50">Not assigned</span>}</td>
+                <td className="p-3">{u.role === "teacher"
+                  ? <AdminUserClassAssignment userId={u.id} assignedClassId={classByTeacher.get(u.id)?.id ?? ""} classes={classOptions} />
+                  : <span className="opacity-50">Not applicable</span>}</td>
                 <td className="p-3 opacity-70">{u.email}</td>
                         <td className="p-3">
                           {u.status === "archived" && ["teacher", "finance", "head_academics"].includes(u.role)

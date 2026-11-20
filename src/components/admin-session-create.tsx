@@ -25,6 +25,7 @@ interface AdminSessionCreateProps {
   departments?: DepartmentOption[];
   classes: ClassOption[];
   teachers?: TeacherOption[];
+  classRequired?: boolean;
   onSuccess?: () => void;
 }
 
@@ -32,12 +33,13 @@ export function AdminSessionCreate({
   departments = [],
   classes,
   teachers = [],
+  classRequired = false,
   onSuccess,
 }: AdminSessionCreateProps) {
   const formId = useId();
   const [selectedDeptId, setSelectedDeptId] = useState<string>("");
   const [title, setTitle] = useState("");
-  const [selectedClassId, setSelectedClassId] = useState("");
+  const [selectedClassId, setSelectedClassId] = useState(classes.length === 1 ? classes[0].id : "");
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
@@ -84,6 +86,12 @@ export function AdminSessionCreate({
     setError("");
     setSuccess("");
     setCreatedMeetUrl("");
+    if (classRequired && !selectedClassId) {
+      setError(classes.length
+        ? "Choose one of your assigned classes before scheduling."
+        : "No class is assigned to your account yet. Ask an administrator to assign your teacher account to a class in Admin → Users.");
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -118,7 +126,7 @@ export function AdminSessionCreate({
 
       // Reset
       setTitle("");
-      setSelectedClassId("");
+      setSelectedClassId(classRequired && classes.length === 1 ? classes[0].id : "");
       setStartsAt("");
       setEndsAt("");
       setMeetUrl("");
@@ -166,10 +174,11 @@ export function AdminSessionCreate({
           className="glass w-full rounded-xl px-3.5 py-2.5 text-sm bg-[var(--surface)] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           value={selectedClassId}
           onChange={(e) => setSelectedClassId(e.target.value)}
-          required={Boolean(selectedDeptId)}
+          required={classRequired || Boolean(selectedDeptId)}
+          disabled={classRequired && classes.length === 0}
         >
           <option value="">
-            {selectedDeptId ? "Choose a class in this department" : "All enrolled students across the school"}
+            {classRequired ? "Choose one of your assigned classes" : selectedDeptId ? "Choose a class in this department" : "All enrolled students across the school"}
           </option>
           {filteredClasses.map((schoolClass) => (
             <option key={schoolClass.id} value={schoolClass.id}>
@@ -180,7 +189,9 @@ export function AdminSessionCreate({
         <p className="text-xs opacity-60">
           {selectedDeptId
             ? "Choose a class so the session is limited to the selected department."
-            : "Leave the department filter clear and this class unselected to schedule for the whole school."}
+            : classRequired
+              ? classes.length ? "You can schedule sessions only for classes assigned to your account." : "Your account has no assigned class yet. Ask an administrator to assign one in Admin → Users."
+              : "Leave the department filter clear and this class unselected to schedule for the whole school."}
         </p>
       </div>
 
@@ -325,7 +336,7 @@ export function AdminSessionCreate({
       <div className="md:col-span-2 flex flex-wrap items-center gap-3 pt-2">
         <GlassButton
           type="submit"
-          disabled={submitting}
+          disabled={submitting || (classRequired && classes.length === 0)}
           className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-indigo-500/25"
         >
           {submitting ? "Scheduling Live Class..." : "Schedule Live Class with Google Meet"}
