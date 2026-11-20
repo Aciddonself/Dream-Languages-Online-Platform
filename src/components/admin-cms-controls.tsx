@@ -1,8 +1,33 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { GlassButton, GlassInput } from "@/components/ui/glass";
+import { createClient } from "@supabase/supabase-js";
+
+export async function uploadSiteMedia(file: File, folder: "news" | "shop") {
+  const preparedResponse = await fetch("/api/admin/site-media-upload", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: file.name, contentType: file.type, size: file.size, folder }),
+  });
+  const prepared = await preparedResponse.json() as { error?: string; path?: string; token?: string; publicUrl?: string };
+  if (!preparedResponse.ok || !prepared.path || !prepared.token || !prepared.publicUrl) throw new Error(prepared.error ?? "Could not prepare the media upload.");
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder-project.supabase.co",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder-anon-key-for-builds-only",
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+  const { error } = await supabase.storage.from("site-media").uploadToSignedUrl(prepared.path, prepared.token, file, { contentType: file.type, upsert: false });
+  if (error) throw new Error(error.message);
+  return prepared.publicUrl;
+}
+
+function NewsMediaPreview({ url }: { url: string }) {
+  if (!url) return null;
+  return /\.(mp4|webm|mov)(\?|$)/i.test(url)
+    ? <video src={url} controls className="max-h-64 w-full rounded-xl border border-[var(--border)]" />
+    : <img src={url} alt="Story media preview" className="max-h-64 w-full rounded-xl border border-[var(--border)] object-contain" />;
+}
 
 export type CmsPage = {
   id: string;
@@ -35,6 +60,17 @@ export function AdminNewsCreate() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaBusy, setMediaBusy] = useState(false);
+
+  async function upload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    setMediaBusy(true); setError("");
+    try { setMediaUrl(await uploadSiteMedia(file, "news")); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to upload the story media."); }
+    finally { setMediaBusy(false); }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,6 +89,7 @@ export function AdminNewsCreate() {
           slug: data.get("slug"),
           excerpt: data.get("excerpt"),
           body: data.get("body"),
+          coverUrl: mediaUrl,
           status: data.get("status"),
         }),
       });
@@ -62,6 +99,7 @@ export function AdminNewsCreate() {
         return;
       }
       setSuccess(`Website update saved as ${result.post.status}.`);
+      setMediaUrl("");
       form.reset();
       router.refresh();
     } catch {
@@ -77,6 +115,11 @@ export function AdminNewsCreate() {
       <GlassInput name="slug" placeholder="Website slug (optional)" maxLength={128} />
       <GlassInput name="excerpt" placeholder="Short preview (optional)" maxLength={500} />
       <textarea className="glass min-h-36 w-full rounded-xl px-4 py-3 text-sm" name="body" placeholder="Website update" maxLength={20000} required />
+      <label className="grid gap-2 text-sm font-bold">Add a photo or video
+        <input className="glass w-full rounded-xl p-3" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" onChange={upload} />
+      </label>
+      <p className="text-xs text-[var(--text-muted)]">Images and videos up to 100 MB. {mediaBusy ? "Uploading media…" : mediaUrl ? "Media uploaded and ready." : "Media is optional."}</p>
+      <NewsMediaPreview url={mediaUrl} />
       <select className="glass w-full rounded-xl px-3 py-2.5" name="status" defaultValue="draft">
         <option value="draft">Save as draft</option><option value="published">Publish to website</option>
       </select>
@@ -85,6 +128,58 @@ export function AdminNewsCreate() {
       {success && <p className="text-sm text-[var(--success)]" role="status">{success}</p>}
     </form>
   );
+}
+
+export function AdminNewsEditor({ post }: { post: { id: string; title: string; slug: string; excerpt: string | null; body: string | null; status: string; coverUrl: string | null } }) {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [mediaUrl, setMediaUrl] = useState(post.coverUrl ?? "");
+  const [mediaBusy, setMediaBusy] = useState(false);
+  async function upload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    setMediaBusy(true); setError("");
+    try { setMediaUrl(await uploadSiteMedia(file, "news")); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to upload the story media."); }
+    finally { setMediaBusy(false); }
+  }
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setBusy(true); setError("");
+    try {
+      await submitCms("/api/admin/cms", "PATCH", {
+        action: "save_news", postId: post.id,
+        title: data.get("title"), slug: data.get("slug"), excerpt: data.get("excerpt"),
+        body: data.get("body"), coverUrl: mediaUrl, status: data.get("status"),
+      });
+      router.refresh();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to update this news post."); }
+    finally { setBusy(false); }
+  }
+  return <form className="grid gap-3 rounded-xl border border-white/10 p-4" onSubmit={submit}>
+    <div className="flex flex-wrap items-center justify-between gap-2 text-xs opacity-70">
+      <span>{post.status}</span>
+      {post.status === "published" && <a className="underline" href="/blog" target="_blank" rel="noreferrer">View public news page</a>}
+    </div>
+    <GlassInput name="title" aria-label="News title" defaultValue={post.title} maxLength={180} required />
+    <GlassInput name="slug" aria-label="News page URL" defaultValue={post.slug} maxLength={128} required />
+    <GlassInput name="excerpt" aria-label="News excerpt" defaultValue={post.excerpt ?? ""} maxLength={500} />
+    <textarea className="glass min-h-32 w-full rounded-xl px-4 py-3 text-sm" name="body" aria-label="News body" defaultValue={post.body ?? ""} maxLength={20000} required />
+    <label className="grid gap-2 text-sm font-bold">Replace story photo or video
+      <input className="glass w-full rounded-xl p-3" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" onChange={upload} />
+    </label>
+    <p className="text-xs text-[var(--text-muted)]">{mediaBusy ? "Uploading media…" : mediaUrl ? "Story media is ready." : "No media selected. Upload a photo or video."}</p>
+    <NewsMediaPreview url={mediaUrl} />
+    <div className="flex flex-wrap gap-3">
+      <select className="glass min-w-40 rounded-xl px-3 py-2.5" name="status" defaultValue={post.status}>
+        <option value="draft">Draft</option><option value="published">Published</option><option value="unpublished">Unpublished</option><option value="archived">Archived</option>
+      </select>
+      <GlassButton type="submit" disabled={busy}>{busy ? "Saving…" : "Save news post"}</GlassButton>
+    </div>
+    {error && <p role="alert" className="text-sm text-[var(--danger)]">{error}</p>}
+  </form>;
 }
 
 export function AdminCmsPageCreate() {

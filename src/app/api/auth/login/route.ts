@@ -5,10 +5,10 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { ACTIVE_STATUSES, MFA_REQUIRED_ROLES } from "@/lib/auth";
 import { roleHome } from "@/lib/rbac";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
-import { adminHostAllowed } from "@/lib/admin-host";
+import { adminHostAllowed, isAdminRole, isDesignatedAdministrator } from "@/lib/admin-host";
 
 const PUBLIC_ROLES = ["student", "teacher", "head_academics", "finance", "applicant"] as const;
 
@@ -41,37 +41,43 @@ export async function POST(req: Request) {
   // Per-account lockout: repeated failures slow attackers down without revealing which emails exist.
   const byEmail = await rateLimit("login-email", email, 5, "15 m");
   if (!byEmail.ok) return tooManyRequests(byEmail.retryAfter);
-  if (!await verifyTurnstile(turnstileToken, ip)) {
-    return NextResponse.json({ error: "CAPTCHA verification failed" }, { status: 400 });
+  const captchaResult = await verifyTurnstile(turnstileToken);
+  if (!captchaResult.ok) {
+    if (captchaResult.reason === "not_configured" || captchaResult.reason === "provider_unavailable") {
+      return NextResponse.json({ error: "Sign-in security verification is temporarily unavailable. Please try again later." }, { status: 503 });
+    }
+    return NextResponse.json({ error: captchaResult.reason === "missing_token" ? "Complete the security check and try again." : "CAPTCHA verification failed. Complete a new security check and try again." }, { status: 400 });
   }
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.json({ error: "Authentication is not configured. Add Supabase URL and anon key to continue." }, { status: 503 });
   }
 
-  const supabase = await createSupabaseServerClient();
+  const { supabase, applyAuthCookies } = await createSupabaseRouteClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error || !data.user) return invalid();
+  if (error || !data.user) return applyAuthCookies(invalid());
 
   const [user] = await db.select().from(users).where(eq(users.authId, data.user.id)).limit(1);
   if (!user || user.deletedAt || !ACTIVE_STATUSES.includes(user.status as (typeof ACTIVE_STATUSES)[number])) {
     await supabase.auth.signOut({ scope: "local" });
-    return invalid();
+    return applyAuthCookies(invalid());
   }
 
   // Administrators sign in only through the dedicated admin portal; everyone else only through the public form.
-  const isAdmin = user.role === "super_admin";
-  const portalMismatch = portal === "admin" ? !isAdmin || !adminHostAllowed(req) : isAdmin || (as !== undefined && as !== user.role);
+  const isAdmin = isAdminRole(user.role);
+  const portalMismatch = portal === "admin"
+    ? !isAdmin || !isDesignatedAdministrator(user.role, user.email) || !adminHostAllowed(req)
+    : isAdmin || (as !== undefined && as !== user.role);
   if (portalMismatch || (portal === "public" && !as)) {
     await supabase.auth.signOut({ scope: "local" });
-    return invalid();
+    return applyAuthCookies(invalid());
   }
 
   if (MFA_REQUIRED_ROLES.includes(user.role)) {
     const { data: factors } = await supabase.auth.mfa.listFactors();
     const totp = factors?.totp.find((factor) => factor.status === "verified");
-    return NextResponse.json({ ok: true, mfa: totp ? "verify" : "enroll", factorId: totp?.id ?? null });
+    return applyAuthCookies(NextResponse.json({ ok: true, mfa: totp ? "verify" : "enroll", factorId: totp?.id ?? null }));
   }
 
-  return NextResponse.json({ ok: true, redirectTo: roleHome(user.role), user: { role: user.role } });
+  return applyAuthCookies(NextResponse.json({ ok: true, redirectTo: roleHome(user.role), user: { role: user.role } }));
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { GlassButton, GlassInput } from "@/components/ui/glass";
 import { prepareProfilePhoto } from "@/lib/prepare-profile-photo";
 import { toast } from "sonner";
@@ -10,9 +11,11 @@ type DepartmentOption = { id: string; name: string };
 export function ApplyForm({
   departments,
   initialDepartmentId = "",
+  requestedIntake,
 }: {
   departments: DepartmentOption[];
   initialDepartmentId?: string;
+  requestedIntake: string;
 }) {
   const [selectedDeptId, setSelectedDeptId] = useState(initialDepartmentId);
   const [isInternational, setIsInternational] = useState(false);
@@ -37,7 +40,7 @@ export function ApplyForm({
         body: formData,
       });
       const body = await response.text();
-      let data: { error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[]> }; message?: string };
+      let data: { error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[]> }; message?: string; code?: string };
       try {
         data = JSON.parse(body) as typeof data;
       } catch {
@@ -49,8 +52,10 @@ export function ApplyForm({
           ? apiError.formErrors?.[0] ?? Object.values(apiError.fieldErrors ?? {}).flat()[0]
           : undefined;
         const message = (typeof apiError === "string" ? apiError : fieldError) ?? "Application failed. Check the form and try again.";
-        setError(message);
-        toast.error(message);
+        const reference = typeof data.code === "string" ? ` Reference: ${data.code}.` : "";
+        const displayedMessage = `${message}${reference}`;
+        setError(displayedMessage);
+        toast.error(displayedMessage);
         return;
       }
       const message = data.message ?? "Application received. The administrator will review it and provide login credentials if accepted.";
@@ -71,6 +76,10 @@ export function ApplyForm({
 
   return (
     <form onSubmit={submit} className="space-y-3">
+      <input type="hidden" name="requestedIntake" value={requestedIntake} />
+      <p className="rounded-xl border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/10 px-4 py-3 font-semibold" role="status">
+        Intake requested: {requestedIntake}. Your place is confirmed after the admissions team reviews your application.
+      </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <GlassInput name="firstName" placeholder="First name" required maxLength={100} />
         <GlassInput name="lastName" placeholder="Last name" required maxLength={100} />
@@ -107,6 +116,9 @@ export function ApplyForm({
           <option value="" disabled>Choose duration</option>
           <option value="1">1 month</option>
           <option value="2">2 months</option>
+          <option value="3">3 months</option>
+          <option value="4">4 months</option>
+          <option value="full_level">Full level</option>
         </select>
       </div>
       <label className="flex items-center gap-2 text-sm">
@@ -142,11 +154,28 @@ export function ApplyForm({
       <p className="text-xs opacity-60">
         The administrator reviews your complete application before confirming admission and issuing your login credentials. Online language classes require a computer or laptop, stable internet, and a quiet place to study.
       </p>
-      {error && <div className="text-sm text-[var(--danger)]" role="alert">{String(error)}</div>}
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="ageConfirmed" required className="mt-1" />
+        <span>I confirm I am 18 years or older, or have parental/guardian consent to apply.</span>
+      </label>
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="termsAccepted" required className="mt-1" />
+        <span>
+          I have read and agree to the{" "}
+          <a href="/terms-of-service" target="_blank" rel="noreferrer" className="underline text-[var(--brand-primary)]">
+            Terms and Conditions
+          </a>
+          , including the school policies and student code of conduct.
+        </span>
+      </label>
+      <p className="text-xs opacity-60">
+        <Link href="/services" className="underline text-[var(--brand-primary)]">View our services</Link>
+      </p>
       {success && <div className="text-sm text-[var(--success)]" role="status">{success}</div>}
-      <GlassButton type="submit" className="w-full" loading={loading}>
-        {loading ? "Submitting application..." : "Submit application"}
+      <GlassButton type="submit" className="w-full" loading={loading} disabled={departments.length === 0}>
+        {loading ? "Submitting application..." : departments.length ? "Submit application" : "Applications unavailable"}
       </GlassButton>
     </form>
   );
 }
+

@@ -66,7 +66,7 @@ export function clock(minutes: number) {
   const m = minutes % 60;
   return `${h > 12 ? h - 12 : h}:${m < 10 ? "0" : ""}${m} ${h >= 12 ? "PM" : "AM"}`;
 }
-export const range = (from: number, to: number) => `${clock(from)} – ${clock(to)}`;
+export const range = (from: number, to: number) => `${clock(from)} to ${clock(to)}`;
 
 export function daysBetween(a: Date, b: Date) {
   return Math.round((a.getTime() - b.getTime()) / 86_400_000);
@@ -94,7 +94,7 @@ export function upcomingEvents(today: Date): Upcoming[] {
 }
 
 export function nextIntakeIndex(today: Date) {
-  const found = intakes.findIndex((i) => i.end >= today);
+  const found = intakes.findIndex((i) => i.start >= today);
   return found === -1 ? intakes.length - 1 : found;
 }
 

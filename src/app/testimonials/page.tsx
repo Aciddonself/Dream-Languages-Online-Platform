@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass";
 import { getPublishedTestimonials, getTeacherRatingSummaries } from "@/lib/public-content";
+import { PublicReviewForm } from "@/components/public-review-form";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function TestimonialsPage() {
   const [testimonials, teachers] = await Promise.all([getPublishedTestimonials(), getTeacherRatingSummaries()]);
@@ -11,8 +12,19 @@ export default async function TestimonialsPage() {
       <h1 className="text-4xl mb-2">Learner testimonials</h1>
       <p className="opacity-70 mb-2">Experiences shared by members of the DLA learning community.</p>
       <p className="text-sm opacity-70 mb-6">
-        Are you a DLA student? <Link href="/student/reviews" className="liquid-link rounded-full border border-transparent px-3 py-1 font-semibold">Share your review</Link> from your dashboard. Reviews are published after administrator approval.
+        Have you learned with DLA or been part of our community? Share your experience. Each review is checked by the DLA team before it appears here.
+        <Link href="/student/reviews" className="liquid-link ml-1 rounded-full border border-transparent px-2 py-1 font-semibold">Current students can also review from their dashboard.</Link>
       </p>
+      <div className="mb-5">
+        <a href="#write-review" className="btn-glass btn-glass-primary inline-flex min-h-11 items-center rounded-xl px-5 py-2.5 font-bold">
+          Write a review
+        </a>
+      </div>
+      <GlassCard id="write-review" className="mb-8 scroll-mt-6 p-5 md:p-6" strong>
+        <h2 className="mb-1 text-2xl font-bold">Share your DLA experience</h2>
+        <p className="mb-4 text-sm">Your honest feedback helps future learners choose the right path.</p>
+        <PublicReviewForm />
+      </GlassCard>
       <div className="grid gap-4 md:grid-cols-2">
         {testimonials.map((testimonial) => (
           <GlassCard className="review-card p-5" key={testimonial.id}>

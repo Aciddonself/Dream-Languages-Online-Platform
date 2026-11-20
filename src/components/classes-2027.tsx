@@ -119,7 +119,7 @@ export function Classes2027() {
         </div>
         <GlassCard className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead><tr className="bg-white/5"><th className="p-3">Level</th><th className="p-3">{mode} class (Mon – Fri)</th></tr></thead>
+            <thead><tr className="bg-white/5"><th className="p-3">Level</th><th className="p-3">{mode} class (Mon to Fri)</th></tr></thead>
             <tbody>
               {levels.map((l) => (
                 <tr key={l} className="border-t border-white/10"><td className="p-3 font-semibold">{l}</td><td className="p-3">{range(SLOTS[mode][l], SLOTS[mode][l] + 120)}</td></tr>

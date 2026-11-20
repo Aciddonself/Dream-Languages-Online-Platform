@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "@/db";
-import { auditLogs, departments, feeSchedules, users } from "@/db/schema";
+import { auditLogs, classes, departments, feeSchedules, users } from "@/db/schema";
 import { getCurrentUser, syncAuthBan } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { validateNewPassword } from "@/lib/password-policy";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
-import { roleHome } from "@/lib/rbac";
+import { isAdministrator, roleHome } from "@/lib/rbac";
 import { nextRegistrationNumber } from "@/lib/registration";
 import { createTextPdf, isProfilePhotoJpeg, readProfilePhotoJpeg } from "@/lib/pdf";
 import { deleteStudentPhoto, storeStudentPhoto } from "@/lib/student-photos";
@@ -20,7 +20,9 @@ const createUserSchema = z.object({
   password: z.string().min(10).max(256),
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
-  role: z.enum(["super_admin", "head_academics", "teacher", "finance", "student", "applicant"]),
+  role: z.enum(["admin", "head_academics", "teacher", "finance", "student", "applicant"]),
+  departmentId: z.string().uuid().optional().or(z.literal("")),
+  classId: z.string().uuid().optional().or(z.literal("")),
 }).strict();
 
 /** Creates (or updates) the Supabase Auth identity for a profile row. Returns the auth user id. */
@@ -28,18 +30,39 @@ async function upsertAuthIdentity(account: { id: string; email: string; authId: 
   const admin = createSupabaseAdminClient();
   if (account.authId) {
     const { error } = await admin.auth.admin.updateUserById(account.authId, { password });
-    if (error) throw new Error("Could not update credentials");
+    if (error) {
+      const failure = new Error(`Supabase Auth password update failed: ${error.message}`);
+      Object.assign(failure, { code: error.code ?? "AUTH_PASSWORD_UPDATE_FAILED", status: error.status ?? null });
+      throw failure;
+    }
     return account.authId;
   }
   const { data, error } = await admin.auth.admin.createUser({ email: account.email, password, email_confirm: true });
-  if (error || !data.user) throw new Error("Could not create credentials");
+  if (error || !data.user) {
+    const failure = new Error(`Supabase Auth user creation failed: ${error?.message ?? "No user returned"}`);
+    Object.assign(failure, { code: error?.code ?? "AUTH_USER_CREATE_FAILED", status: error?.status ?? null });
+    throw failure;
+  }
   return data.user.id;
 }
 
-export async function POST(req: Request) {
+function logUserManagementError(label: string, error: unknown) {
+  const detail = error && typeof error === "object"
+    ? error as { name?: string; code?: string; status?: number | null; statusCode?: string | null; message?: string }
+    : {};
+  const safeMessage = (detail.message ?? "").replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email]").slice(0, 240);
+  console.error(label, {
+    errorName: detail.name ?? "Error",
+    errorCode: detail.code ?? "unknown",
+    status: detail.status ?? detail.statusCode ?? null,
+    message: safeMessage || undefined,
+  });
+}
+
+async function createUserRequest(req: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+  if (!isAdministrator(actor.role)) return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
   const limited = await rateLimit("admin-users", actor.id, 30, "10 m");
   if (!limited.ok) return tooManyRequests(limited.retryAfter);
 
@@ -52,13 +75,43 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Could not read the new user form" }, { status: 400 });
   }
-  const body = Object.fromEntries(["email", "password", "firstName", "lastName", "role"].map((key) => [key, form.get(key)]));
+  const body = Object.fromEntries(["email", "password", "firstName", "lastName", "role", "departmentId", "classId"].map((key) => [key, form.get(key)]));
   const parsed = createUserSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { email, password, firstName, lastName, role } = parsed.data;
+  const { email, password, firstName, lastName, role, departmentId, classId } = parsed.data;
+  let teacherClass: { id: string; teacherId: string | null; departmentId: string | null } | undefined;
+  if (role === "teacher") {
+    if (!classId) return NextResponse.json({ error: "Choose the class this teacher will teach before creating the account." }, { status: 400 });
+    [teacherClass] = await db.select({ id: classes.id, teacherId: classes.teacherId, departmentId: classes.departmentId })
+      .from(classes).where(and(eq(classes.id, classId), isNull(classes.deletedAt))).limit(1);
+    if (!teacherClass) return NextResponse.json({ error: "Choose an active class for this teacher." }, { status: 400 });
+    if (teacherClass.teacherId) {
+      const [existingTeacher] = await db.select({ status: users.status, deletedAt: users.deletedAt }).from(users)
+        .where(eq(users.id, teacherClass.teacherId)).limit(1);
+      if (existingTeacher && existingTeacher.status !== "archived" && !existingTeacher.deletedAt) {
+        return NextResponse.json({ error: "That class already has an active teacher. Choose another class or reassign that teacher first." }, { status: 409 });
+      }
+    }
+  } else if (classId) {
+    return NextResponse.json({ error: "A teaching class can only be assigned when creating a teacher account." }, { status: 400 });
+  }
+  if (["student", "applicant"].includes(role) && !departmentId) {
+    return NextResponse.json({ error: "Choose the student's language department before creating the account." }, { status: 400 });
+  }
+  if (departmentId) {
+    const [department] = await db.select({ id: departments.id }).from(departments)
+      .where(and(eq(departments.id, departmentId), eq(departments.isLanguage, true), isNull(departments.deletedAt))).limit(1);
+    if (!department) return NextResponse.json({ error: "Choose an active language department." }, { status: 400 });
+  }
+  if (role === "admin") {
+    if (actor.role !== "super_admin") return NextResponse.json({ error: "Only the super admin can create the administrator account" }, { status: 403 });
+    const [existingAdmin] = await db.select({ id: users.id }).from(users)
+      .where(and(eq(users.role, "admin"), ne(users.status, "archived"), isNull(users.deletedAt))).limit(1);
+    if (existingAdmin) return NextResponse.json({ error: "The administrator account already exists. Only one admin account is allowed." }, { status: 409 });
+  }
   if (role === "student" && (!photo || photo.size < 1 || photo.size > 5 * 1024 * 1024 || photo.type !== "image/jpeg")) {
     return NextResponse.json({ error: "Upload a passport photo in JPG format (up to 5 MB) when creating a student." }, { status: 400 });
   }
@@ -82,22 +135,37 @@ export async function POST(req: Request) {
   let user;
   try {
     if (avatarStorageKey && photoBytes) await storeStudentPhoto(avatarStorageKey, photoBytes);
-    [user] = await db.transaction(async (tx: any) => tx
-      .insert(users)
-      .values({
-        email,
-        authId,
-        role,
-        status: role === "applicant" ? "applicant" : "registered",
-        firstName,
-        lastName,
-        displayName: `${firstName} ${lastName}`,
-        registrationNumber: role === "student" || role === "applicant" ? await nextRegistrationNumber(tx) : undefined,
-        avatarUrl: avatarStorageKey ? "/api/portal/profile-photo" : null,
-        avatarStorageKey,
-      })
-      .onConflictDoNothing()
-      .returning({ id: users.id, email: users.email, role: users.role, registrationNumber: users.registrationNumber }));
+    [user] = await db.transaction(async (tx: any) => {
+      const [createdUser] = await tx.insert(users)
+        .values({
+          email,
+          authId,
+          role,
+          departmentId: teacherClass?.departmentId ?? (departmentId || null),
+          status: role === "applicant" ? "applicant" : "registered",
+          firstName,
+          lastName,
+          displayName: `${firstName} ${lastName}`,
+          registrationNumber: role === "student" || role === "applicant" ? await nextRegistrationNumber(tx) : undefined,
+          avatarUrl: avatarStorageKey ? "/api/portal/profile-photo" : null,
+          avatarStorageKey,
+        })
+        .onConflictDoNothing()
+        .returning({ id: users.id, email: users.email, role: users.role, registrationNumber: users.registrationNumber });
+      if (createdUser && role === "teacher" && teacherClass) {
+        const [assignment] = await tx.update(classes).set({ teacherId: createdUser.id })
+        .where(and(
+          eq(classes.id, teacherClass.id),
+          teacherClass.teacherId ? eq(classes.teacherId, teacherClass.teacherId) : isNull(classes.teacherId),
+          isNull(classes.deletedAt),
+        ))
+        .returning({ id: classes.id });
+        if (!assignment) {
+          throw Object.assign(new Error("The selected class was assigned to another teacher while this account was being created."), { code: "TEACHING_CLASS_TAKEN" });
+        }
+      }
+      return createdUser ? [createdUser] : [];
+    });
   } catch (error) {
     const { error: deleteAuthError } = await createSupabaseAdminClient().auth.admin.deleteUser(authId);
     if (deleteAuthError) console.error("Could not clean up Auth identity after user creation failed:", deleteAuthError);
@@ -108,6 +176,9 @@ export async function POST(req: Request) {
         console.error("Could not clean up student photo after user creation failed:", cleanupError);
       }
     }
+    if (error && typeof error === "object" && "code" in error && error.code === "TEACHING_CLASS_TAKEN") {
+      return NextResponse.json({ error: "That class was just assigned to another teacher. Refresh the page and choose a different class." }, { status: 409 });
+    }
     throw error;
   }
   if (!user) {
@@ -116,21 +187,26 @@ export async function POST(req: Request) {
     if (avatarStorageKey) await deleteStudentPhoto(avatarStorageKey);
     return NextResponse.json({ error: "Email already registered" }, { status: 409 });
   }
-  await db.insert(auditLogs).values({
-    actorId: actor.id,
-    action: "create_user",
-    entityType: "user",
-    entityId: user.id,
-    after: { role: user.role },
-    ip: clientIp(req),
-  });
+  try {
+    await db.insert(auditLogs).values({
+      actorId: actor.id,
+      action: "create_user",
+      entityType: "user",
+      entityId: user.id,
+      after: { role: user.role },
+      ip: clientIp(req),
+    });
+  } catch (error) {
+    // The account is already provisioned. A logging failure must not tell the admin that creation failed.
+    console.error("User created but audit log failed:", error instanceof Error ? error.name : "Unknown error");
+  }
   return NextResponse.json({ ok: true, redirectTo: roleHome(user.role), user }, { status: 201 });
 }
 
-export async function PATCH(req: Request) {
+async function updateUserRequest(req: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+  if (!isAdministrator(actor.role)) return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
 
   let body: unknown;
   try {
@@ -139,7 +215,10 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 });
   }
   const parsed = z.discriminatedUnion("action", [
+    z.object({ action: z.literal("archive_others"), confirmation: z.literal("ARCHIVE OTHER ACCOUNTS") }),
     z.object({ userId: z.string().uuid(), action: z.literal("admit_applicant") }),
+    z.object({ userId: z.string().uuid(), action: z.literal("set_department"), departmentId: z.string().uuid() }),
+    z.object({ userId: z.string().uuid(), action: z.literal("set_class"), classId: z.string().uuid() }),
     z.object({
       userId: z.string().uuid(),
       action: z.literal("set_status"),
@@ -152,16 +231,113 @@ export async function PATCH(req: Request) {
     }),
   ]).safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  const action = parsed.data;
 
-  if (parsed.data.action === "set_password") {
-    if (parsed.data.userId === actor.id) {
+  if (action.action === "set_class") {
+    const [account] = await db.select().from(users).where(eq(users.id, action.userId)).limit(1);
+    if (!account || account.deletedAt || account.status === "archived") return NextResponse.json({ error: "Active teacher account not found." }, { status: 404 });
+    if (account.role !== "teacher") return NextResponse.json({ error: "Only teacher accounts can be assigned to a teaching class." }, { status: 400 });
+    if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) return NextResponse.json({ error: "Administrator accounts cannot be edited here." }, { status: 403 });
+
+    const assigned = await db.transaction(async (tx: any) => {
+      const [schoolClass] = await tx.select({ id: classes.id, name: classes.name, teacherId: classes.teacherId, departmentId: classes.departmentId })
+        .from(classes).where(and(eq(classes.id, action.classId), isNull(classes.deletedAt))).for("update").limit(1);
+      if (!schoolClass) return { error: "Choose an active class." };
+      if (schoolClass.teacherId && schoolClass.teacherId !== account.id) {
+        const [existingTeacher] = await tx.select({ status: users.status, deletedAt: users.deletedAt }).from(users)
+          .where(eq(users.id, schoolClass.teacherId)).limit(1);
+        if (existingTeacher && existingTeacher.status !== "archived" && !existingTeacher.deletedAt) {
+          return { error: "That class is already assigned to another active teacher." };
+        }
+      }
+
+      const previous = await tx.select({ id: classes.id, name: classes.name })
+        .from(classes).where(and(eq(classes.teacherId, account.id), isNull(classes.deletedAt)));
+      await tx.update(classes).set({ teacherId: null })
+        .where(and(eq(classes.teacherId, account.id), isNull(classes.deletedAt)));
+      await tx.update(classes).set({ teacherId: account.id }).where(eq(classes.id, schoolClass.id));
+      if (schoolClass.departmentId) {
+        await tx.update(users).set({ departmentId: schoolClass.departmentId, updatedAt: new Date() }).where(eq(users.id, account.id));
+      }
+      await tx.insert(auditLogs).values({
+        actorId: actor.id,
+        action: "assign_teacher_class",
+        entityType: "user",
+        entityId: account.id,
+        before: { classIds: previous.map((item: { id: string }) => item.id) },
+        after: { classId: schoolClass.id, className: schoolClass.name, departmentId: schoolClass.departmentId },
+        ip: clientIp(req),
+      });
+      return { classId: schoolClass.id };
+    });
+    if ("error" in assigned) return NextResponse.json({ error: assigned.error }, { status: assigned.error === "Choose an active class." ? 400 : 409 });
+    return NextResponse.json({ ok: true, ...assigned });
+  }
+
+  if (action.action === "set_department") {
+    const [account] = await db.select().from(users).where(eq(users.id, action.userId)).limit(1);
+    if (!account || account.deletedAt) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    if (!["student", "applicant"].includes(account.role)) return NextResponse.json({ error: "Only student and applicant accounts can be assigned to a language department" }, { status: 400 });
+    if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) return NextResponse.json({ error: "Administrator accounts cannot be edited here" }, { status: 403 });
+    const [department] = await db.select({ id: departments.id }).from(departments)
+      .where(and(eq(departments.id, action.departmentId), eq(departments.isLanguage, true), isNull(departments.deletedAt))).limit(1);
+    if (!department) return NextResponse.json({ error: "Choose an active language department" }, { status: 400 });
+    await db.transaction(async (tx: any) => {
+      await tx.update(users).set({ departmentId: department.id, updatedAt: new Date() }).where(eq(users.id, account.id));
+      await tx.insert(auditLogs).values({
+        actorId: actor.id,
+        action: "assign_language_department",
+        entityType: "user",
+        entityId: account.id,
+        before: { departmentId: account.departmentId },
+        after: { departmentId: department.id },
+        ip: clientIp(req),
+      });
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action.action === "archive_others") {
+    if (actor.role !== "super_admin") return NextResponse.json({ error: "Only the super admin can archive accounts in bulk" }, { status: 403 });
+    const archived = await db.transaction(async (tx: any) => {
+      const accounts = await tx.update(users)
+        .set({ status: "archived", deletedAt: new Date(), updatedAt: new Date() })
+        .where(ne(users.id, actor.id))
+        .returning({ id: users.id, authId: users.authId });
+      await tx.insert(auditLogs).values({
+        actorId: actor.id,
+        action: "archive_other_accounts",
+        entityType: "user_directory",
+        after: { archivedCount: accounts.length },
+        ip: clientIp(req),
+      });
+      return accounts;
+    });
+    const authIds = archived.flatMap((account: { authId: string | null }) => account.authId ? [account.authId] : []);
+    const banResults = await Promise.allSettled(authIds.map((authId: string) => syncAuthBan(authId, "archived")));
+    const failedBans = banResults.filter((result) => result.status === "rejected").length;
+    return NextResponse.json({
+      ok: failedBans === 0,
+      archivedCount: archived.length,
+      failedAuthBans: failedBans,
+      message: failedBans
+        ? "Other accounts have been archived in the LMS. Some Auth bans need attention; archived accounts are still blocked by the LMS."
+        : "All other accounts have been archived and can no longer sign in. Their records are retained.",
+    }, { status: failedBans ? 502 : 200 });
+  }
+
+  if (action.action === "set_password") {
+    if (action.userId === actor.id) {
       return NextResponse.json({ error: "Use administrator password recovery to change your own password" }, { status: 403 });
     }
-    const { password, userId } = parsed.data;
+    const { password, userId } = action;
     const passwordProblem = await validateNewPassword(password);
     if (passwordProblem) return NextResponse.json({ error: passwordProblem }, { status: 400 });
     const [account] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (!account || account.deletedAt) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) {
+      return NextResponse.json({ error: "Only the super admin can manage another administrator's credentials" }, { status: 403 });
+    }
     const authId = await upsertAuthIdentity(account, password);
     await db.transaction(async (tx: any) => {
       await tx.update(users).set({ authId, updatedAt: new Date() }).where(eq(users.id, account.id));
@@ -177,16 +353,19 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (parsed.data.action === "set_status") {
-    const status = parsed.data.status;
-    if (parsed.data.userId === actor.id) {
+  if (action.action === "set_status") {
+    const status = action.status;
+    if (action.userId === actor.id) {
       return NextResponse.json({ error: "Administrators cannot change or disable their own account from user management" }, { status: 403 });
     }
     const outcome = await db.transaction(async (tx: any) => {
-      const [account] = await tx.select().from(users).where(eq(users.id, parsed.data.userId)).limit(1);
+      const [account] = await tx.select().from(users).where(eq(users.id, action.userId)).limit(1);
       if (!account) return { error: "Account not found", status: 404 as const };
+      if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) {
+        return { error: "Only the super admin can change an administrator account", status: 403 as const };
+      }
       const [updated] = await tx.update(users)
-        .set({ status, updatedAt: new Date() })
+        .set({ status, deletedAt: status === "active" ? null : account.deletedAt, updatedAt: new Date() })
         .where(eq(users.id, account.id))
         .returning({ id: users.id, status: users.status, role: users.role });
       await tx.insert(auditLogs).values({
@@ -201,12 +380,22 @@ export async function PATCH(req: Request) {
     });
     if ("error" in outcome) return NextResponse.json({ error: outcome.error }, { status: outcome.status });
     // Blocked statuses are banned at the Auth server so refresh tokens stop working as well.
-    if (outcome.authId) await syncAuthBan(outcome.authId, outcome.user.status);
+    if (outcome.authId) {
+      try {
+        await syncAuthBan(outcome.authId, outcome.user.status);
+      } catch (error) {
+        console.error("Could not synchronize account status with Supabase Auth:", error instanceof Error ? error.name : "Unknown error");
+        return NextResponse.json({
+          error: "The LMS status was saved, but the sign-in block did not sync with Supabase. Refresh and retry, then check Supabase Auth if it continues.",
+          user: outcome.user,
+        }, { status: 502 });
+      }
+    }
     return NextResponse.json({ ok: true, user: outcome.user });
   }
 
   const outcome = await db.transaction(async (tx: any) => {
-    const [applicant] = await tx.select().from(users).where(eq(users.id, parsed.data.userId)).limit(1);
+    const [applicant] = await tx.select().from(users).where(eq(users.id, action.userId)).limit(1);
     if (!applicant || applicant.role !== "applicant") return { error: "Applicant account not found", status: 404 as const };
     if (!applicant.avatarStorageKey) {
       return { error: "Upload the applicant's passport photo before admitting them as a student.", status: 409 as const };
@@ -289,7 +478,7 @@ export async function PATCH(req: Request) {
     `Nationality: ${admitted.nationality ?? "Not provided"}`,
     `Preferred language or programme: ${admitted.departmentName ?? "To be confirmed"}`,
     `Study format: ${admitted.studyFormat?.replaceAll("_", " ") ?? "To be confirmed"}`,
-    `Duration: ${admitted.studyDurationMonths ? `${admitted.studyDurationMonths} month(s)` : "To be confirmed"}`,
+    `Duration: ${admitted.studyDurationMonths === 0 ? "Full level" : admitted.studyDurationMonths ? `${admitted.studyDurationMonths} month(s)` : "To be confirmed"}`,
     `Study mode: ${admitted.studyMode ?? "To be confirmed"}`,
     `Fee currency: ${admitted.isInternational ? "USD" : "UGX"}`,
     `Next of kin: ${admitted.nextOfKinName ?? "Not provided"}`,
@@ -310,7 +499,7 @@ export async function PATCH(req: Request) {
   ], portrait);
   const email = await sendEmail({
     to: admitted.email,
-    subject: `Dream Languages Uganda admission confirmed — ${admitted.registrationNumber ?? ""}`,
+    subject: `Dream Languages Uganda admission confirmed: ${admitted.registrationNumber ?? ""}`,
     html: `<p>Hello ${name.replace(/[&<>"]/g, "")},</p><p>Your student application has been approved. Your registration number is <strong>${admitted.registrationNumber ?? "pending"}</strong>.</p><p>Your application form and admission form are attached as PDFs. Sign in to the student portal to view your classes and fees.</p><p>Dream Languages Uganda</p>`,
     dedupeKey: `admission:${outcome.student.id}`,
     attachments: [
@@ -325,3 +514,23 @@ export async function PATCH(req: Request) {
     emailWarning: email.sent ? undefined : email.error,
   });
 }
+
+export async function POST(req: Request) {
+  try {
+    return await createUserRequest(req);
+  } catch (error) {
+    logUserManagementError("Admin user creation failed", error);
+    return NextResponse.json({ error: "Could not create the account. Check Supabase Auth and database availability, then try again." }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    return await updateUserRequest(req);
+  } catch (error) {
+    logUserManagementError("Admin user update failed", error);
+    return NextResponse.json({ error: "Could not update the account. Check Supabase Auth and database availability, then try again." }, { status: 500 });
+  }
+}
+
+

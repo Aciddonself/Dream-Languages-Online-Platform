@@ -12,7 +12,7 @@ export async function POST(
 ) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["super_admin", "head_academics"].includes(actor.role)) {
+  if (!["super_admin", "head_academics", "admin"].includes(actor.role)) {
     return NextResponse.json({ error: "Administrator or Head of Academics access required" }, { status: 403 });
   }
   const limited = await rateLimit("school-holiday-action", actor.id, 20, "10 m");

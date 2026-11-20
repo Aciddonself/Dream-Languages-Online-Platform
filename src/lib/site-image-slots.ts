@@ -1,0 +1,28 @@
+export const SITE_IMAGE_SLOTS = [
+  { id: "site_logo", label: "Website logo", fallback: "/dla-logo.png", alt: "Dream Languages Uganda logo" },
+  { id: "home_hero", label: "Home page hero", fallback: "/site-media/hero-language-class.jpg", alt: "Learners taking part in a classroom lesson at Dream Languages" },
+  { id: "home_german", label: "Home page German class card", fallback: "/site-media/german-class.jpg", alt: "German language learners at DLA" },
+  { id: "home_nursing", label: "Home page nursing class card", fallback: "/site-media/nursing-class.jpg", alt: "DLA nurses learning group" },
+  { id: "home_learning", label: "Home page learning card", fallback: "/site-media/language-learning.jpg", alt: "Learners taking part in a language lesson" },
+  { id: "partner_edu_tours", label: "Edu-Tours partner logo", fallback: "/site-media/edu-tours.jpg", alt: "Edu-Tours partner logo" },
+  { id: "partner_besten", label: "Besten Technologies partner logo", fallback: "/site-media/partner-besten.png", alt: "Besten Technologies partner logo" },
+  { id: "partner_your_way", label: "Your Way partner logo", fallback: "/site-media/partner-your-way.jpg", alt: "Your Way partner logo" },
+  { id: "partner_atrsy", label: "Atrsy partner logo", fallback: "/site-media/partner-atrsy.png", alt: "Atrsy partner logo" },
+  { id: "about_hero", label: "About page feature image", fallback: "/site-media/dla-about.jpg", alt: "Learners taking part in a DLA class" },
+  { id: "about_emma", label: "About page Emma Denis portrait", fallback: "/site-media/teacher-emma-denis.jpg", alt: "Emma Denis" },
+  { id: "about_regan", label: "About page Dr Regan Lugoloobi portrait", fallback: "/site-media/dr-regan-lugoloobi.jpg", alt: "Dr. Regan Lugoloobi" },
+  { id: "about_joseph", label: "About page Joseph Mabadiliko portrait", fallback: "/site-media/teacher-joseph-mabadiliko.jpg", alt: "Joseph Mabadiliko" },
+  { id: "about_hildburg", label: "About page Hildburg portrait", fallback: "/site-media/teacher-hildburg.jpg", alt: "Hildburg" },
+  { id: "courses_hero", label: "Courses page feature image", fallback: "/site-media/hero-language-class.jpg", alt: "Students taking part in a DLA language class" },
+  { id: "gallery_class", label: "Gallery: Language class", fallback: "/site-media/hero-language-class.jpg", alt: "Students participating in a DLA language class" },
+  { id: "gallery_german", label: "Gallery: German learners", fallback: "/site-media/german-class.jpg", alt: "Learners studying German" },
+  { id: "gallery_learning", label: "Gallery: Learning together", fallback: "/site-media/language-learning.jpg", alt: "DLA language learners in class" },
+  { id: "gallery_literacy", label: "Gallery: Adult literacy", fallback: "/site-media/adult-literacy.jpg", alt: "Adult literacy learners at DLA" },
+  { id: "gallery_classroom", label: "Gallery: Classroom learning", fallback: "/site-media/classroom-learning.jpg", alt: "Students in a DLA classroom" },
+  { id: "gallery_nursing", label: "Gallery: Dream Nurses Class", fallback: "/site-media/nursing-class.jpg", alt: "Dream Nurses Class 2024 at DLA" },
+  { id: "gallery_community", label: "Gallery: Learning community", fallback: "/site-media/learning-community.jpg", alt: "DLA students learning together" },
+  { id: "gallery_course", label: "Gallery: Language programme", fallback: "/site-media/course-language.jpg", alt: "Learners taking part in a DLA language programme" },
+  { id: "gallery_edu_tours", label: "Gallery: Edu-Tours", fallback: "/site-media/edu-tours.jpg", alt: "DLA Edu-Tours partner" },
+] as const;
+
+export type SiteImageSlotId = (typeof SITE_IMAGE_SLOTS)[number]["id"];

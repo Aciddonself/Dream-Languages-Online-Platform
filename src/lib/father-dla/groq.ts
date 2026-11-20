@@ -27,7 +27,18 @@ export async function* streamGroq(opts: {
       messages: [{ role: "system", content: opts.system }, ...opts.messages],
     }),
   });
-  if (!res.ok || !res.body) throw new Error(`Model request failed (${res.status})`);
+  if (!res.ok || !res.body) {
+    // The status and a sanitized provider code are useful in Railway logs;
+    // never log response bodies because providers may echo request details.
+    const responseText = await res.text().catch(() => "");
+    let providerCode = "unknown";
+    try {
+      const payload = JSON.parse(responseText) as { error?: { code?: unknown; type?: unknown } };
+      const raw = payload.error?.code ?? payload.error?.type;
+      if (typeof raw === "string" && /^[a-z0-9_-]{1,80}$/i.test(raw)) providerCode = raw;
+    } catch { /* ignore provider response body */ }
+    throw new Error(`Groq request failed (HTTP ${res.status}, ${providerCode})`);
+  }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

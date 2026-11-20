@@ -12,6 +12,7 @@ import {
   exams,
   enrolments,
   feeSchedules,
+  departments,
   holds,
   materials,
   payments,
@@ -44,10 +45,13 @@ function headingFromSlug(slug: string) {
 
 export default async function PortalSectionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ portal: string; section: string[] }>;
+  searchParams: Promise<{ departmentId?: string }>;
 }) {
-  const { portal, section } = await params;
+  const [{ portal, section }, query] = await Promise.all([params, searchParams]);
+  const selectedDepartmentId = query.departmentId ?? "";
   const config = portalConfig[portal as keyof typeof portalConfig];
   if (!config || section.length !== 1) notFound();
 
@@ -58,6 +62,7 @@ export default async function PortalSectionPage({
   let rows: Row[] = [];
   let description = `Your ${title.toLowerCase()} information and updates.`;
   const links: { href: string; label: string }[] = [];
+  let teacherLanguageOptions: { id: string; name: string }[] = [];
 
   const extra = await portalSection(portal, currentSection, user);
   if (extra) {
@@ -111,9 +116,14 @@ export default async function PortalSectionPage({
     }
   } else if (portal === "teacher") {
     if (currentSection === "classes") {
-      const records = await db.select().from(classes).where(and(eq(classes.teacherId, user.id), isNull(classes.deletedAt)));
-      rows = records.map((record: { name: string; capacity?: number | null }) => ({ title: record.name, detail: `Capacity: ${record.capacity ?? "Not set"}` }));
-      description = "Classes assigned to your teacher account.";
+      teacherLanguageOptions = await db.selectDistinct({ id: departments.id, name: departments.name }).from(classes)
+        .innerJoin(departments, eq(classes.departmentId, departments.id))
+        .where(and(eq(classes.teacherId, user.id), isNull(classes.deletedAt), isNull(departments.deletedAt)));
+      const records = await db.select({ name: classes.name, capacity: classes.capacity, departmentName: departments.name }).from(classes)
+        .leftJoin(departments, eq(classes.departmentId, departments.id))
+        .where(and(eq(classes.teacherId, user.id), isNull(classes.deletedAt), selectedDepartmentId ? eq(classes.departmentId, selectedDepartmentId) : undefined));
+      rows = records.map((record) => ({ title: record.name, detail: `${record.departmentName ?? "Department unassigned"} · Capacity: ${record.capacity ?? "Not set"}` }));
+      description = "Classes assigned to your teacher account. Filter by the language department to focus on one group of learners.";
     } else if (currentSection === "exams") {
       const records = await db.select().from(exams).where(eq(exams.teacherId, user.id)).orderBy(desc(exams.createdAt));
       rows = records.map((record: { title: string; published: boolean; durationMinutes?: number | null }) => ({ title: record.title, detail: `${record.published ? "Published" : "Awaiting review"} · ${record.durationMinutes ?? 60} minutes`, status: record.published ? "Published" : "Draft" }));
@@ -164,6 +174,16 @@ export default async function PortalSectionPage({
         <h1 className="display-font text-3xl font-bold">{title}</h1>
         <p className="text-sm opacity-65">{description}</p>
       </div>
+      {portal === "teacher" && currentSection === "classes" && (
+        <form method="get" className="mb-5 flex flex-wrap gap-2">
+          <select name="departmentId" defaultValue={selectedDepartmentId} className="glass min-w-56 px-3 py-2.5">
+            <option value="">All my language departments</option>
+            {teacherLanguageOptions.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+          </select>
+          <button type="submit" className="glass rounded-xl px-4 py-2.5 font-semibold">Filter classes</button>
+          {selectedDepartmentId && <Link href="/teacher/classes" className="glass rounded-xl px-4 py-2.5">Clear</Link>}
+        </form>
+      )}
       {links.length > 0 && (
         <div className="flex flex-wrap gap-3 mb-5">
           {links.map((link) => (

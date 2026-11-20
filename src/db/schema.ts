@@ -7,6 +7,7 @@ import {
   boolean,
   timestamp,
   date,
+  numeric,
   jsonb,
   pgEnum,
   uniqueIndex,
@@ -18,6 +19,7 @@ import { relations } from "drizzle-orm";
 // ---------- Enums ----------
 export const roleEnum = pgEnum("role", [
   "super_admin",
+  "admin",
   "head_academics",
   "teacher",
   "finance",
@@ -125,6 +127,7 @@ export const users = pgTable(
     studyFormat: varchar("study_format", { length: 32 }),
     studyDurationMonths: integer("study_duration_months"),
     studyMode: varchar("study_mode", { length: 16 }),
+    requestedIntake: varchar("requested_intake", { length: 64 }),
     isInternational: boolean("is_international").default(false).notNull(),
     registrationNumber: varchar("registration_number", { length: 64 }).unique(),
     departmentId: uuid("department_id"),
@@ -291,8 +294,27 @@ export const materials = pgTable("materials", {
   description: text("description"),
   fileUrl: text("file_url"),
   type: varchar("type", { length: 32 }).default("file"),
+  storagePath: text("storage_path"),
+  fileName: text("file_name"),
+  fileSizeBytes: integer("file_size_bytes"),
+  uploadComplete: boolean("upload_complete").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const classRecordings = pgTable("class_recordings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  classId: uuid("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+  sessionId: uuid("session_id").references(() => timetableSessions.id, { onDelete: "set null" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  recordingUrl: text("recording_url").notNull(),
+  storagePath: text("storage_path"),
+  fileName: text("file_name"),
+  external: boolean("external").default(false).notNull(),
+  uploadComplete: boolean("upload_complete").default(true).notNull(),
+  addedBy: uuid("added_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [index("class_recordings_class_created_idx").on(t.classId, t.createdAt)]);
 
 export const assignments = pgTable("assignments", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -543,6 +565,15 @@ export const cmsPages = pgTable("cms_pages", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+/** Current public image for each CMS-managed image slot; original uploads stay in Storage as versioned assets. */
+export const siteImages = pgTable("site_images", {
+  slot: varchar("slot", { length: 64 }).primaryKey(),
+  storagePath: text("storage_path").notNull(),
+  altText: text("alt_text").notNull(),
+  updatedBy: uuid("updated_by").notNull().references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const newsPosts = pgTable("news_posts", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: text("title").notNull(),
@@ -555,6 +586,20 @@ export const newsPosts = pgTable("news_posts", {
   publishedAt: timestamp("published_at"),
   authorId: uuid("author_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const shopProducts = pgTable("shop_products", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: varchar("category", { length: 80 }).notNull(),
+  imageUrl: text("image_url").notNull(),
+  price: numeric("price", { precision: 12, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("UGX"),
+  published: boolean("published").default(false).notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const testimonials = pgTable("testimonials", {

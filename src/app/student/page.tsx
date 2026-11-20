@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/rbac";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
+import { formatSchoolDateTime } from "@/lib/school-time";
 import { StudentIdCard } from "@/components/id-card";
 import { ProfilePhotoControl } from "@/components/profile-photo-control";
 import { AttendanceRing } from "@/components/attendance-ring";
@@ -24,6 +25,7 @@ import Link from "next/link";
 
 const nav = [
   { href: "/student", label: "Dashboard", icon: "🏠" },
+  { href: "/student/assignments", label: "Assignments", icon: "🗂️" },
   { href: "/student/ai-tutor", label: "AI Tutor", icon: "🎓" },
   { href: "/student/timetable", label: "Timetable", icon: "🗓️" },
   { href: "/student/fees", label: "Fees", icon: "💰" },
@@ -32,16 +34,18 @@ const nav = [
   { href: "/student/results", label: "Results", icon: "📊" },
   { href: "/student/requests", label: "Requests", icon: "📨" },
   { href: "/student/materials", label: "Materials", icon: "📄" },
+  { href: "/student/recordings", label: "Recorded classes", icon: "🎬" },
   { href: "/student/community", label: "Community", icon: "💬" },
   { href: "/student/reviews", label: "Share a Review", icon: "⭐" },
 ];
 
 export default async function StudentDashboard() {
   const user = await requireRole(["student", "super_admin"]);
-  const [enrollment] = await db
+  const studentEnrollments = await db
     .select({
       classId: classes.id,
       className: classes.name,
+      departmentId: departments.id,
       departmentName: departments.name,
       levelName: levels.name,
     })
@@ -49,8 +53,15 @@ export default async function StudentDashboard() {
     .innerJoin(classes, eq(enrolments.classId, classes.id))
     .leftJoin(departments, eq(classes.departmentId, departments.id))
     .leftJoin(levels, eq(classes.levelId, levels.id))
-    .where(eq(enrolments.studentId, user.id))
-    .limit(1);
+    .where(and(eq(enrolments.studentId, user.id), eq(enrolments.status, "active"), isNull(classes.deletedAt)));
+  const enrollment = studentEnrollments[0];
+  const enrolledClassIds: string[] = Array.from(new Set<string>(studentEnrollments.map((item) => item.classId)));
+  const enrolledLanguageIds: string[] = Array.from(new Set<string>(studentEnrollments.map((item) => item.departmentId).filter((id): id is string => Boolean(id))));
+  const announcementFilters = [
+    ...(studentEnrollments.length ? [eq(announcements.audience, "all"), eq(announcements.audience, "students")] : []),
+    ...(enrolledClassIds.length ? [and(eq(announcements.audience, "class"), inArray(announcements.classId, enrolledClassIds))] : []),
+    ...(enrolledLanguageIds.length ? [and(eq(announcements.audience, "language"), inArray(announcements.departmentId, enrolledLanguageIds))] : []),
+  ];
 
   const [attendanceSummary, feeSummary, activeHold, assignmentSummary, announcementRows, completedAttendanceSessions, portalNotifications] = await Promise.all([
     db.select({ total: count() }).from(attendance).where(eq(attendance.studentId, user.id)),
@@ -69,11 +80,9 @@ export default async function StudentDashboard() {
           .from(assignments)
           .where(and(eq(assignments.classId, enrollment.classId), gt(assignments.dueAt, new Date())))
       : Promise.resolve([{ total: 0 }]),
-    db.select().from(announcements).where(or(
-      eq(announcements.audience, "all"),
-      eq(announcements.audience, "students"),
-      ...(enrollment ? [eq(announcements.classId, enrollment.classId)] : []),
-    )).orderBy(desc(announcements.publishedAt)).limit(8),
+    announcementFilters.length
+      ? db.select().from(announcements).where(or(...announcementFilters)).orderBy(desc(announcements.publishedAt)).limit(8)
+      : Promise.resolve([]),
     enrollment
       ? db.select({
           id: timetableSessions.id,
@@ -255,7 +264,7 @@ export default async function StudentDashboard() {
               <div className="font-semibold">{upcomingSessions[0]?.title ?? enrollment?.className ?? "No class assigned"}</div>
               <div className="text-sm opacity-60">
                 {upcomingSessions[0]
-                  ? `${new Date(upcomingSessions[0].startsAt).toLocaleString()}${upcomingSessions[0].room ? ` · ${upcomingSessions[0].room}` : ""}`
+                  ? `${formatSchoolDateTime(upcomingSessions[0].startsAt)}${upcomingSessions[0].room ? ` · ${upcomingSessions[0].room}` : ""}`
                   : "No upcoming session scheduled"}
               </div>
             </div>
@@ -277,7 +286,7 @@ export default async function StudentDashboard() {
             <ul className="space-y-2 text-sm">
               {upcomingSessions.length ? upcomingSessions.map((session) => (
                 <li key={session.id} className="glass flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-                  <span>{new Date(session.startsAt).toLocaleString()} · {session.title}</span>
+                  <span>{formatSchoolDateTime(session.startsAt)} · {session.title}</span>
                   {session.meetUrl && (
                     <a
                       className="font-semibold text-emerald-400 underline hover:text-emerald-300"

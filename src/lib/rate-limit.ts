@@ -27,8 +27,13 @@ export async function rateLimit(bucket: string, key: string, limit: number, wind
       limiter = new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(limit, window), prefix: `dla:${bucket}` });
       limiters.set(`${bucket}:${limit}:${window}`, limiter);
     }
-    const result = await limiter.limit(key);
-    return { ok: result.success, retryAfter: Math.max(1, Math.ceil((result.reset - Date.now()) / 1000)) };
+    try {
+      const result = await limiter.limit(key);
+      return { ok: result.success, retryAfter: Math.max(1, Math.ceil((result.reset - Date.now()) / 1000)) };
+    } catch (error) {
+      const detail = error && typeof error === "object" ? error as { name?: string; code?: string } : {};
+      console.error("Distributed rate limit failed; using this instance's local limiter", { bucket, errorName: detail.name ?? "Error", errorCode: detail.code ?? "unknown" });
+    }
   }
   const now = Date.now();
   const entry = memory.get(id);

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { classes, enrolments, timetableSessions } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { isSupportedMeetingUrl } from "@/lib/meeting-links";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ sessionId: string }> }) {
   const user = await getCurrentUser();
@@ -21,10 +22,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ses
   try {
     meetUrl = new URL(session.meetUrl ?? "");
   } catch {
-    return NextResponse.json({ error: "A Google Meet has not been assigned to this class" }, { status: 409 });
+    return NextResponse.json({ error: "An online meeting link has not been assigned to this class" }, { status: 409 });
   }
-  if (meetUrl.hostname !== "meet.google.com") {
-    return NextResponse.json({ error: "A Google Meet has not been assigned to this class" }, { status: 409 });
+  if (!isSupportedMeetingUrl(meetUrl.href)) {
+    return NextResponse.json({ error: "A supported meeting link has not been assigned to this class" }, { status: 409 });
   }
 
   if (user.role === "student") {
@@ -41,10 +42,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ses
     const [schoolClass] = session.classId
       ? await db.select({ teacherId: classes.teacherId }).from(classes).where(eq(classes.id, session.classId)).limit(1)
       : [];
-    if (session.teacherId !== user.id && schoolClass?.teacherId !== user.id && session.classId !== null) {
-      // Allow assigned teacher, class teacher, or if open session
+    if (session.teacherId !== user.id && schoolClass?.teacherId !== user.id) {
+      return NextResponse.json({ error: "You are not assigned to this class" }, { status: 403 });
     }
-  } else if (!["head_academics", "super_admin"].includes(user.role)) {
+  } else if (!["head_academics", "super_admin", "admin"].includes(user.role)) {
     return NextResponse.json({ error: "Portal access required" }, { status: 403 });
   }
   return NextResponse.redirect(meetUrl, 302);

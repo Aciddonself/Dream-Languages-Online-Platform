@@ -1,6 +1,5 @@
 "use client";
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { GlassCard, GlassButton, GlassInput } from "@/components/ui/glass";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -11,6 +10,17 @@ type Step =
   | { kind: "password" }
   | { kind: "verify"; factorId: string }
   | { kind: "enroll"; factorId: string; qrCode: string; secret: string };
+
+type TurnstileApi = {
+  render: (el: HTMLElement, options: {
+    sitekey: string;
+    callback: (token: string) => void;
+    "expired-callback": () => void;
+    "error-callback": () => void;
+    "timeout-callback": () => void;
+  }) => string;
+  reset: (widgetId?: string) => void;
+};
 
 const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -23,17 +33,13 @@ const roleOptions = [
 ];
 
 export function LoginForm({ mode = "public" }: { mode?: "public" | "admin" }) {
-  return (
-    <Suspense fallback={null}>
-      <LoginPanel mode={mode} />
-    </Suspense>
-  );
+  return <LoginPanel mode={mode} />;
 }
 
 function LoginPanel({ mode }: { mode: "public" | "admin" }) {
   const isAdmin = mode === "admin";
-  const router = useRouter();
-  const search = useSearchParams();
+  const [searchString, setSearchString] = useState("");
+  const search = new URLSearchParams(searchString);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [signInAs, setSignInAs] = useState("student");
@@ -42,8 +48,19 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [captcha, setCaptcha] = useState("");
+  const [captchaLoadError, setCaptchaLoadError] = useState(false);
   const widget = useRef<HTMLDivElement>(null);
+  const widgetId = useRef<string | undefined>(undefined);
+  const captchaUnavailable = process.env.NODE_ENV === "production" && !siteKey;
   const authNotConfigured = search.get("error") === "auth_not_configured";
+  const serverSessionRejected = search.get("error") === "server_session_rejected";
+  const proxySessionMissing = search.get("error") === "proxy_session_missing";
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => { if (active) setSearchString(window.location.search); });
+    return () => { active = false; };
+  }, []);
 
   // Deep link only if it stays inside the role's own portal; otherwise use the server-chosen home.
   function destination(home?: string) {
@@ -54,14 +71,29 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
   }
 
   useEffect(() => {
-    const w = window as unknown as { turnstile?: { render: (el: HTMLElement, o: object) => void } };
+    if (!siteKey) return;
+    const w = window as unknown as { turnstile?: TurnstileApi };
+    let active = true;
     const timer = setInterval(() => {
       if (siteKey && widget.current && w.turnstile && !widget.current.hasChildNodes()) {
-        w.turnstile.render(widget.current, { sitekey: siteKey, callback: setCaptcha });
+        try {
+          widgetId.current = w.turnstile.render(widget.current, {
+            sitekey: siteKey,
+            callback: (token) => { setCaptcha(token); setCaptchaLoadError(false); },
+            "expired-callback": () => setCaptcha(""),
+            "error-callback": () => { setCaptcha(""); setCaptchaLoadError(true); },
+            "timeout-callback": () => setCaptcha(""),
+          });
+        } catch {
+          setCaptchaLoadError(true);
+        }
         clearInterval(timer);
       }
     }, 300);
-    return () => clearInterval(timer);
+    const loadTimeout = window.setTimeout(() => {
+      if (active && !widgetId.current) setCaptchaLoadError(true);
+    }, 10000);
+    return () => { active = false; clearInterval(timer); clearTimeout(loadTimeout); };
   }, []);
 
   async function post(url: string, payload: object) {
@@ -70,9 +102,36 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
     return { res, data };
   }
 
+  async function finishSignIn(redirectTo?: string) {
+    const response = await fetch("/api/auth/session-status", { cache: "no-store" });
+    const session = await response.json().catch(() => ({}));
+    const expectedRole = isAdmin ? ["super_admin", "admin"].includes(session.role) : session.role === signInAs;
+    if (!response.ok || session.authenticated !== true) {
+      const issue = typeof session.issue === "string" ? session.issue : `http_${response.status}`;
+      fail(`Your credentials were accepted, but the sign-in session check failed (${issue}). Refresh and try again. If it repeats, share this code with support: AUTH_${issue.toUpperCase()}.`);
+      return;
+    }
+    if (!expectedRole) {
+      fail("Your sign-in session belongs to a different account role. Please use the correct sign-in page. Reference: AUTH_ROLE_MISMATCH.");
+      return;
+    }
+    if (session.assuranceLevel !== "aal2") {
+      fail("The authenticator step did not complete verification. Sign in again and enter the current code. Reference: AUTH_MFA_NOT_VERIFIED.");
+      return;
+    }
+    toast.success("Signed in successfully.");
+    window.location.replace(destination(redirectTo));
+  }
+
   function fail(message: string) {
     setError(message);
     toast.error(message);
+  }
+
+  function resetTurnstile() {
+    setCaptcha("");
+    const w = window as unknown as { turnstile?: TurnstileApi };
+    if (widgetId.current && w.turnstile) w.turnstile.reset(widgetId.current);
   }
 
   async function submit(e: React.FormEvent) {
@@ -82,6 +141,7 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
     try {
       if (step.kind === "password") {
         const { res, data } = await post("/api/auth/login", { email, password, turnstileToken: captcha || undefined, portal: mode, ...(isAdmin ? {} : { as: signInAs }) });
+        resetTurnstile();
         if (!res.ok) return fail(data.error || "Sign in failed. Check your email and password.");
         if (data.mfa === "verify") return setStep({ kind: "verify", factorId: data.factorId });
         if (data.mfa === "enroll") {
@@ -89,15 +149,14 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
           if (!enrol.res.ok) return fail(enrol.data.error || "Could not start 2FA setup");
           return setStep({ kind: "enroll", factorId: enrol.data.factorId, qrCode: enrol.data.qrCode, secret: enrol.data.secret });
         }
-        toast.success("Signed in successfully.");
-        router.replace(destination(data.redirectTo));
+        await finishSignIn(data.redirectTo);
         return;
       }
       const { res, data } = await post("/api/auth/mfa", { action: "verify", factorId: step.factorId, code });
       if (!res.ok) return fail(data.error || "Invalid code");
-      toast.success("Signed in successfully.");
-      router.replace(destination(data.redirectTo));
+      await finishSignIn(data.redirectTo);
     } catch {
+      resetTurnstile();
       fail("Unable to reach the sign-in service. Check your connection and try again.");
     } finally {
       setLoading(false);
@@ -116,6 +175,16 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
             Authentication is not configured yet. Add Supabase URL and anon key in your local environment before signing in.
           </div>
         )}
+        {serverSessionRejected && (
+          <div role="alert" className="mb-4 rounded-lg border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]">
+            The password and authenticator step completed, but the admin dashboard could not confirm the server session. Reference: AUTH_SERVER_SESSION_REJECTED.
+          </div>
+        )}
+        {proxySessionMissing && (
+          <div role="alert" className="mb-4 rounded-lg border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]">
+            The admin page request arrived without a session the server could verify. Reference: AUTH_PROXY_SESSION_MISSING.
+          </div>
+        )}
         <form onSubmit={submit} className="space-y-4">
           {step.kind === "password" ? (
             <>
@@ -132,6 +201,8 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
               <GlassInput type="email" placeholder="DLA email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
               <GlassInput type="password" placeholder="Password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
               {siteKey && <div ref={widget} />}
+              {captchaUnavailable && <p role="alert" className="text-sm text-[var(--danger)]">Secure sign in is temporarily unavailable because its CAPTCHA key is not configured.</p>}
+              {siteKey && captchaLoadError && <p role="alert" className="text-sm text-[var(--danger)]">The security check could not load. Refresh the page and try again.</p>}
             </>
           ) : (
             <>
@@ -142,11 +213,11 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
                   <p className="opacity-70 break-all">Manual key: {step.secret}</p>
                 </div>
               )}
-              <GlassInput inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="123456" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} required />
+              <GlassInput inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="6-digit authenticator code" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} required />
             </>
           )}
           {error && <div role="alert" className="text-sm text-[var(--danger)]">{error}</div>}
-          <GlassButton type="submit" className="w-full" loading={loading}>{loading ? "Please wait..." : step.kind === "password" ? "Sign In" : "Verify"}</GlassButton>
+          <GlassButton type="submit" className="w-full" loading={loading} disabled={step.kind === "password" && (captchaUnavailable || (!!siteKey && !captcha))}>{loading ? "Please wait..." : step.kind === "password" ? "Sign In" : "Verify"}</GlassButton>
         </form>
         <div className="mt-4 text-sm opacity-70">
           {isAdmin ? (
@@ -160,7 +231,7 @@ function LoginPanel({ mode }: { mode: "public" | "admin" }) {
         </div>
         </div>
         <div className="login-split-image" aria-hidden={false}>
-          <Image src="/site-media/teacher-joseph-mabadiliko.jpg" alt="Mr Joseph Mabadiliko, DLA teacher" fill priority sizes="(min-width: 768px) 480px, 0px" className="object-cover" />
+          <Image src="/site-media/teacher-joseph-mabadiliko.jpg" alt="Mr Joseph Mabadiliko, DLA teacher" fill priority sizes="(min-width: 768px) 480px, 0px" className="object-contain" />
           <div className="login-split-caption">
             <strong>Mr Joseph Mabadiliko</strong>
             <span>Dream Languages Uganda</span>

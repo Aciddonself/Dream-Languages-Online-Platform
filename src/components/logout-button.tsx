@@ -18,7 +18,7 @@ export function LogoutButton() {
       const response = await fetch("/api/auth/logout", { method: "POST" });
       if (!response.ok) throw new Error("Sign out failed. Please try again.");
       toast.success("You have been signed out.");
-      router.replace(pathname.startsWith("/admin") ? "/admin/login" : "/login");
+      router.replace(pathname.startsWith("/admin") ? "/admin/sign-in" : "/login");
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to sign out. Check your connection and try again.");

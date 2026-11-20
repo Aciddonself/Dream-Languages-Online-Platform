@@ -43,7 +43,7 @@ async function myNotifications(user: Viewer): Promise<SectionData> {
 }
 
 async function calendar(user: Viewer): Promise<SectionData> {
-  const ids = user.role === "super_admin" || user.role === "finance" ? null : await myClassIds(user);
+  const ids = ["super_admin", "admin", "finance"].includes(user.role) ? null : await myClassIds(user);
   const filter = ids === null ? undefined : ids.length ? inArray(timetableSessions.classId, ids) : sql`false`;
   const list = await db.select().from(timetableSessions).where(and(gte(timetableSessions.endsAt, new Date()), filter)).orderBy(timetableSessions.startsAt).limit(60);
   const rows: SectionRow[] = list.map((s) => ({ title: s.title, detail: `${when(s.startsAt)}${s.room ? ` · ${s.room}` : ""}`, status: s.meetUrl ? "Live link ready" : "Scheduled" }));
@@ -55,7 +55,7 @@ async function calendar(user: Viewer): Promise<SectionData> {
 }
 
 async function helpDesk(user: Viewer): Promise<SectionData> {
-  const admin = user.role === "super_admin";
+  const admin = user.role === "super_admin" || user.role === "admin";
   const list = await db.select().from(supportTickets).where(admin ? undefined : eq(supportTickets.userId, user.id)).orderBy(desc(supportTickets.createdAt)).limit(100);
   return { description: admin ? "Every support ticket from students, staff and applicants." : "Requests you sent to the school and their status.", rows: list.map((t) => ({ title: t.subject, detail: `${t.body.slice(0, 160)} · ${day(t.createdAt)}`, status: t.status })) };
 }
@@ -152,7 +152,7 @@ async function myCertificates(user: Viewer): Promise<SectionData> {
 }
 
 async function rooms(user: Viewer): Promise<SectionData> {
-  const ids = user.role === "super_admin" ? null : await myClassIds(user);
+  const ids = user.role === "super_admin" || user.role === "admin" ? null : await myClassIds(user);
   const list = await db.select().from(discussionRooms).where(ids === null ? undefined : or(eq(discussionRooms.visibility, "public"), ids.length ? inArray(discussionRooms.classId, ids) : sql`false`)).orderBy(desc(discussionRooms.createdAt)).limit(60);
   return { description: "Rooms where learners practise together.", rows: list.map((r) => ({ title: r.title, detail: `${r.language ?? "Any language"} · ${r.level ?? "All levels"}${r.topic ? ` · ${r.topic}` : ""}`, status: r.status })) };
 }

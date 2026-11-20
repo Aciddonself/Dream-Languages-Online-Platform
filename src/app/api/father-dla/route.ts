@@ -20,17 +20,22 @@ async function currentActor(): Promise<Actor> {
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status });
 
 export async function GET() {
-  const actor = await currentActor();
-  const config = await getConfig();
-  const configured = !!activeProvider();
-  if (!actor) return json({ configured, signedIn: false, history: [], levels: CEFR_LEVELS });
-  const [profile, history] = await Promise.all([getProfile(actor.id), loadHistory(actor.id, config.limits.historyMessages)]);
-  return json({ configured, signedIn: true, role: actor.role, level: profile.cefrLevel, language: profile.targetLanguage, history, levels: CEFR_LEVELS });
+  try {
+    const actor = await currentActor();
+    const config = await getConfig();
+    const configured = !!activeProvider();
+    if (!actor) return json({ configured, signedIn: false, history: [], levels: CEFR_LEVELS });
+    const [profile, history] = await Promise.all([getProfile(actor.id), loadHistory(actor.id, config.limits.historyMessages)]);
+    return json({ configured, signedIn: true, role: actor.role, level: profile.cefrLevel, language: profile.targetLanguage, history, levels: CEFR_LEVELS });
+  } catch {
+    return json({ error: "Father-DLA could not load its settings or conversation. Please refresh and try again." }, 503);
+  }
 }
 
 const messageSchema = z.object({ message: z.string().trim().min(1) }).strict();
 
 export async function POST(request: Request) {
+  try {
   const actor = await currentActor();
   const config = await getConfig();
 
@@ -70,22 +75,33 @@ export async function POST(request: Request) {
     },
   });
   return new Response(stream, { headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Accel-Buffering": "no" } });
+  } catch {
+    return json({ error: "Father-DLA could not start a response. Check its provider key, usage limits, and database connection." }, 503);
+  }
 }
 
 export async function DELETE() {
+  try {
   const actor = await currentActor();
   if (!actor) return json({ error: "Sign in required" }, 401);
   await clearHistory(actor.id);
   return json({ ok: true });
+  } catch {
+    return json({ error: "Conversation history could not be cleared. Please try again." }, 503);
+  }
 }
 
 const profileSchema = z.object({ level: z.enum(CEFR_LEVELS), language: z.string().trim().max(40).nullable().optional() }).strict();
 
 export async function PUT(request: Request) {
+  try {
   const actor = await currentActor();
   if (!actor) return json({ error: "Sign in required" }, 401);
   const parsed = profileSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return json({ error: "Choose a valid level" }, 400);
   await setProfile(actor.id, parsed.data.level, parsed.data.language ?? null);
   return json({ ok: true });
+  } catch {
+    return json({ error: "Your Father-DLA preferences could not be saved." }, 503);
+  }
 }

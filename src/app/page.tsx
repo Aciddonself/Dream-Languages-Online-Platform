@@ -1,6 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
+import type { Metadata } from "next";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { CountUpStats } from "@/components/count-up-stats";
+import { SocialLinksDisplay } from "@/components/social-links-display";
+import { HomeHeroCarousel } from "@/components/home-hero-carousel";
 import {
   getPublicDepartments,
   getPublishedFaqs,
@@ -8,52 +12,78 @@ import {
   getPublishedPartners,
   getPublishedTestimonials,
 } from "@/lib/public-content";
+import { getSocialLinks } from "@/lib/social-links";
+import { getSiteImages } from "@/lib/site-images";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Language School in Uganda | French, German, English and More",
+  description: "Study French, German, English, Spanish, Mandarin, Kiswahili and other languages with Dream Languages Uganda. Compare programmes, study online or in class, and apply for an intake.",
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
-  const [depts, tests, faqList, partnerList, news] = await Promise.all([
+  const [depts, tests, faqList, partnerList, news, socialLinks, siteImages] = await Promise.all([
     getPublicDepartments(),
     getPublishedTestimonials(),
     getPublishedFaqs(),
     getPublishedPartners(),
     getPublishedNews(),
+    getSocialLinks(),
+    getSiteImages(),
   ]);
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    name: "Dream Languages and Adult Literacy",
+    alternateName: "Dream Languages Uganda",
+    url: "https://dreamlanguagesug.online",
+    description: "Language learning, adult literacy and practical education with online and in-person study options in Uganda.",
+    areaServed: ["Uganda", "East Africa", "Africa", "Worldwide"],
+    knowsAbout: depts.filter((department) => department.isLanguage).map((department) => department.name),
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Bbunga, Ggaba Road, at St. Karoli Lwanga Catholic Church",
+      addressLocality: "Kampala",
+      addressCountry: "UG",
+    },
+  };
+  const organizationJson = JSON.stringify(organizationSchema).replace(/</g, "\\u003c");
 
   return (
     <main className="min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: organizationJson }} />
       {/* Hero */}
-      <section className="px-6 pt-10 pb-16 max-w-6xl mx-auto">
-        <GlassCard className="source-hero p-8 md:p-12" strong>
-          <div className="hero-split">
-          <div className="max-w-3xl">
+      <section className="px-4 pt-6 pb-12 sm:px-6 sm:pt-8 sm:pb-14 max-w-6xl mx-auto">
+        <GlassCard className="source-hero p-5 sm:p-7 md:p-9" strong>
+          <div className="mx-auto max-w-5xl">
             <Badge tone="primary">Dream Languages Uganda</Badge>
             <h1 className="hero-heading mt-4">
               Lifelong Training <span>For All Ages</span>
             </h1>
-            <p className="mt-4 text-lg opacity-80 max-w-xl">
+            <p className="mt-4 text-lg opacity-80 max-w-3xl">
               We are a premier language and adult education school offering high-quality education in languages and practical skills to students of all ages and backgrounds.
             </p>
-            <p className="mt-3 opacity-80 max-w-xl">
-              Learn French, German, Chinese, Spanish, English and more from certified tutors, live online or in class. Study at your own pace with small groups, real conversation practice, exam preparation and our Father DLA AI tutor guiding you between lessons.
-            </p>
-            <ul className="mt-4 grid gap-2 max-w-xl text-sm opacity-90">
-              <li>✓ Flexible morning, evening and weekend classes</li>
-              <li>✓ Placement test so you start at exactly the right level</li>
-              <li>✓ Certificates and exam support for study, work and travel abroad</li>
-              <li>✓ A friendly community of learners from every age and background</li>
-            </ul>
-            <p className="mt-4 font-semibold max-w-xl">Join hundreds of students already building their future with DLA. Your first lesson could be this week.</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/apply"><GlassButton>Apply Now</GlassButton></Link>
-              <Link href="/courses"><GlassButton variant="glass">Explore Courses</GlassButton></Link>
-              <Link href="/login"><GlassButton variant="ghost">Login</GlassButton></Link>
+            <HomeHeroCarousel
+              firstImage={siteImages.home_hero?.url ?? "/site-media/hero-language-class.jpg"}
+              firstAlt={siteImages.home_hero?.altText ?? "Learners taking part in a classroom lesson at Dream Languages"}
+            />
+            <div className="mx-auto max-w-4xl">
+              <p className="mt-3 opacity-80">
+                Learn French, German, Chinese, Spanish, English and more from certified tutors, live online or in class. Study at your own pace with small groups, real conversation practice, exam preparation and our Father DLA AI tutor guiding you between lessons.
+              </p>
+              <ul className="mt-4 grid gap-2 text-sm opacity-90">
+                <li>✓ Flexible morning, evening and weekend classes</li>
+                <li>✓ Placement test so you start at exactly the right level</li>
+                <li>✓ Certificates and exam support for study, work and travel abroad</li>
+                <li>✓ A friendly community of learners from every age and background</li>
+              </ul>
+              <p className="mt-4 font-semibold">Join hundreds of students already building their future with DLA. Your first lesson could be this week.</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="https://dreamlanguagesug.online/apply?intake=next"><GlassButton>Book Now</GlassButton></Link>
+                <Link href="/courses"><GlassButton variant="glass">Explore Courses</GlassButton></Link>
+              </div>
             </div>
-          </div>
-          <div className="hero-image">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/gallery-5.jpg" alt="DLA students and tutors" style={{ objectPosition: "center top" }} />
-          </div>
           </div>
         </GlassCard>
       </section>
@@ -69,14 +99,14 @@ export default async function HomePage() {
           <Link href="/about" className="text-sm font-semibold text-[var(--brand-secondary-soft)] hover:underline">Learn about DLA →</Link>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          {[
-            { title: "German in 6 Months at DLA", image: "german-class.jpg", alt: "German language learners at DLA" },
-            { title: "Dream Nurses Class 2024", image: "nursing-class.jpg", alt: "DLA nurses learning group" },
-            { title: "Confusing German grammar made easy", image: "language-learning.jpg", alt: "Learners taking part in a language lesson" },
+          {[{ title: "German in 6 Months at DLA", image: "german-class.jpg", alt: "German language learners at DLA", slot: "home_german" as const },
+            { title: "Dream Nurses Class 2024", image: "nursing-class.jpg", alt: "DLA nurses learning group", slot: "home_nursing" as const },
+            { title: "Confusing German grammar made easy", image: "language-learning.jpg", alt: "Learners taking part in a language lesson", slot: "home_learning" as const },
           ].map((item) => (
             <GlassCard className="overflow-hidden" key={item.image}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/site-media/${item.image}`} alt={item.alt} className="h-52 w-full object-cover" loading="lazy" />
+              <div className="home-learning-image">
+                <Image src={siteImages[item.slot]?.url ?? `/site-media/${item.image}`} alt={siteImages[item.slot]?.altText ?? item.alt} fill quality={90} sizes="(max-width: 767px) 100vw, 33vw" unoptimized={Boolean(siteImages[item.slot])} />
+              </div>
               <div className="p-4 font-semibold">{item.title}</div>
             </GlassCard>
           ))}
@@ -165,19 +195,26 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="px-6 max-w-6xl mx-auto mb-12">
+        <GlassCard className="p-6">
+          <h2 className="display-font text-2xl font-bold mb-2">Follow Dream Languages</h2>
+          <p className="mb-4 text-sm opacity-70">Follow our official pages for school news, learning updates and community stories.</p>
+          <SocialLinksDisplay links={socialLinks} />
+        </GlassCard>
+      </section>
+
       {/* Partners */}
       <section className="px-6 max-w-6xl mx-auto mb-12">
         <h2 className="display-font text-3xl font-bold mb-4">Our Partners</h2>
         <div className="flex flex-wrap gap-4">
           {[
-            { name: "Edu-Tours", image: "edu-tours.jpg" },
-            { name: "Besten Technologies", image: "partner-besten.png" },
-            { name: "Your Way", image: "partner-your-way.jpg" },
-            { name: "Atrsy", image: "partner-atrsy.png" },
+            { name: "Edu-Tours", image: "edu-tours.jpg", slot: "partner_edu_tours" as const },
+            { name: "Besten Technologies", image: "partner-besten.png", slot: "partner_besten" as const },
+            { name: "Your Way", image: "partner-your-way.jpg", slot: "partner_your_way" as const },
+            { name: "Atrsy", image: "partner-atrsy.png", slot: "partner_atrsy" as const },
           ].map((partner) => (
             <GlassCard key={partner.name} className="grid min-h-24 min-w-40 place-items-center p-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/site-media/${partner.image}`} alt={partner.name} className="max-h-16 max-w-36 object-contain" loading="lazy" />
+              <Image src={siteImages[partner.slot]?.url ?? `/site-media/${partner.image}`} alt={siteImages[partner.slot]?.altText ?? partner.name} width={288} height={128} quality={90} className="max-h-16 max-w-36 object-contain" unoptimized={Boolean(siteImages[partner.slot])} />
             </GlassCard>
           ))}
           {partnerList.map((partner) => <GlassCard key={partner.id} className="px-6 py-4 font-semibold">{partner.name}</GlassCard>)}
