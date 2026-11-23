@@ -97,6 +97,7 @@ export function SiteFooter() {
         <div className="site-footer-bottom">
           <span>© Dream Languages And Adult Literacy Uganda Limited. All rights reserved.</span>
           <span>Kampala, Uganda · info@dreamlanguagesug.online · Reg. No. DLA-UG-001</span>
+          <span>Built by <a href="https://www.zilenix.online" target="_blank" rel="noopener noreferrer">Zilenix</a></span>
         </div>
       </div>
     </footer>

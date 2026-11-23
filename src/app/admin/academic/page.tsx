@@ -4,8 +4,8 @@ import { GlassCard } from "@/components/ui/glass";
 import { AdminSessionCreate } from "@/components/admin-session-create";
 import { GoogleCalendarIntegration } from "@/components/google-calendar-integration";
 import { db } from "@/db";
-import { classes, timetableSessions } from "@/db/schema";
-import { desc, isNull } from "drizzle-orm";
+import { classes, departments, timetableSessions } from "@/db/schema";
+import { asc, desc, eq, isNull } from "drizzle-orm";
 import { googleCalendarConnectionStatus, googleCalendarIsConfigured } from "@/lib/google-calendar";
 
 const nav = [{ href: "/admin", label: "Dashboard", icon: "🏠" }, { href: "/admin/academic", label: "Academic", icon: "🎓" }];
@@ -13,10 +13,11 @@ const nav = [{ href: "/admin", label: "Dashboard", icon: "🏠" }, { href: "/adm
 export default async function AdminAcademic() {
   await requireRole(["super_admin"]);
   const [schoolClasses, sessions, googleStatus] = await Promise.all([
-    db.select({ id: classes.id, name: classes.name }).from(classes).where(isNull(classes.deletedAt)).orderBy(classes.name),
+    db.select({ id: classes.id, name: classes.name, departmentId: classes.departmentId }).from(classes).where(isNull(classes.deletedAt)).orderBy(classes.name),
     db.select().from(timetableSessions).orderBy(desc(timetableSessions.startsAt)).limit(50),
     googleCalendarConnectionStatus(),
   ]);
+  const languages = await db.select({ id: departments.id, name: departments.name, code: departments.code, flagEmoji: departments.flagEmoji }).from(departments).where(eq(departments.isLanguage, true)).orderBy(asc(departments.name));
   return (
     <PortalShell title="Academic Structure" nav={nav}>
       <h1 className="display-font text-2xl font-bold mb-4">Academic Structure</h1>
@@ -25,7 +26,7 @@ export default async function AdminAcademic() {
         <GlassCard className="p-6" strong>
           <h2 className="font-semibold mb-2">Schedule a class or online lesson</h2>
           <p className="text-sm opacity-70 mb-4">Add the Google Meet link created for the session so enrolled students can join from their portal.</p>
-          <AdminSessionCreate classes={schoolClasses} />
+          <AdminSessionCreate departments={languages} classes={schoolClasses} />
         </GlassCard>
         <GlassCard className="p-6" strong>
           <h2 className="font-semibold mb-3">Scheduled sessions</h2>
@@ -53,3 +54,4 @@ export default async function AdminAcademic() {
     </PortalShell>
   );
 }
+
