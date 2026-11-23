@@ -3,7 +3,7 @@ import { and, eq, isNull, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "@/db";
-import { auditLogs, classes, departments, feeSchedules, users } from "@/db/schema";
+import { auditLogs, classes, departments, enrolments, feeSchedules, users } from "@/db/schema";
 import { getCurrentUser, syncAuthBan } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { validateNewPassword } from "@/lib/password-policy";
@@ -82,15 +82,18 @@ async function createUserRequest(req: Request) {
   }
 
   const { email, password, firstName, lastName, role, departmentId, classId } = parsed.data;
-  let teacherClass: { id: string; teacherId: string | null; departmentId: string | null } | undefined;
-  if (role === "teacher") {
-    if (!classId) return NextResponse.json({ error: "Choose the class this teacher will teach before creating the account." }, { status: 400 });
-    [teacherClass] = await db.select({ id: classes.id, teacherId: classes.teacherId, departmentId: classes.departmentId })
+  let selectedClass: { id: string; teacherId: string | null; departmentId: string | null } | undefined;
+  if (["student", "teacher"].includes(role)) {
+    if (!classId) return NextResponse.json({ error: role === "teacher" ? "Choose the class this teacher will teach." : "Choose the class this student will join." }, { status: 400 });
+    [selectedClass] = await db.select({ id: classes.id, teacherId: classes.teacherId, departmentId: classes.departmentId })
       .from(classes).where(and(eq(classes.id, classId), isNull(classes.deletedAt))).limit(1);
-    if (!teacherClass) return NextResponse.json({ error: "Choose an active class for this teacher." }, { status: 400 });
-    if (teacherClass.teacherId) {
+    if (!selectedClass) return NextResponse.json({ error: "Choose an active class in the selected language department." }, { status: 400 });
+    if (!departmentId || selectedClass.departmentId !== departmentId) {
+      return NextResponse.json({ error: "Choose a class that belongs to the selected language department." }, { status: 400 });
+    }
+    if (role === "teacher" && selectedClass.teacherId) {
       const [existingTeacher] = await db.select({ status: users.status, deletedAt: users.deletedAt }).from(users)
-        .where(eq(users.id, teacherClass.teacherId)).limit(1);
+        .where(eq(users.id, selectedClass.teacherId)).limit(1);
       if (existingTeacher && existingTeacher.status !== "archived" && !existingTeacher.deletedAt) {
         return NextResponse.json({ error: "That class already has an active teacher. Choose another class or reassign that teacher first." }, { status: 409 });
       }
@@ -98,8 +101,8 @@ async function createUserRequest(req: Request) {
   } else if (classId) {
     return NextResponse.json({ error: "A teaching class can only be assigned when creating a teacher account." }, { status: 400 });
   }
-  if (["student", "applicant"].includes(role) && !departmentId) {
-    return NextResponse.json({ error: "Choose the student's language department before creating the account." }, { status: 400 });
+  if (["student", "applicant", "teacher"].includes(role) && !departmentId) {
+    return NextResponse.json({ error: "Choose the user's language department before creating the account." }, { status: 400 });
   }
   if (departmentId) {
     const [department] = await db.select({ id: departments.id }).from(departments)
@@ -141,7 +144,7 @@ async function createUserRequest(req: Request) {
           email,
           authId,
           role,
-          departmentId: teacherClass?.departmentId ?? (departmentId || null),
+          departmentId: selectedClass?.departmentId ?? (departmentId || null),
           status: role === "applicant" ? "applicant" : "registered",
           firstName,
           lastName,
@@ -152,17 +155,20 @@ async function createUserRequest(req: Request) {
         })
         .onConflictDoNothing()
         .returning({ id: users.id, email: users.email, role: users.role, registrationNumber: users.registrationNumber });
-      if (createdUser && role === "teacher" && teacherClass) {
+      if (createdUser && role === "teacher" && selectedClass) {
         const [assignment] = await tx.update(classes).set({ teacherId: createdUser.id })
         .where(and(
-          eq(classes.id, teacherClass.id),
-          teacherClass.teacherId ? eq(classes.teacherId, teacherClass.teacherId) : isNull(classes.teacherId),
+          eq(classes.id, selectedClass.id),
+          selectedClass.teacherId ? eq(classes.teacherId, selectedClass.teacherId) : isNull(classes.teacherId),
           isNull(classes.deletedAt),
         ))
         .returning({ id: classes.id });
         if (!assignment) {
           throw Object.assign(new Error("The selected class was assigned to another teacher while this account was being created."), { code: "TEACHING_CLASS_TAKEN" });
         }
+      }
+      if (createdUser && role === "student" && selectedClass) {
+        await tx.insert(enrolments).values({ studentId: createdUser.id, classId: selectedClass.id, status: "active" }).onConflictDoNothing();
       }
       return createdUser ? [createdUser] : [];
     });
@@ -220,6 +226,14 @@ async function updateUserRequest(req: Request) {
     z.object({ userId: z.string().uuid(), action: z.literal("set_department"), departmentId: z.string().uuid() }),
     z.object({ userId: z.string().uuid(), action: z.literal("set_class"), classId: z.string().uuid() }),
     z.object({
+      userId: z.string().uuid(), action: z.literal("edit_profile"),
+      firstName: z.string().trim().min(1).max(100),
+      lastName: z.string().trim().min(1).max(100),
+      phone: z.string().trim().max(40).optional().or(z.literal("")),
+      departmentId: z.string().uuid().optional().or(z.literal("")),
+    }),
+    z.object({ userId: z.string().uuid(), action: z.literal("permanently_delete"), confirmation: z.literal("PERMANENTLY DELETE") }),
+    z.object({
       userId: z.string().uuid(),
       action: z.literal("set_status"),
       status: z.enum(["active", "on_hold", "paused", "withdrawn", "archived"]),
@@ -235,15 +249,15 @@ async function updateUserRequest(req: Request) {
 
   if (action.action === "set_class") {
     const [account] = await db.select().from(users).where(eq(users.id, action.userId)).limit(1);
-    if (!account || account.deletedAt || account.status === "archived") return NextResponse.json({ error: "Active teacher account not found." }, { status: 404 });
-    if (account.role !== "teacher") return NextResponse.json({ error: "Only teacher accounts can be assigned to a teaching class." }, { status: 400 });
+    if (!account || account.deletedAt || account.status === "archived") return NextResponse.json({ error: "Active account not found." }, { status: 404 });
+    if (!["teacher", "student"].includes(account.role)) return NextResponse.json({ error: "Classes can only be assigned to teacher and student accounts." }, { status: 400 });
     if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) return NextResponse.json({ error: "Administrator accounts cannot be edited here." }, { status: 403 });
 
     const assigned = await db.transaction(async (tx: any) => {
       const [schoolClass] = await tx.select({ id: classes.id, name: classes.name, teacherId: classes.teacherId, departmentId: classes.departmentId })
         .from(classes).where(and(eq(classes.id, action.classId), isNull(classes.deletedAt))).for("update").limit(1);
       if (!schoolClass) return { error: "Choose an active class." };
-      if (schoolClass.teacherId && schoolClass.teacherId !== account.id) {
+      if (account.role === "teacher" && schoolClass.teacherId && schoolClass.teacherId !== account.id) {
         const [existingTeacher] = await tx.select({ status: users.status, deletedAt: users.deletedAt }).from(users)
           .where(eq(users.id, schoolClass.teacherId)).limit(1);
         if (existingTeacher && existingTeacher.status !== "archived" && !existingTeacher.deletedAt) {
@@ -251,20 +265,33 @@ async function updateUserRequest(req: Request) {
         }
       }
 
-      const previous = await tx.select({ id: classes.id, name: classes.name })
-        .from(classes).where(and(eq(classes.teacherId, account.id), isNull(classes.deletedAt)));
-      await tx.update(classes).set({ teacherId: null })
-        .where(and(eq(classes.teacherId, account.id), isNull(classes.deletedAt)));
-      await tx.update(classes).set({ teacherId: account.id }).where(eq(classes.id, schoolClass.id));
-      if (schoolClass.departmentId) {
-        await tx.update(users).set({ departmentId: schoolClass.departmentId, updatedAt: new Date() }).where(eq(users.id, account.id));
+      const previous = account.role === "teacher"
+        ? await tx.select({ id: classes.id, name: classes.name }).from(classes)
+          .where(and(eq(classes.teacherId, account.id), isNull(classes.deletedAt)))
+        : await tx.select({ id: enrolments.classId, name: classes.name }).from(enrolments)
+          .innerJoin(classes, eq(enrolments.classId, classes.id))
+          .where(and(eq(enrolments.studentId, account.id), eq(enrolments.status, "active")));
+
+      if (account.role === "student") {
+        const [existingEnrollment] = await tx.select({ id: enrolments.id })
+          .from(enrolments).where(and(eq(enrolments.studentId, account.id), eq(enrolments.classId, schoolClass.id))).limit(1);
+        if (existingEnrollment) {
+          await tx.update(enrolments).set({ status: "active" }).where(eq(enrolments.id, existingEnrollment.id));
+        } else {
+          await tx.insert(enrolments).values({ studentId: account.id, classId: schoolClass.id, status: "active" }).onConflictDoNothing();
+        }
+      } else {
+        await tx.update(classes).set({ teacherId: null })
+          .where(and(eq(classes.teacherId, account.id), isNull(classes.deletedAt)));
+        await tx.update(classes).set({ teacherId: account.id }).where(eq(classes.id, schoolClass.id));
       }
+      await tx.update(users).set({ departmentId: schoolClass.departmentId, updatedAt: new Date() }).where(eq(users.id, account.id));
       await tx.insert(auditLogs).values({
         actorId: actor.id,
-        action: "assign_teacher_class",
+        action: account.role === "teacher" ? "assign_teacher_class" : "assign_student_class",
         entityType: "user",
         entityId: account.id,
-        before: { classIds: previous.map((item: { id: string }) => item.id) },
+        before: { classes: previous.map((item: { id: string; name: string }) => ({ id: item.id, name: item.name })) },
         after: { classId: schoolClass.id, className: schoolClass.name, departmentId: schoolClass.departmentId },
         ip: clientIp(req),
       });
@@ -277,7 +304,6 @@ async function updateUserRequest(req: Request) {
   if (action.action === "set_department") {
     const [account] = await db.select().from(users).where(eq(users.id, action.userId)).limit(1);
     if (!account || account.deletedAt) return NextResponse.json({ error: "Account not found" }, { status: 404 });
-    if (!["student", "applicant"].includes(account.role)) return NextResponse.json({ error: "Only student and applicant accounts can be assigned to a language department" }, { status: 400 });
     if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) return NextResponse.json({ error: "Administrator accounts cannot be edited here" }, { status: 403 });
     const [department] = await db.select({ id: departments.id }).from(departments)
       .where(and(eq(departments.id, action.departmentId), eq(departments.isLanguage, true), isNull(departments.deletedAt))).limit(1);
@@ -295,6 +321,75 @@ async function updateUserRequest(req: Request) {
       });
     });
     return NextResponse.json({ ok: true });
+  }
+
+  if (action.action === "edit_profile") {
+    const [account] = await db.select().from(users).where(eq(users.id, action.userId)).limit(1);
+    if (!account || account.deletedAt) return NextResponse.json({ error: "Account not found." }, { status: 404 });
+    if (account.id === actor.id) return NextResponse.json({ error: "Edit your own administrator profile from account settings." }, { status: 403 });
+    if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) return NextResponse.json({ error: "Only the super administrator can edit an administrator account." }, { status: 403 });
+    if (["student", "teacher"].includes(account.role) && action.departmentId !== account.departmentId) {
+      return NextResponse.json({ error: "Change this user's language department through the assigned class controls." }, { status: 400 });
+    }
+    if (["student", "applicant", "teacher"].includes(account.role) && !action.departmentId) {
+      return NextResponse.json({ error: "Choose a language department for this account." }, { status: 400 });
+    }
+    if (action.departmentId) {
+      const [department] = await db.select({ id: departments.id }).from(departments)
+        .where(and(eq(departments.id, action.departmentId), eq(departments.isLanguage, true), isNull(departments.deletedAt))).limit(1);
+      if (!department) return NextResponse.json({ error: "Choose an active language department." }, { status: 400 });
+    }
+    await db.transaction(async (tx: any) => {
+      await tx.update(users).set({
+        firstName: action.firstName,
+        lastName: action.lastName,
+        displayName: `${action.firstName} ${action.lastName}`,
+        phone: action.phone || null,
+        departmentId: action.departmentId || null,
+        updatedAt: new Date(),
+      }).where(eq(users.id, account.id));
+      await tx.insert(auditLogs).values({
+        actorId: actor.id,
+        action: "edit_user_profile",
+        entityType: "user",
+        entityId: account.id,
+        before: { firstName: account.firstName, lastName: account.lastName, departmentId: account.departmentId },
+        after: { firstName: action.firstName, lastName: action.lastName, departmentId: action.departmentId || null },
+        ip: clientIp(req),
+      });
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action.action === "permanently_delete") {
+    if (action.userId === actor.id) return NextResponse.json({ error: "You cannot permanently delete your own account." }, { status: 403 });
+    if (actor.role !== "super_admin" && actor.role !== "admin") return NextResponse.json({ error: "Administrator access required." }, { status: 403 });
+    const [account] = await db.select().from(users).where(eq(users.id, action.userId)).limit(1);
+    if (!account || account.status !== "archived" || !account.deletedAt) return NextResponse.json({ error: "Only archived accounts can be permanently deleted." }, { status: 409 });
+    if (account.role === "super_admin" || (actor.role === "admin" && account.role === "admin")) {
+      return NextResponse.json({ error: "Only the super administrator can permanently delete another administrator, and the super administrator account is protected." }, { status: 403 });
+    }
+    try {
+      await db.transaction(async (tx: any) => {
+        await tx.delete(users).where(eq(users.id, account.id));
+      });
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
+      if (code === "23503") {
+        return NextResponse.json({ error: "This account is linked to school records that must be retained. It remains archived and cannot be permanently deleted while those records depend on it." }, { status: 409 });
+      }
+      throw error;
+    }
+    let authDeleted = true;
+    if (account.authId) {
+      const { error } = await createSupabaseAdminClient().auth.admin.deleteUser(account.authId);
+      authDeleted = !error;
+      if (error) console.error("Permanently deleted account profile but could not remove its Supabase Auth identity.", error.code ?? error.message);
+    }
+    if (account.avatarStorageKey) {
+      await deleteStudentPhoto(account.avatarStorageKey).catch((error) => console.error("Could not remove archived user photo after account deletion.", error instanceof Error ? error.name : "Unknown error"));
+    }
+    return NextResponse.json({ ok: true, authDeleted, message: authDeleted ? "Archived account permanently deleted." : "Account data was deleted, but its Supabase sign-in identity needs administrator cleanup." });
   }
 
   if (action.action === "archive_others") {
@@ -365,7 +460,7 @@ async function updateUserRequest(req: Request) {
         return { error: "Only the super admin can change an administrator account", status: 403 as const };
       }
       const [updated] = await tx.update(users)
-        .set({ status, deletedAt: status === "active" ? null : account.deletedAt, updatedAt: new Date() })
+        .set({ status, deletedAt: status === "archived" ? new Date() : status === "active" ? null : account.deletedAt, updatedAt: new Date() })
         .where(eq(users.id, account.id))
         .returning({ id: users.id, status: users.status, role: users.role });
       await tx.insert(auditLogs).values({

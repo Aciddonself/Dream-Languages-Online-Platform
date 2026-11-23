@@ -9,13 +9,14 @@ import { AdminApplicantPromote } from "@/components/admin-applicant-promote";
 import { AdminUserStatus } from "@/components/admin-user-status";
 import { AdminUserCredentials } from "@/components/admin-user-credentials";
 import { AdminUserMfaReset } from "@/components/admin-user-mfa-reset";
-import { AdminUserDepartment } from "@/components/admin-user-department";
 import { AdminStudentPhotoControl } from "@/components/admin-student-photo-control";
 import { StudentDocumentStampControl } from "@/components/student-document-stamp-control";
 import { AdminUserClassAssignment } from "@/components/admin-user-class-assignment";
+import { AdminUserEdit } from "@/components/admin-user-edit";
+import { AdminUserArchiveButton, AdminUserPermanentDelete } from "@/components/admin-user-delete-actions";
 import { and, asc, eq, ilike, inArray, isNull, ne, or } from "drizzle-orm";
 import { db } from "@/db";
-import { classes, departments, users } from "@/db/schema";
+import { classes, departments, enrolments, users } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
   const activeClasses = await db.select({
     id: classes.id,
     name: classes.name,
+    departmentId: classes.departmentId,
     departmentName: departments.name,
     teacherId: classes.teacherId,
   }).from(classes)
@@ -64,6 +66,9 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
     .select({
       id: users.id,
       displayName: users.displayName,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      phone: users.phone,
       departmentName: departments.name,
       departmentId: users.departmentId,
       email: users.email,
@@ -85,6 +90,13 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
     .leftJoin(departments, eq(users.departmentId, departments.id))
     .where(filters.length ? and(...filters) : undefined)
     .orderBy(asc(users.registrationNumber), asc(users.createdAt));
+  const studentIds = all.filter((account) => account.role === "student").map((account) => account.id);
+  const studentEnrollments = studentIds.length
+    ? await db.select({ studentId: enrolments.studentId, classId: enrolments.classId })
+      .from(enrolments).innerJoin(classes, eq(enrolments.classId, classes.id))
+      .where(and(inArray(enrolments.studentId, studentIds), eq(enrolments.status, "active"), isNull(classes.deletedAt)))
+    : [];
+  const classByStudent = new Map(studentEnrollments.map((enrollment) => [enrollment.studentId, enrollment.classId]));
   return (
     <PortalShell title="User Management" nav={nav}>
       <h1 className="display-font text-2xl font-bold mb-4">User accounts</h1>
@@ -124,26 +136,24 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
         <AdminUserCreate
           canCreateAdmin={actor.role === "super_admin"}
           departments={languageDepartments}
-          classes={classOptions.filter((schoolClass) => !schoolClass.teacherId)}
+          classes={classOptions}
         />
       </GlassCard>
       <GlassCard className="overflow-hidden">
         <p className="px-4 pt-3 text-xs opacity-70">Scroll the table horizontally to reach password, authenticator, admission, photo, and document controls.</p>
         <div className="admin-user-create-scroll w-full overflow-x-auto px-3 pb-3" role="region" aria-label="User account table. Scroll horizontally to see all controls." tabIndex={0}>
-          <table className="w-full min-w-[1720px] text-sm">
+          <table className="w-full min-w-[2200px] text-sm">
           <thead className="bg-white/5">
-            <tr><th className="text-left p-3">Name / photo</th><th className="text-left p-3">Registration no.</th><th className="text-left p-3">Language department</th><th className="text-left p-3">Assigned class</th><th className="text-left p-3">Email / login</th><th className="text-left p-3">Role held</th><th className="text-left p-3">Status</th><th className="min-w-[240px] text-left p-3">Issue credentials</th><th className="text-left p-3">Authenticator</th><th className="text-left p-3">Admission</th><th className="text-left p-3">Passport photo</th><th className="text-left p-3">Official student documents</th></tr>
+            <tr><th className="text-left p-3">Name / photo</th><th className="text-left p-3">Registration no.</th><th className="text-left p-3">Language department</th><th className="text-left p-3">Assigned class</th><th className="text-left p-3">Email / login</th><th className="text-left p-3">Role held</th><th className="text-left p-3">Status</th><th className="text-left p-3">Edit / delete</th><th className="min-w-[240px] text-left p-3">Issue credentials</th><th className="text-left p-3">Authenticator</th><th className="text-left p-3">Admission</th><th className="text-left p-3">Passport photo</th><th className="text-left p-3">Official student documents</th></tr>
           </thead>
           <tbody>
-            {all.map((u: { id: string; displayName: string | null; role: string; status: string; registrationNumber: string | null; address: string | null; nextOfKinName: string | null; nextOfKinPhone: string | null; studyFormat: string | null; studyDurationMonths: number | null; requestedIntake: string | null; email: string; departmentName: string | null; departmentId: string | null; avatarStorageKey: string | null; documentStampedAt: Date | null; documentStamperName: string | null; documentStamperTitle: string | null; }) => (
+            {all.map((u) => (
               <tr key={u.id} className="border-t border-white/10">
                 <td className="p-3"><span className="flex items-center gap-2">{["student", "applicant"].includes(u.role) && u.avatarStorageKey && <Image src={`/api/portal/profile-photo?userId=${u.id}`} alt={`${u.displayName ?? "Student"} passport photo`} width={40} height={48} unoptimized className="h-12 w-10 rounded object-cover" />}{u.displayName}</span>{u.role === "applicant" && <div className="max-w-xs text-xs opacity-65">{u.requestedIntake ? `Requested intake: ${u.requestedIntake} · ` : ""}{u.address ?? "Address missing"} · Next of kin: {u.nextOfKinName ?? "Not provided"} {u.nextOfKinPhone ?? ""} · {u.studyFormat?.replaceAll("_", " ") ?? "Format pending"} {u.studyDurationMonths === 0 ? "Full level" : u.studyDurationMonths ? `${u.studyDurationMonths} month(s)` : ""}</div>}</td>
                 <td className="p-3 font-mono text-xs">{u.registrationNumber ?? "Not assigned"}</td>
-                <td className="p-3">{["student", "applicant"].includes(u.role)
-                  ? <AdminUserDepartment userId={u.id} departmentId={u.departmentId} departments={languageDepartments} />
-                  : u.departmentName ?? <span className="opacity-50">Not assigned</span>}</td>
-                <td className="p-3">{u.role === "teacher"
-                  ? <AdminUserClassAssignment userId={u.id} assignedClassId={classByTeacher.get(u.id)?.id ?? ""} classes={classOptions} />
+                <td className="p-3">{u.departmentName ?? <span className="opacity-50">Not assigned</span>}</td>
+                <td className="p-3">{(u.role === "teacher" || u.role === "student") && u.status !== "archived"
+                  ? <AdminUserClassAssignment userId={u.id} role={u.role} departmentId={u.departmentId} assignedClassId={u.role === "teacher" ? classByTeacher.get(u.id)?.id ?? "" : classByStudent.get(u.id) ?? ""} departments={languageDepartments} classes={classOptions} />
                   : <span className="opacity-50">Not applicable</span>}</td>
                 <td className="p-3 opacity-70">{u.email}</td>
                         <td className="p-3">
@@ -152,6 +162,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                             : u.role}
                         </td>
                         <td className="p-3"><AdminUserStatus userId={u.id} status={u.status} isSelf={u.id === actor.id} /></td>
+                        <td className="p-3"><div className="grid min-w-64 gap-2"><AdminUserEdit user={{ id: u.id, firstName: u.firstName, lastName: u.lastName, phone: u.phone, departmentId: u.departmentId }} departments={languageDepartments} departmentLocked={["student", "teacher"].includes(u.role)} disabled={u.id === actor.id || (actor.role === "admin" && ["admin", "super_admin"].includes(u.role))} /><AdminUserArchiveButton userId={u.id} name={u.displayName ?? u.email} isSelf={u.id === actor.id} archived={u.status === "archived"} />{includeArchived && <AdminUserPermanentDelete userId={u.id} email={u.email} canDelete={actor.role === "super_admin" || (actor.role === "admin" && !["admin", "super_admin"].includes(u.role))} />}</div></td>
                         <td className="p-3">{u.id === actor.id ? "Use administrator recovery" : <AdminUserCredentials userId={u.id} />}</td>
                         <td className="p-3">{u.id !== actor.id && <AdminUserMfaReset userId={u.id} />}</td>
                 <td className="p-3">{u.role === "applicant" ? <AdminApplicantPromote userId={u.id} /> : "Not applicable"}</td>

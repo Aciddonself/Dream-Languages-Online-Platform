@@ -7,7 +7,7 @@ import { GlassButton, GlassInput } from "@/components/ui/glass";
 import { prepareProfilePhoto } from "@/lib/prepare-profile-photo";
 
 type DepartmentOption = { id: string; name: string };
-type ClassOption = { id: string; name: string; departmentName: string | null };
+type ClassOption = { id: string; name: string; departmentId: string | null; departmentName: string | null; teacherId: string | null };
 
 export function AdminUserCreate({ canCreateAdmin = false, departments = [], classes = [] }: { canCreateAdmin?: boolean; departments?: DepartmentOption[]; classes?: ClassOption[] }) {
   const router = useRouter();
@@ -67,9 +67,15 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
     }
   }
 
+  const needsLanguage = ["student", "applicant", "teacher"].includes(form.role);
+  const needsClass = ["student", "teacher"].includes(form.role);
+  const availableClasses = classes.filter((schoolClass) =>
+    schoolClass.departmentId === form.departmentId && (form.role !== "teacher" || !schoolClass.teacherId),
+  );
+
   return (
     <div className="admin-user-create-scroll -mx-4 overflow-x-auto px-4 pb-3" role="region" aria-label="Add user form. Scroll horizontally to see all fields." tabIndex={0}>
-      <form onSubmit={submit} className="grid min-w-[1790px] grid-cols-[150px_150px_230px_230px_180px_260px_250px_220px] items-end gap-3">
+      <form onSubmit={submit} className="grid min-w-[1900px] grid-cols-[150px_150px_230px_230px_180px_250px_250px_250px_220px] items-end gap-3">
         <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
           <span>First name</span>
           <GlassInput placeholder="First name" value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} required />
@@ -88,7 +94,7 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
         </label>
         <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
           <span>Account role</span>
-          <select className="glass min-w-0 w-full px-3 py-2.5" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, departmentId: event.target.value === "student" || event.target.value === "applicant" ? form.departmentId : "" })}>
+          <select className="glass min-w-0 w-full px-3 py-2.5" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, departmentId: "", classId: "" })}>
             <option value="student">Student</option>
             <option value="applicant">Applicant</option>
             <option value="teacher">Teacher</option>
@@ -112,14 +118,26 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
             <input ref={photoInput} className="min-w-0 max-w-full text-sm" type="file" accept="image/jpeg,image/png,image/webp" required />
           </label>
         )}
-        {form.role === "teacher" && (
+        <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
+          <span>Language department{needsLanguage ? " (required)" : " (optional)"}</span>
+          <select
+            className="glass min-w-0 w-full px-3 py-2.5"
+            value={form.departmentId}
+            onChange={(event) => setForm({ ...form, departmentId: event.target.value, classId: "" })}
+            required={needsLanguage}
+          >
+            <option value="">Choose a language department</option>
+            {departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+          </select>
+        </label>
+        {needsClass && (
           <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
-            <span>Assigned class <span className="font-normal">(required)</span></span>
-            <select className="glass min-w-0 w-full px-3 py-2.5" value={form.classId} onChange={(event) => setForm({ ...form, classId: event.target.value })} required>
-              <option value="">Choose an available class</option>
-              {classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.name}{schoolClass.departmentName ? ` · ${schoolClass.departmentName}` : ""}</option>)}
+            <span>{form.role === "student" ? "Enrolled class" : "Assigned teaching class"} <span className="font-normal">(required)</span></span>
+            <select className="glass min-w-0 w-full px-3 py-2.5" value={form.classId} onChange={(event) => setForm({ ...form, classId: event.target.value })} required disabled={!form.departmentId}>
+              <option value="">{form.departmentId ? "Choose a class" : "Choose a language first"}</option>
+              {availableClasses.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.name}{schoolClass.departmentName ? ` · ${schoolClass.departmentName}` : ""}</option>)}
             </select>
-            {!classes.length && <span className="text-xs font-normal opacity-70">All existing classes already have a teacher. Reassign one in the user list first.</span>}
+            {form.role === "teacher" && !availableClasses.length && form.departmentId && <span className="text-xs font-normal opacity-70">No unassigned class is available in this department. Assign or move a teacher from the user list first.</span>}
           </label>
         )}
         <GlassButton type="submit" className="min-h-11 w-full" disabled={loading}>
