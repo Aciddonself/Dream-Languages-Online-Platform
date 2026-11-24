@@ -16,7 +16,7 @@ import { AdminUserEdit } from "@/components/admin-user-edit";
 import { AdminUserArchiveButton, AdminUserPermanentDelete } from "@/components/admin-user-delete-actions";
 import { and, asc, eq, ilike, inArray, isNull, ne, or } from "drizzle-orm";
 import { db } from "@/db";
-import { classes, departments, enrolments, users } from "@/db/schema";
+import { classes, departments, enrolments, levels, users } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +36,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
     id: classes.id,
     name: classes.name,
     departmentId: classes.departmentId,
+    levelId: classes.levelId,
     departmentName: departments.name,
     teacherId: classes.teacherId,
   }).from(classes)
@@ -53,8 +54,29 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
     ...schoolClass,
     teacherId: schoolClass.teacherId && activeTeacherIds.has(schoolClass.teacherId) ? schoolClass.teacherId : null,
   }));
-  const classByTeacher = new Map<string, (typeof classOptions)[number]>(classOptions.filter((schoolClass) => schoolClass.teacherId)
-    .map((schoolClass) => [schoolClass.teacherId as string, schoolClass] as const));
+  const levelRows = await db.select({ id: levels.id, code: levels.code }).from(levels);
+  const levelCodeById = new Map(levelRows.map((level) => [level.id, level.code]));
+  const levelCodes = ["A1", "A2", "B1", "B2", "C1", "C2"];
+  const teacherLevelAssignments = new Map<string, Set<string>>();
+  for (const schoolClass of classOptions) {
+    if (!schoolClass.teacherId) continue;
+    const fromName = schoolClass.name.match(/(?:^|[^A-Z0-9])(A1|A2|B1|B2|C1|C2)(?=$|[^A-Z0-9])/i)?.[1]?.toUpperCase();
+    const code = (schoolClass.levelId ? levelCodeById.get(schoolClass.levelId) : null) ?? fromName;
+    if (!code || !levelCodes.includes(code)) continue;
+    const assignmentKey = `${schoolClass.teacherId}:${schoolClass.departmentId ?? ""}`;
+    const assignments = teacherLevelAssignments.get(assignmentKey) ?? new Set<string>();
+    assignments.add(code);
+    teacherLevelAssignments.set(assignmentKey, assignments);
+  }
+  const assignedLevelByTeacher = new Map<string, string>();
+  const assignedLevelSummaryByTeacher = new Map<string, string>();
+  for (const [assignmentKey, assignedLevels] of teacherLevelAssignments) {
+    if (levelCodes.every((code) => assignedLevels.has(code))) assignedLevelByTeacher.set(assignmentKey, "GENERAL");
+    else if (assignedLevels.size === 1) assignedLevelByTeacher.set(assignmentKey, [...assignedLevels][0]);
+    if (assignedLevels.size > 1 && !levelCodes.every((code) => assignedLevels.has(code))) {
+      assignedLevelSummaryByTeacher.set(assignmentKey, [...assignedLevels].join(", "));
+    }
+  }
   const filters = [
     includeArchived ? undefined : isNull(users.deletedAt),
     term ? or(ilike(users.registrationNumber, `%${term}%`), ilike(users.displayName, `%${term}%`), ilike(users.email, `%${term}%`)) : undefined,
@@ -96,7 +118,9 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
       .from(enrolments).innerJoin(classes, eq(enrolments.classId, classes.id))
       .where(and(inArray(enrolments.studentId, studentIds), eq(enrolments.status, "active"), isNull(classes.deletedAt)))
     : [];
-  const classByStudent = new Map(studentEnrollments.map((enrollment) => [enrollment.studentId, enrollment.classId]));
+  const classByStudent = new Map<string, string>(
+    studentEnrollments.map((enrollment) => [enrollment.studentId, enrollment.classId]),
+  );
   return (
     <PortalShell title="User Management" nav={nav}>
       <h1 className="display-font text-2xl font-bold mb-4">User accounts</h1>
@@ -153,7 +177,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                 <td className="p-3 font-mono text-xs">{u.registrationNumber ?? "Not assigned"}</td>
                 <td className="p-3">{u.departmentName ?? <span className="opacity-50">Not assigned</span>}</td>
                 <td className="p-3">{(u.role === "teacher" || u.role === "student") && u.status !== "archived"
-                  ? <AdminUserClassAssignment userId={u.id} role={u.role} departmentId={u.departmentId} assignedClassId={u.role === "teacher" ? classByTeacher.get(u.id)?.id ?? "" : classByStudent.get(u.id) ?? ""} departments={languageDepartments} classes={classOptions} />
+                  ? <AdminUserClassAssignment userId={u.id} role={u.role} departmentId={u.departmentId} assignedClassId={u.role === "student" ? classByStudent.get(u.id) ?? "" : ""} assignedLevelCode={u.role === "teacher" ? assignedLevelByTeacher.get(`${u.id}:${u.departmentId ?? ""}`) ?? "" : ""} assignedLevelSummary={u.role === "teacher" ? assignedLevelSummaryByTeacher.get(`${u.id}:${u.departmentId ?? ""}`) ?? "" : ""} departments={languageDepartments} classes={classOptions} />
                   : <span className="opacity-50">Not applicable</span>}</td>
                 <td className="p-3 opacity-70">{u.email}</td>
                         <td className="p-3">

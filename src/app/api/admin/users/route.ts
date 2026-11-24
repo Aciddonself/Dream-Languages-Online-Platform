@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { and, eq, isNull, ne } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "@/db";
-import { auditLogs, classes, departments, enrolments, feeSchedules, users } from "@/db/schema";
+import { auditLogs, classes, departments, enrolments, feeSchedules, levels, users } from "@/db/schema";
 import { getCurrentUser, syncAuthBan } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { validateNewPassword } from "@/lib/password-policy";
@@ -15,6 +15,86 @@ import { deleteStudentPhoto, storeStudentPhoto } from "@/lib/student-photos";
 import { sendEmail } from "@/lib/email";
 import { getCourseTuition } from "@/lib/course-pricing";
 
+const COURSE_LEVEL_CODES = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
+type TeachingLevel = typeof COURSE_LEVEL_CODES[number] | "GENERAL";
+
+async function assignTeacherLevels(tx: any, teacherId: string, departmentId: string, selection: TeachingLevel) {
+  const [department] = await tx.select({ id: departments.id, name: departments.name })
+    .from(departments)
+    .where(and(eq(departments.id, departmentId), eq(departments.isLanguage, true), isNull(departments.deletedAt)))
+    .for("update")
+    .limit(1);
+  if (!department) throw Object.assign(new Error("Choose an active language department."), { code: "INVALID_TEACHING_DEPARTMENT" });
+
+  const existingLevels = await tx.select({ id: levels.id, code: levels.code })
+    .from(levels).where(eq(levels.departmentId, department.id)).for("update");
+  const levelsByCode = new Map<string, { id: string; code: string }>(existingLevels.map((level: { id: string; code: string }) => [level.code.toUpperCase(), level]));
+  for (const [order, code] of COURSE_LEVEL_CODES.entries()) {
+    if (levelsByCode.has(code)) continue;
+    const [createdLevel] = await tx.insert(levels).values({ departmentId: department.id, code, name: code, order }).returning({ id: levels.id, code: levels.code });
+    if (createdLevel) levelsByCode.set(code, createdLevel);
+  }
+
+  const selectedCodes = selection === "GENERAL" ? [...COURSE_LEVEL_CODES] : [selection];
+  const allClasses = await tx.select({ id: classes.id, name: classes.name, levelId: classes.levelId, teacherId: classes.teacherId })
+    .from(classes).where(and(eq(classes.departmentId, department.id), isNull(classes.deletedAt))).for("update");
+
+  for (const schoolClass of allClasses as Array<{ id: string; name: string; levelId: string | null; teacherId: string | null }>) {
+    if (schoolClass.levelId) continue;
+    const classLevelCode = schoolClass.name.match(/(?:^|[^A-Z0-9])(A1|A2|B1|B2|C1|C2)(?=$|[^A-Z0-9])/i)?.[1]?.toUpperCase();
+    const matchingLevel = classLevelCode ? levelsByCode.get(classLevelCode) : undefined;
+    if (matchingLevel) {
+      await tx.update(classes).set({ levelId: matchingLevel.id }).where(eq(classes.id, schoolClass.id));
+      schoolClass.levelId = matchingLevel.id;
+    }
+  }
+
+  const targetClasses: Array<{ id: string; name: string; teacherId: string | null }> = [];
+  for (const code of selectedCodes) {
+    const level = levelsByCode.get(code);
+    if (!level) throw Object.assign(new Error(`Level ${code} is unavailable for ${department.name}.`), { code: "TEACHING_LEVEL_MISSING" });
+    const matchingClasses = (allClasses as Array<{ id: string; name: string; levelId: string | null; teacherId: string | null }>)
+      .filter((schoolClass) => schoolClass.levelId === level.id);
+    if (matchingClasses.length) {
+      targetClasses.push(...matchingClasses.map(({ id, name, teacherId }) => ({ id, name, teacherId })));
+    } else {
+      const [createdClass] = await tx.insert(classes).values({
+        name: `${department.name} ${code}`,
+        departmentId: department.id,
+        levelId: level.id,
+      }).returning({ id: classes.id, name: classes.name, teacherId: classes.teacherId });
+      if (createdClass) targetClasses.push(createdClass);
+    }
+  }
+
+  const otherTeacherIds = [...new Set(targetClasses.flatMap((schoolClass) => schoolClass.teacherId && schoolClass.teacherId !== teacherId ? [schoolClass.teacherId] : []))];
+  if (otherTeacherIds.length) {
+    const activeTeachers = await tx.select({ id: users.id }).from(users).where(and(
+      inArray(users.id, otherTeacherIds), eq(users.role, "teacher"), ne(users.status, "archived"), isNull(users.deletedAt),
+    ));
+    const activeTeacherIds = new Set(activeTeachers.map((teacher: { id: string }) => teacher.id));
+    const conflict = targetClasses.find((schoolClass) => schoolClass.teacherId && activeTeacherIds.has(schoolClass.teacherId));
+    if (conflict) {
+      const code = conflict.name.match(/(?:^|[^A-Z0-9])(A1|A2|B1|B2|C1|C2)(?=$|[^A-Z0-9])/i)?.[1]?.toUpperCase();
+      throw Object.assign(new Error(`${code ?? "One selected level"} already has an active teacher. Reassign that teacher or choose another level.`), { code: "TEACHING_LEVEL_TAKEN" });
+    }
+  }
+
+  const previousClasses = await tx.select({ id: classes.id, name: classes.name }).from(classes)
+    .where(and(eq(classes.teacherId, teacherId), isNull(classes.deletedAt)));
+  await tx.update(classes).set({ teacherId: null }).where(and(eq(classes.teacherId, teacherId), isNull(classes.deletedAt)));
+  const targetIds = targetClasses.map((schoolClass) => schoolClass.id);
+  if (targetIds.length) await tx.update(classes).set({ teacherId }).where(inArray(classes.id, targetIds));
+  await tx.update(users).set({ departmentId: department.id, updatedAt: new Date() }).where(eq(users.id, teacherId));
+
+  return {
+    departmentName: department.name,
+    levelCodes: selectedCodes,
+    classes: targetClasses.map(({ id, name }) => ({ id, name })),
+    previousClasses,
+  };
+}
+
 const createUserSchema = z.object({
   email: z.string().trim().email().transform((email) => email.toLowerCase()),
   password: z.string().min(10).max(256),
@@ -23,6 +103,7 @@ const createUserSchema = z.object({
   role: z.enum(["admin", "head_academics", "teacher", "finance", "student", "applicant"]),
   departmentId: z.string().uuid().optional().or(z.literal("")),
   classId: z.string().uuid().optional().or(z.literal("")),
+  teachingLevel: z.enum(["A1", "A2", "B1", "B2", "C1", "C2", "GENERAL"]).optional().or(z.literal("")),
 }).strict();
 
 /** Creates (or updates) the Supabase Auth identity for a profile row. Returns the auth user id. */
@@ -75,31 +156,30 @@ async function createUserRequest(req: Request) {
   } catch {
     return NextResponse.json({ error: "Could not read the new user form" }, { status: 400 });
   }
-  const body = Object.fromEntries(["email", "password", "firstName", "lastName", "role", "departmentId", "classId"].map((key) => [key, form.get(key)]));
+  const body = Object.fromEntries(["email", "password", "firstName", "lastName", "role", "departmentId", "classId", "teachingLevel"].map((key) => [key, form.get(key)]));
   const parsed = createUserSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { email, password, firstName, lastName, role, departmentId, classId } = parsed.data;
+  const { email, password, firstName, lastName, role, departmentId, classId, teachingLevel } = parsed.data;
   let selectedClass: { id: string; teacherId: string | null; departmentId: string | null } | undefined;
-  if (["student", "teacher"].includes(role)) {
-    if (!classId) return NextResponse.json({ error: role === "teacher" ? "Choose the class this teacher will teach." : "Choose the class this student will join." }, { status: 400 });
+  if (role === "student") {
+    if (!classId) return NextResponse.json({ error: "Choose the class this student will join." }, { status: 400 });
     [selectedClass] = await db.select({ id: classes.id, teacherId: classes.teacherId, departmentId: classes.departmentId })
       .from(classes).where(and(eq(classes.id, classId), isNull(classes.deletedAt))).limit(1);
     if (!selectedClass) return NextResponse.json({ error: "Choose an active class in the selected language department." }, { status: 400 });
     if (!departmentId || selectedClass.departmentId !== departmentId) {
       return NextResponse.json({ error: "Choose a class that belongs to the selected language department." }, { status: 400 });
     }
-    if (role === "teacher" && selectedClass.teacherId) {
-      const [existingTeacher] = await db.select({ status: users.status, deletedAt: users.deletedAt }).from(users)
-        .where(eq(users.id, selectedClass.teacherId)).limit(1);
-      if (existingTeacher && existingTeacher.status !== "archived" && !existingTeacher.deletedAt) {
-        return NextResponse.json({ error: "That class already has an active teacher. Choose another class or reassign that teacher first." }, { status: 409 });
-      }
-    }
   } else if (classId) {
-    return NextResponse.json({ error: "A teaching class can only be assigned when creating a teacher account." }, { status: 400 });
+    return NextResponse.json({ error: "Only a student account is assigned to an enrolled class during creation." }, { status: 400 });
+  }
+  if (role === "teacher" && !teachingLevel) {
+    return NextResponse.json({ error: "Choose A1, A2, B1, B2, C1, C2, or General for this teacher." }, { status: 400 });
+  }
+  if (role !== "teacher" && teachingLevel) {
+    return NextResponse.json({ error: "A teaching level can only be selected for a teacher account." }, { status: 400 });
   }
   if (["student", "applicant", "teacher"].includes(role) && !departmentId) {
     return NextResponse.json({ error: "Choose the user's language department before creating the account." }, { status: 400 });
@@ -155,17 +235,8 @@ async function createUserRequest(req: Request) {
         })
         .onConflictDoNothing()
         .returning({ id: users.id, email: users.email, role: users.role, registrationNumber: users.registrationNumber });
-      if (createdUser && role === "teacher" && selectedClass) {
-        const [assignment] = await tx.update(classes).set({ teacherId: createdUser.id })
-        .where(and(
-          eq(classes.id, selectedClass.id),
-          selectedClass.teacherId ? eq(classes.teacherId, selectedClass.teacherId) : isNull(classes.teacherId),
-          isNull(classes.deletedAt),
-        ))
-        .returning({ id: classes.id });
-        if (!assignment) {
-          throw Object.assign(new Error("The selected class was assigned to another teacher while this account was being created."), { code: "TEACHING_CLASS_TAKEN" });
-        }
+      if (createdUser && role === "teacher" && teachingLevel) {
+        await assignTeacherLevels(tx, createdUser.id, departmentId!, teachingLevel as TeachingLevel);
       }
       if (createdUser && role === "student" && selectedClass) {
         await tx.insert(enrolments).values({ studentId: createdUser.id, classId: selectedClass.id, status: "active" }).onConflictDoNothing();
@@ -182,8 +253,8 @@ async function createUserRequest(req: Request) {
         console.error("Could not clean up student photo after user creation failed:", cleanupError);
       }
     }
-    if (error && typeof error === "object" && "code" in error && error.code === "TEACHING_CLASS_TAKEN") {
-      return NextResponse.json({ error: "That class was just assigned to another teacher. Refresh the page and choose a different class." }, { status: 409 });
+    if (error && typeof error === "object" && "code" in error && error.code === "TEACHING_LEVEL_TAKEN") {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "One selected level already has an active teacher." }, { status: 409 });
     }
     throw error;
   }
@@ -226,6 +297,10 @@ async function updateUserRequest(req: Request) {
     z.object({ userId: z.string().uuid(), action: z.literal("set_department"), departmentId: z.string().uuid() }),
     z.object({ userId: z.string().uuid(), action: z.literal("set_class"), classId: z.string().uuid() }),
     z.object({
+      userId: z.string().uuid(), action: z.literal("set_teacher_level"), departmentId: z.string().uuid(),
+      teachingLevel: z.enum(["A1", "A2", "B1", "B2", "C1", "C2", "GENERAL"]),
+    }),
+    z.object({
       userId: z.string().uuid(), action: z.literal("edit_profile"),
       firstName: z.string().trim().min(1).max(100),
       lastName: z.string().trim().min(1).max(100),
@@ -247,48 +322,60 @@ async function updateUserRequest(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const action = parsed.data;
 
+  if (action.action === "set_teacher_level") {
+    const [account] = await db.select().from(users).where(eq(users.id, action.userId)).limit(1);
+    if (!account || account.deletedAt || account.status === "archived") return NextResponse.json({ error: "Active teacher account not found." }, { status: 404 });
+    if (account.role !== "teacher") return NextResponse.json({ error: "Teaching levels can only be assigned to a teacher account." }, { status: 400 });
+    try {
+      const assigned = await db.transaction(async (tx: any) => {
+        const result = await assignTeacherLevels(tx, account.id, action.departmentId, action.teachingLevel);
+        await tx.insert(auditLogs).values({
+          actorId: actor.id,
+          action: "assign_teacher_levels",
+          entityType: "user",
+          entityId: account.id,
+          before: { classes: result.previousClasses.map((schoolClass: { id: string; name: string }) => schoolClass) },
+          after: { departmentId: action.departmentId, departmentName: result.departmentName, levels: result.levelCodes, classes: result.classes },
+          ip: clientIp(req),
+        });
+        return result;
+      });
+      return NextResponse.json({ ok: true, levelCodes: assigned.levelCodes, classCount: assigned.classes.length });
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
+      if (["TEACHING_LEVEL_TAKEN", "INVALID_TEACHING_DEPARTMENT", "TEACHING_LEVEL_MISSING"].includes(code)) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : "Could not assign the selected teaching level." }, { status: code === "TEACHING_LEVEL_TAKEN" ? 409 : 400 });
+      }
+      throw error;
+    }
+  }
+
   if (action.action === "set_class") {
     const [account] = await db.select().from(users).where(eq(users.id, action.userId)).limit(1);
     if (!account || account.deletedAt || account.status === "archived") return NextResponse.json({ error: "Active account not found." }, { status: 404 });
-    if (!["teacher", "student"].includes(account.role)) return NextResponse.json({ error: "Classes can only be assigned to teacher and student accounts." }, { status: 400 });
+    if (account.role !== "student") return NextResponse.json({ error: "This class selector is only for students. Assign teachers by language level." }, { status: 400 });
     if (actor.role === "admin" && ["admin", "super_admin"].includes(account.role)) return NextResponse.json({ error: "Administrator accounts cannot be edited here." }, { status: 403 });
 
     const assigned = await db.transaction(async (tx: any) => {
-      const [schoolClass] = await tx.select({ id: classes.id, name: classes.name, teacherId: classes.teacherId, departmentId: classes.departmentId })
+      const [schoolClass] = await tx.select({ id: classes.id, name: classes.name, departmentId: classes.departmentId })
         .from(classes).where(and(eq(classes.id, action.classId), isNull(classes.deletedAt))).for("update").limit(1);
       if (!schoolClass) return { error: "Choose an active class." };
-      if (account.role === "teacher" && schoolClass.teacherId && schoolClass.teacherId !== account.id) {
-        const [existingTeacher] = await tx.select({ status: users.status, deletedAt: users.deletedAt }).from(users)
-          .where(eq(users.id, schoolClass.teacherId)).limit(1);
-        if (existingTeacher && existingTeacher.status !== "archived" && !existingTeacher.deletedAt) {
-          return { error: "That class is already assigned to another active teacher." };
-        }
-      }
 
-      const previous = account.role === "teacher"
-        ? await tx.select({ id: classes.id, name: classes.name }).from(classes)
-          .where(and(eq(classes.teacherId, account.id), isNull(classes.deletedAt)))
-        : await tx.select({ id: enrolments.classId, name: classes.name }).from(enrolments)
-          .innerJoin(classes, eq(enrolments.classId, classes.id))
-          .where(and(eq(enrolments.studentId, account.id), eq(enrolments.status, "active")));
+      const previous = await tx.select({ id: enrolments.classId, name: classes.name }).from(enrolments)
+        .innerJoin(classes, eq(enrolments.classId, classes.id))
+        .where(and(eq(enrolments.studentId, account.id), eq(enrolments.status, "active")));
 
-      if (account.role === "student") {
-        const [existingEnrollment] = await tx.select({ id: enrolments.id })
-          .from(enrolments).where(and(eq(enrolments.studentId, account.id), eq(enrolments.classId, schoolClass.id))).limit(1);
-        if (existingEnrollment) {
-          await tx.update(enrolments).set({ status: "active" }).where(eq(enrolments.id, existingEnrollment.id));
-        } else {
-          await tx.insert(enrolments).values({ studentId: account.id, classId: schoolClass.id, status: "active" }).onConflictDoNothing();
-        }
+      const [existingEnrollment] = await tx.select({ id: enrolments.id })
+        .from(enrolments).where(and(eq(enrolments.studentId, account.id), eq(enrolments.classId, schoolClass.id))).limit(1);
+      if (existingEnrollment) {
+        await tx.update(enrolments).set({ status: "active" }).where(eq(enrolments.id, existingEnrollment.id));
       } else {
-        await tx.update(classes).set({ teacherId: null })
-          .where(and(eq(classes.teacherId, account.id), isNull(classes.deletedAt)));
-        await tx.update(classes).set({ teacherId: account.id }).where(eq(classes.id, schoolClass.id));
+        await tx.insert(enrolments).values({ studentId: account.id, classId: schoolClass.id, status: "active" }).onConflictDoNothing();
       }
       await tx.update(users).set({ departmentId: schoolClass.departmentId, updatedAt: new Date() }).where(eq(users.id, account.id));
       await tx.insert(auditLogs).values({
         actorId: actor.id,
-        action: account.role === "teacher" ? "assign_teacher_class" : "assign_student_class",
+        action: "assign_student_class",
         entityType: "user",
         entityId: account.id,
         before: { classes: previous.map((item: { id: string; name: string }) => ({ id: item.id, name: item.name })) },
