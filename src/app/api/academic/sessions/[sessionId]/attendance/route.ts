@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { attendance, auditLogs, classes, enrolments, timetableSessions, users } from "@/db/schema";
+import { attendance, auditLogs, classes, departments, enrolments, timetableSessions, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { calculateAttendancePercent } from "@/lib/attendance";
+import { notifySchoolAudience } from "@/lib/notification-delivery";
 import { z } from "zod";
 
 const actionSchema = z.object({
@@ -157,6 +158,21 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Class can only be started from 30 minutes before its scheduled time until its scheduled end" }, { status: 409 });
     }
     await db.update(timetableSessions).set({ liveStartedAt: now, teacherCheckInAt: now }).where(eq(timetableSessions.id, session.id));
+    try {
+      const [schoolClass] = session.classId
+        ? await db.select({ departmentName: departments.name }).from(classes)
+          .leftJoin(departments, eq(classes.departmentId, departments.id)).where(eq(classes.id, session.classId)).limit(1)
+        : [];
+      await notifySchoolAudience({
+        title: `Live class started: ${session.title}`,
+        body: `${schoolClass?.departmentName ? `${schoolClass.departmentName} learners` : "The school"} class is live now.${session.meetUrl ? ` Join at ${session.meetUrl}` : " Open your class calendar to join."}`,
+        audience: session.classId ? "class" : "all",
+        classId: session.classId,
+        excludeUserId: user.id,
+      });
+    } catch (error) {
+      console.error("Class started, but live class notifications could not be delivered", error instanceof Error ? error.message : "unknown error");
+    }
     return NextResponse.json({ ok: true, liveStartedAt: now });
   }
 

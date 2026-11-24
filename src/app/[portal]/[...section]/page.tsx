@@ -24,9 +24,10 @@ import {
 import { requireRole } from "@/lib/rbac";
 import { portalSection } from "@/lib/portal-sections";
 import { PORTAL_NAVS } from "@/lib/portal-nav";
+import { PortalInbox } from "@/components/portal-inbox";
 
 const portalConfig = {
-  admin: { title: "Admin Console", roles: ["super_admin"] },
+  admin: { title: "Admin Console", roles: ["super_admin", "admin"] },
   applicant: { title: "Applicant Portal", roles: ["applicant", "student", "super_admin"] },
   student: { title: "Student Portal", roles: ["student", "super_admin"] },
   teacher: { title: "Teacher Portal", roles: ["teacher", "head_academics", "super_admin"] },
@@ -193,7 +194,7 @@ export default async function PortalSectionPage({
           ))}
         </div>
       )}
-      <GlassCard className="p-5" strong>
+      {currentSection === "inbox" ? <PortalInbox currentUserId={user.id} /> : <GlassCard className="p-5" strong>
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="font-semibold">{title} records</h2>
           <Badge tone={rows.length ? "info" : "warning"}>{rows.length} records</Badge>
@@ -215,7 +216,7 @@ export default async function PortalSectionPage({
             There are no {title.toLowerCase()} records to show yet. New school records will appear here when they are added.
           </p>
         )}
-      </GlassCard>
+      </GlassCard>}
     </PortalShell>
   );
 }

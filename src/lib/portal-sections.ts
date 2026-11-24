@@ -39,7 +39,7 @@ async function inbox(user: Viewer): Promise<SectionData> {
 
 async function myNotifications(user: Viewer): Promise<SectionData> {
   const list = await db.select().from(notifications).where(eq(notifications.userId, user.id)).orderBy(desc(notifications.createdAt)).limit(50);
-  return { description: "Updates sent to you by the school.", rows: list.map((n) => ({ title: n.title, detail: `${n.body} · ${when(n.createdAt)}`, status: n.read ? "Read" : "Unread" })) };
+  return { description: "School announcements, class schedules, live class reminders, messages, and application updates sent to you.", rows: list.map((n) => ({ title: n.title, detail: `${n.body ? `${n.body} · ` : ""}${when(n.createdAt)}`, status: n.read ? "Read" : "Unread" })) };
 }
 
 async function calendar(user: Viewer): Promise<SectionData> {
@@ -358,7 +358,7 @@ async function adminExtras(slug: string): Promise<SectionData | null> {
 export async function portalSection(portal: string, slug: string, user: Viewer): Promise<SectionData | null> {
   try {
     if (slug === "inbox") return await inbox(user);
-    if (slug === "notifications" && portal !== "admin") return await myNotifications(user);
+    if (slug === "notifications") return await myNotifications(user);
     if (slug === "calendar" && portal !== "admin") return await calendar(user);
     if (slug === "help-desk" && portal !== "hoc") return await helpDesk(user);
     if (slug === "documents" || slug === "teacher-documents") return slug === "teacher-documents" ? await teacherDocuments() : await myDocuments(user);

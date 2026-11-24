@@ -90,6 +90,7 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="mb-6 flex flex-wrap gap-3">
+        <Link className="btn-glass inline-flex items-center px-4 py-2" href="/admin/activity">View school activity across departments</Link>
         <Link className="btn-glass inline-flex items-center px-4 py-2" href="/admin/users?role=applicant">Review admission applications</Link>
         <Link className="btn-glass inline-flex items-center px-4 py-2" href="/admin/users?role=student">Browse enrolled students by language</Link>
       </div>

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { announcements, auditLogs, classes, departments } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { detectPhoneOrHandle } from "@/lib/phone-filter";
+import { notifySchoolAudience } from "@/lib/notification-delivery";
 
 const schema = z.object({
   title: z.string().trim().min(1).max(180),
@@ -78,5 +79,18 @@ export async function POST(request: Request) {
     entityId: announcement.id,
     after: { title: announcement.title, audience: parsed.data.audience, classId, departmentId },
   });
-  return NextResponse.json({ ok: true, announcement }, { status: 201 });
+  let notifiedCount = 0;
+  try {
+    notifiedCount = await notifySchoolAudience({
+      title: `School announcement: ${announcement.title}`,
+      body: parsed.data.body,
+      audience: parsed.data.audience,
+      departmentId,
+      classId,
+      excludeUserId: user.id,
+    });
+  } catch (error) {
+    console.error("Announcement was saved, but notifications could not be delivered", error instanceof Error ? error.message : "unknown error");
+  }
+  return NextResponse.json({ ok: true, announcement, notifiedCount }, { status: 201 });
 }

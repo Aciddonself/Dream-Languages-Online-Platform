@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { departments, users } from "@/db/schema";
+import { departments, notifications, users } from "@/db/schema";
 import { nextRegistrationNumber } from "@/lib/registration";
 import { isProfilePhotoJpeg } from "@/lib/pdf";
 import { deleteStudentPhoto, storeStudentPhoto } from "@/lib/student-photos";
@@ -138,6 +138,21 @@ export async function POST(request: Request) {
         console.error("Could not clean up duplicate applicant photo:", cleanupError);
       }
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+    }
+    try {
+      const admins = await db.select({ id: users.id }).from(users).where(and(
+        inArray(users.role, ["super_admin", "admin"]), inArray(users.status, ["active", "registered"]),
+        isNull(users.deletedAt),
+      ));
+      if (admins.length) {
+        await db.insert(notifications).values(admins.map((admin) => ({
+          userId: admin.id,
+          title: "New student application received",
+          body: `${firstName} ${lastName} applied to ${selectedDepartment.name}. Review the application in Admin → Users → Admission applications.`,
+        })));
+      }
+    } catch (notificationError) {
+      console.error("Application was saved, but the administrator notification could not be delivered", notificationError instanceof Error ? notificationError.message : "unknown error");
     }
     return NextResponse.json({
       ok: true,

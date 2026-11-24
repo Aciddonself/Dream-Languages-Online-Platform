@@ -5,6 +5,7 @@ import { classes, timetableSessions, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { and, eq, gt, isNull, lt, or } from "drizzle-orm";
 import { isSupportedMeetingUrl } from "@/lib/meeting-links";
+import { notifySchoolAudience } from "@/lib/notification-delivery";
 
 const schema = z.object({
   title: z.string().trim().min(1).max(160),
@@ -131,5 +132,18 @@ export async function POST(request: Request) {
     })))
     .returning({ id: timetableSessions.id, title: timetableSessions.title, meetUrl: timetableSessions.meetUrl });
 
-  return NextResponse.json({ ok: true, session: sessions[0], sessions, createdCount: sessions.length }, { status: 201 });
+  let notifiedCount = 0;
+  try {
+    const startLabel = startsAt.toLocaleString("en-UG", { timeZone: "Africa/Kampala" });
+    notifiedCount = await notifySchoolAudience({
+      title: `Class scheduled: ${title}`,
+      body: `${classId ? "Your class" : "A school wide class"} starts ${startLabel}${recurring ? " and continues weekly" : ""}.${meetUrl ? ` Join at ${meetUrl}` : ""}`,
+      audience: classId ? "class" : "all",
+      classId: classId || null,
+      excludeUserId: user.id,
+    });
+  } catch (error) {
+    console.error("Class was scheduled, but notifications could not be delivered", error instanceof Error ? error.message : "unknown error");
+  }
+  return NextResponse.json({ ok: true, session: sessions[0], sessions, createdCount: sessions.length, notifiedCount }, { status: 201 });
 }

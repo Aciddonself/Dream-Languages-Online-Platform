@@ -25,6 +25,7 @@ const admin = build("/admin", {
     ["chat", "Chat and Community", "💬"],
     ["inbox", "Inbox", "📥"],
     ["notifications", "Notifications", "🔔"],
+    ["activity", "School activity", "📡"],
   ],
   People: [
     ["applications", "Applications", "📋"],
