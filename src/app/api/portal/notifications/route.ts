@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, like } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { notifications } from "@/db/schema";
@@ -8,15 +8,23 @@ import { getCurrentUser } from "@/lib/auth";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  const rows = await db.select({
-    id: notifications.id,
-    title: notifications.title,
-    body: notifications.body,
-    read: notifications.read,
-    createdAt: notifications.createdAt,
-  }).from(notifications).where(eq(notifications.userId, user.id))
-    .orderBy(desc(notifications.createdAt)).limit(30);
-  return NextResponse.json({ notifications: rows, unreadCount: rows.filter((row) => !row.read).length }, {
+  const [rows, [totalUnread], [messageUnread]] = await Promise.all([
+    db.select({
+      id: notifications.id,
+      title: notifications.title,
+      body: notifications.body,
+      read: notifications.read,
+      createdAt: notifications.createdAt,
+    }).from(notifications).where(eq(notifications.userId, user.id))
+      .orderBy(desc(notifications.createdAt)).limit(30),
+    db.select({ total: count() }).from(notifications).where(and(eq(notifications.userId, user.id), eq(notifications.read, false))),
+    db.select({ total: count() }).from(notifications).where(and(eq(notifications.userId, user.id), eq(notifications.read, false), like(notifications.title, "New message from %"))),
+  ]);
+  return NextResponse.json({
+    notifications: rows,
+    unreadCount: Number(totalUnread?.total ?? 0),
+    unreadMessagesCount: Number(messageUnread?.total ?? 0),
+  }, {
     headers: { "Cache-Control": "private, no-store" },
   });
 }

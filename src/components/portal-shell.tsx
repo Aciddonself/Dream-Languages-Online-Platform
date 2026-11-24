@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,6 +17,8 @@ import {
   Moon,
   Search,
   Sun,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
@@ -48,7 +50,12 @@ export function PortalShell({
   const [notificationTab, setNotificationTab] = useState<NotificationTab>("All");
   const [notificationRows, setNotificationRows] = useState<PortalNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [notificationError, setNotificationError] = useState("");
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const soundEnabledRef = useRef(true);
+  const previousNotificationCountsRef = useRef<{ total: number; messages: number } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
 
@@ -86,16 +93,61 @@ export function PortalShell({
     }
   }, [pathname, sidebarScrollKey]);
 
+  const playNotificationSound = useCallback((isMessage: boolean) => {
+    const context = audioContextRef.current;
+    if (!soundEnabledRef.current || !context || context.state !== "running") return;
+    const startAt = context.currentTime;
+    const frequencies = isMessage ? [740, 988] : [660];
+    frequencies.forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, startAt + index * 0.13);
+      gain.gain.exponentialRampToValueAtTime(0.12, startAt + index * 0.13 + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startAt + index * 0.13 + 0.17);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(startAt + index * 0.13);
+      oscillator.stop(startAt + index * 0.13 + 0.18);
+    });
+  }, []);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("dla-notification-sounds");
+      const enabled = saved !== "off";
+      soundEnabledRef.current = enabled;
+      setSoundEnabled(enabled);
+    } catch { /* Sounds remain enabled for this session when storage is unavailable. */ }
+    function unlockAudio() {
+      if (!window.AudioContext || !soundEnabledRef.current) return;
+      audioContextRef.current ??= new window.AudioContext();
+      if (audioContextRef.current.state === "suspended") void audioContextRef.current.resume();
+    }
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", unlockAudio);
+  }, []);
+
   useEffect(() => {
     let active = true;
     async function refreshNotifications() {
       try {
         const response = await fetch("/api/portal/notifications", { cache: "no-store" });
-        const result = await response.json().catch(() => ({})) as { notifications?: PortalNotification[]; unreadCount?: number };
+        const result = await response.json().catch(() => ({})) as { notifications?: PortalNotification[]; unreadCount?: number; unreadMessagesCount?: number };
         if (!response.ok) throw new Error("Could not load notifications.");
         if (active) {
+          const nextTotal = result.unreadCount ?? 0;
+          const nextMessages = result.unreadMessagesCount ?? 0;
+          const previous = previousNotificationCountsRef.current;
+          if (previous) {
+            if (nextMessages > previous.messages) playNotificationSound(true);
+            if (nextTotal - nextMessages > previous.total - previous.messages) playNotificationSound(false);
+          }
+          previousNotificationCountsRef.current = { total: nextTotal, messages: nextMessages };
           setNotificationRows(result.notifications ?? []);
-          setUnreadCount(result.unreadCount ?? 0);
+          setUnreadCount(nextTotal);
+          setUnreadMessagesCount(nextMessages);
           setNotificationError("");
         }
       } catch (cause) {
@@ -103,9 +155,26 @@ export function PortalShell({
       }
     }
     void refreshNotifications();
-    const timer = window.setInterval(() => { void refreshNotifications(); }, 45_000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, []);
+    const timer = window.setInterval(() => { void refreshNotifications(); }, 15_000);
+    const handleNotificationRefresh = () => { void refreshNotifications(); };
+    window.addEventListener("dla:notifications-refresh", handleNotificationRefresh);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("dla:notifications-refresh", handleNotificationRefresh);
+    };
+  }, [playNotificationSound]);
+
+  function toggleNotificationSound() {
+    const enabled = !soundEnabled;
+    soundEnabledRef.current = enabled;
+    setSoundEnabled(enabled);
+    try { window.localStorage.setItem("dla-notification-sounds", enabled ? "on" : "off"); } catch { /* Current session preference still applies. */ }
+    if (enabled && window.AudioContext) {
+      audioContextRef.current ??= new window.AudioContext();
+      if (audioContextRef.current.state === "suspended") void audioContextRef.current.resume();
+    }
+  }
 
   async function markNotificationRead(notificationId?: string) {
     const response = await fetch("/api/portal/notifications", {
@@ -118,7 +187,16 @@ export function PortalShell({
       return;
     }
     setNotificationRows((rows) => rows.map((row) => !notificationId || row.id === notificationId ? { ...row, read: true } : row));
-    setUnreadCount((count) => notificationId ? Math.max(0, count - (notificationRows.some((row) => row.id === notificationId && !row.read) ? 1 : 0)) : 0);
+    if (notificationId) {
+      const target = notificationRows.find((row) => row.id === notificationId && !row.read);
+      if (target) {
+        setUnreadCount((count) => Math.max(0, count - 1));
+        if (target.title.startsWith("New message from ")) setUnreadMessagesCount((count) => Math.max(0, count - 1));
+      }
+    } else {
+      setUnreadCount(0);
+      setUnreadMessagesCount(0);
+    }
   }
 
   const visibleNotifications = notificationTab === "Unread" ? notificationRows.filter((row) => !row.read) : notificationRows;
@@ -236,14 +314,15 @@ export function PortalShell({
               <span>Search</span>
               <kbd><Command size={11} /> K</kbd>
             </button>
-            <Link className="portal-icon-button portal-inbox-button" href={nav.find((item) => /inbox|message/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} aria-label="Inbox">
+            <Link className="portal-icon-button portal-inbox-button" scroll={false} href={nav.find((item) => /inbox|message/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} aria-label={unreadMessagesCount ? `Inbox, ${unreadMessagesCount} unread messages` : "Inbox"}>
               <Inbox size={18} />
+              {unreadMessagesCount > 0 && <span className="portal-count-badge">{unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}</span>}
             </Link>
             <div className="portal-popover-anchor">
               <button
                 className="portal-icon-button"
                 type="button"
-                aria-label="Notifications"
+                aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
                 aria-expanded={notificationsOpen}
                 onClick={() => {
                   setNotificationsOpen((value) => !value);
@@ -252,9 +331,12 @@ export function PortalShell({
                 }}
               >
                 <Bell size={18} />
-                {unreadCount > 0 && <span className="portal-notification-dot" aria-label={`${unreadCount} unread notifications`} />}
+                {unreadCount > 0 && <span className="portal-count-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
               </button>
             </div>
+            <button className="portal-icon-button" type="button" onClick={toggleNotificationSound} aria-label={soundEnabled ? "Mute notification and inbox sounds" : "Enable notification and inbox sounds"} title={soundEnabled ? "Notification sounds on" : "Notification sounds off"}>
+              {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </button>
             <div className="portal-popover-anchor">
               <button
                 className="portal-theme-trigger"

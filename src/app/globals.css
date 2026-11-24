@@ -866,6 +866,7 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; }
 .portal-notification-item time { color: var(--portal-muted); font-size: 0.67rem; }
 .portal-notification-unread { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #d96b52; }
 .portal-notification-action { width: fit-content; color: var(--portal-accent); font-size: 0.73rem; font-weight: 700; text-decoration: underline; }
+.portal-count-badge { position: absolute; top: -6px; right: -7px; display: grid; min-width: 18px; height: 18px; place-items: center; padding: 0 4px; border: 2px solid var(--portal-surface); border-radius: 999px; color: #fff; background: #c63b32; font-size: 0.61rem; font-weight: 800; line-height: 1; }
 .portal-search-backdrop { z-index: 60; display: flex; align-items: flex-start; justify-content: center; padding: min(16vh, 130px) 16px 20px; }
 .portal-search-dialog { width: min(560px, 100%); overflow: hidden; border: 1px solid var(--portal-line); border-radius: 14px; color: var(--portal-ink); background: var(--portal-surface); box-shadow: 0 22px 70px rgba(10, 22, 37, 0.24); }
 .portal-search-input-row { display: flex; min-height: 58px; align-items: center; gap: 12px; padding: 0 15px; border-bottom: 1px solid var(--portal-line); color: var(--portal-muted); }

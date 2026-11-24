@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, desc, eq, inArray, isNull, ne, or } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, like, ne, or } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { messages, notifications, users } from "@/db/schema";
@@ -24,10 +24,15 @@ export async function GET() {
     if (message.recipientId && message.recipientId !== user.id) counterpartIdSet.add(message.recipientId);
   }
   const counterpartIds: string[] = Array.from(counterpartIdSet);
-  const counterpartRows = counterpartIds.length
-    ? await db.select({ id: users.id, displayName: users.displayName, firstName: users.firstName, lastName: users.lastName })
-      .from(users).where(inArray(users.id, counterpartIds))
-    : [];
+  const [counterpartRows, [unreadMessageCount]] = await Promise.all([
+    counterpartIds.length
+      ? db.select({ id: users.id, displayName: users.displayName, firstName: users.firstName, lastName: users.lastName })
+        .from(users).where(inArray(users.id, counterpartIds))
+      : Promise.resolve([]),
+    db.select({ total: count() }).from(notifications).where(and(
+      eq(notifications.userId, user.id), eq(notifications.read, false), like(notifications.title, "New message from %"),
+    )),
+  ]);
   const nameById = new Map(counterpartRows.map((row) => [row.id, row.displayName ?? ([row.firstName, row.lastName].filter(Boolean).join(" ") || "DLA user")]));
   return NextResponse.json({
     messages: records.reverse().map((message) => ({
@@ -40,6 +45,7 @@ export async function GET() {
       name: contact.displayName ?? ([contact.firstName, contact.lastName].filter(Boolean).join(" ") || "DLA user"),
       role: contact.role.replaceAll("_", " "),
     })),
+    unreadMessagesCount: Number(unreadMessageCount?.total ?? 0),
   }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
@@ -53,7 +59,7 @@ export async function POST(request: Request) {
   const parsed = sendSchema.safeParse(raw);
   if (!parsed.success) return NextResponse.json({ error: "Select a recipient and enter a message of up to 4,000 characters." }, { status: 400 });
   if (parsed.data.recipientId === sender.id) return NextResponse.json({ error: "Choose another account as the recipient." }, { status: 400 });
-  const [recipient] = await db.select({ id: users.id }).from(users).where(and(
+  const [recipient] = await db.select({ id: users.id, displayName: users.displayName, firstName: users.firstName, lastName: users.lastName }).from(users).where(and(
     eq(users.id, parsed.data.recipientId), inArray(users.status, ["active", "registered"]), isNull(users.deletedAt),
   )).limit(1);
   if (!recipient) return NextResponse.json({ error: "That recipient is not an active DLA account." }, { status: 404 });
@@ -68,5 +74,21 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Direct message notification could not be delivered", error instanceof Error ? error.message : "unknown error");
   }
-  return NextResponse.json({ ok: true, message }, { status: 201 });
+  return NextResponse.json({ ok: true, message: {
+    ...message,
+    senderId: sender.id,
+    recipientId: recipient.id,
+    senderName: "You",
+    recipientName: recipient.displayName ?? ([recipient.firstName, recipient.lastName].filter(Boolean).join(" ") || "DLA user"),
+    body: parsed.data.body,
+  } }, { status: 201 });
+}
+
+export async function PATCH() {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  await db.update(notifications).set({ read: true }).where(and(
+    eq(notifications.userId, user.id), eq(notifications.read, false), like(notifications.title, "New message from %"),
+  ));
+  return NextResponse.json({ ok: true });
 }
