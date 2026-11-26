@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { asc } from "drizzle-orm";
 import { AdminOwnPasswordChange } from "@/components/admin-own-password-change";
+import { PesapalIpnSetup } from "@/components/pesapal-ipn-setup";
 
 const nav = [{ href: "/admin", label: "Dashboard", icon: "🏠" }, { href: "/admin/settings", label: "Settings", icon: "⚙️" }];
 
@@ -22,6 +23,11 @@ export default async function AdminSettings() {
             <span className="font-medium">{record.key}</span><span className="text-xs opacity-60">Updated {record.updatedAt.toLocaleDateString()}</span>
           </li>
         ))}</ul> : <p className="text-sm opacity-65">No custom settings are configured yet.</p>}
+      </GlassCard>
+      <GlassCard className="mt-4 p-5" strong>
+        <h2 className="font-semibold mb-2">Pesapal checkout</h2>
+        <p className="mb-4 text-sm opacity-70">After the Pesapal merchant keys and public APP_URL are saved in Railway, register the payment notification endpoint here. Copy its returned ID into Railway as PESAPAL_IPN_ID.</p>
+        <PesapalIpnSetup />
       </GlassCard>
       <GlassCard className="mt-4 p-5" strong>
         <h2 className="font-semibold mb-2">Administrator password</h2>

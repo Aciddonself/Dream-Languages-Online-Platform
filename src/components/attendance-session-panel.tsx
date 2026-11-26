@@ -157,7 +157,7 @@ export function AttendanceSessionPanel({
                   </>
                 ) : (
                   <>
-                    {session.meetUrl && live && <a className="btn-glass btn-glass-primary rounded-xl px-4 py-2 font-semibold" href={session.meetUrl} target="_blank" rel="noreferrer">Join class</a>}
+                    {session.meetUrl && live && <a className="btn-glass btn-glass-primary rounded-xl px-4 py-2 font-semibold" href={session.meetUrl}>Join class</a>}
                     {live && !attendee?.checkInAt && <GlassButton disabled={busy[session.id]} onClick={() => void act(session.id, "check_in")}>Check in</GlassButton>}
                     {live && attendee?.checkInAt && !attendee.checkOutAt && <GlassButton variant="glass" disabled={busy[session.id]} onClick={() => void act(session.id, "check_out")}>Check out</GlassButton>}
                   </>
@@ -204,7 +204,7 @@ export function AttendanceSessionPanel({
                     </form>
                   ) : null;
                 })()}
-                {session.meetUrl && <a className="mt-3 inline-block text-sm font-semibold underline" href={session.meetUrl} target="_blank" rel="noreferrer">Open private class meeting</a>}
+                {session.meetUrl && <a className="mt-3 inline-block text-sm font-semibold underline" href={session.meetUrl}>Open private class meeting</a>}
               </>
             ) : (
               <div className="mt-3 text-sm opacity-70">

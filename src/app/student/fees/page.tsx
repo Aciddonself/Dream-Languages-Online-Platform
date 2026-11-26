@@ -6,7 +6,8 @@ import { db } from "@/db";
 import { feeSchedules, payments } from "@/db/schema";
 import { requireRole } from "@/lib/rbac";
 import { StudentPaymentReport } from "@/components/student-payment-report";
-import { FlutterwaveCheckout } from "@/components/flutterwave-checkout";
+import { PesapalCheckout } from "@/components/pesapal-checkout";
+import { pesapalConfigured } from "@/lib/pesapal";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,7 @@ export default async function StudentFeesPage({ searchParams }: { searchParams: 
       <p className="text-sm opacity-65 mb-5">Payment history is shown from your admission date ({user.createdAt.toLocaleDateString()}). Receipts become available after payment verification.</p>
       {paymentResult === "success" && <p role="status" className="mb-4 rounded-xl border border-emerald-600/30 bg-emerald-500/10 p-3 text-sm">Your payment was verified and applied to your fee schedule. Download the receipt from your payment history.</p>}
       {paymentResult === "verification-pending" && <p role="status" className="mb-4 rounded-xl border border-amber-600/30 bg-amber-500/10 p-3 text-sm">The payment provider has not confirmed this payment yet. Your balance will update only after verification. Contact Finance if the amount was charged.</p>}
+      {paymentResult === "cancelled" && <p role="status" className="mb-4 rounded-xl border border-amber-600/30 bg-amber-500/10 p-3 text-sm">Checkout was cancelled. No payment was applied to your account.</p>}
       {(paymentResult === "failed" || paymentResult === "invalid" || paymentResult === "not-found") && <p role="status" className="mb-4 rounded-xl border border-red-600/30 bg-red-500/10 p-3 text-sm">Online checkout was not completed. No unverified payment will be applied. You can try again or use the manual payment instructions.</p>}
       {totals.length ? <div className="mb-5 space-y-4">{totals.map((total) => (
         <div key={total.currency} className="grid gap-4 sm:grid-cols-3">
@@ -70,7 +72,7 @@ export default async function StudentFeesPage({ searchParams }: { searchParams: 
         <p className="mb-4 text-sm opacity-65">Pay using the official bank or mobile money instructions, then submit the amount and transaction reference here. Your balance changes only after Finance verifies the transfer.</p>
         <Link className="mb-4 inline-flex text-sm font-semibold underline" href="/pay-now">View official bank and mobile money instructions</Link>
         <StudentPaymentReport currencies={Array.from(new Set<string>(schedules.filter((fee) => fee.amount > fee.paid).map((fee) => fee.currency)))} />
-        <FlutterwaveCheckout outstandingUgx={schedules.filter((fee) => fee.currency === "UGX").reduce((sum, fee) => sum + Math.max(0, fee.amount - fee.paid), 0)} configured={Boolean(process.env.FLUTTERWAVE_SECRET_KEY)} />
+      <PesapalCheckout outstandingUgx={schedules.filter((fee) => fee.currency === "UGX").reduce((sum, fee) => sum + Math.max(0, fee.amount - fee.paid), 0)} configured={pesapalConfigured()} />
       </GlassCard>}
       <GlassCard className="p-5">
         <h2 className="font-semibold mb-3">Payment history</h2>

@@ -233,8 +233,6 @@ export function LiveClassController({ sessions: initialSessions, canManage = tru
                     {session.meetUrl && (
                       <a
                         href={`/api/portal/sessions/${session.id}/join`}
-                        target="_blank"
-                        rel="noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-95 transition-opacity"
                       >
                         <span>🎥</span>

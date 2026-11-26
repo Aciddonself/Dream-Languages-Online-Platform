@@ -286,7 +286,7 @@ export function AdminSessionCreate({
               </p>
             </div>
           </div>
-          <a className="text-xs font-semibold underline" href="https://meet.google.com/new" target="_blank" rel="noreferrer">Create a Google Meet link ↗</a>
+          <a className="text-xs font-semibold underline" href="https://meet.google.com/new">Create a Google Meet link</a>
         </div>
 
         <GlassInput
@@ -356,8 +356,6 @@ export function AdminSessionCreate({
             <a
               className="inline-flex items-center gap-1.5 font-semibold text-emerald-300 underline hover:text-emerald-200"
               href={createdMeetUrl}
-              target="_blank"
-              rel="noreferrer"
             >
               🎥 Open the Google Meet link ↗
             </a>

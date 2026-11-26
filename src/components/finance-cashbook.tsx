@@ -11,6 +11,26 @@ type Week = { weekStart: string; income: Record<string, number>; expenses: Recor
 type Report = { month: string; selectedWeekStart: string; selectedWeekEnd: string; openingBalance: Record<string, number>; entries: Entry[]; weeks: Week[]; monthOpening: Record<string, number>; monthIncome: Record<string, number>; monthExpenses: Record<string, number>; monthClosing: Record<string, number> };
 const ugx = (value: number) => new Intl.NumberFormat("en-UG", { maximumFractionDigits: 0 }).format(value);
 const today = () => new Date().toISOString().slice(0, 10);
+function apiError(error: unknown, fallback: string) {
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && "formErrors" in error) {
+    const formErrors = (error as { formErrors?: unknown }).formErrors;
+    if (Array.isArray(formErrors) && typeof formErrors[0] === "string") return formErrors[0];
+  }
+  return fallback;
+}
+
+async function readApiResponse(response: Response) {
+  const body = await response.text();
+  if (!body.trim()) {
+    throw new Error(`The cashbook server returned an empty response (HTTP ${response.status}). Refresh the page, then contact the administrator if it continues.`);
+  }
+  try {
+    return JSON.parse(body) as { error?: string | { formErrors?: string[] }; [key: string]: unknown };
+  } catch {
+    throw new Error(`The cashbook server returned an invalid response (HTTP ${response.status}). The request was not completed.`);
+  }
+}
 
 export function FinanceCashbook() {
   const [weekDate, setWeekDate] = useState(today);
@@ -20,22 +40,26 @@ export function FinanceCashbook() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
-  const refresh = useCallback(async () => {
+  const loadReport = useCallback(async (selectedWeek: string, selectedMonth: string) => {
     setBusy(true);
     setError("");
     try {
-      const response = await fetch(`/api/finance/cashbook?week=${encodeURIComponent(weekDate)}&month=${encodeURIComponent(month)}`, { cache: "no-store" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not load the cashbook.");
+      const response = await fetch(`/api/finance/cashbook?week=${encodeURIComponent(selectedWeek)}&month=${encodeURIComponent(selectedMonth)}`, { cache: "no-store" });
+      const data = await readApiResponse(response);
+      if (!response.ok) throw new Error(apiError(data.error, "Could not load the cashbook."));
       setReport(data as Report);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not load the cashbook.");
     } finally {
       setBusy(false);
     }
-  }, [weekDate, month]);
+  }, []);
+  const refresh = useCallback(() => loadReport(weekDate, month), [loadReport, weekDate, month]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    const task = window.setTimeout(() => { void refresh(); }, 0);
+    return () => window.clearTimeout(task);
+  }, [refresh]);
 
   async function addEntry(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,13 +72,15 @@ export function FinanceCashbook() {
     setBusy(true); setError(""); setNotice("");
     try {
       const response = await fetch("/api/finance/cashbook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.formErrors?.[0] ?? data.error ?? "Could not save this entry.");
+      const data = await readApiResponse(response);
+      if (!response.ok) throw new Error(apiError(data.error, "Could not save this entry."));
       formElement.reset();
-      setWeekDate(String(payload.entryDate));
-      setMonth(String(payload.entryDate).slice(0, 7));
+      const savedDate = String(payload.entryDate);
+      const savedMonth = savedDate.slice(0, 7);
+      setWeekDate(savedDate);
+      setMonth(savedMonth);
       setNotice("Cashbook entry saved and balances recalculated.");
-      await refresh();
+      await loadReport(savedDate, savedMonth);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not save this entry.");
     } finally { setBusy(false); }
@@ -66,8 +92,8 @@ export function FinanceCashbook() {
     setBusy(true); setError(""); setNotice("");
     try {
       const response = await fetch("/api/finance/cashbook", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: entry.id, reason }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not reverse this entry.");
+      const data = await readApiResponse(response);
+      if (!response.ok) throw new Error(apiError(data.error, "Could not reverse this entry."));
       setNotice("Entry reversed. Weekly and monthly balances have been recalculated.");
       await refresh();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not reverse this entry."); }

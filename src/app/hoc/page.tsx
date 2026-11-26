@@ -155,8 +155,6 @@ export default async function HocDashboard({ searchParams }: { searchParams: Pro
                       <a
                         className="rounded-lg bg-emerald-600/80 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
                         href={`/api/portal/sessions/${session.id}/join`}
-                        target="_blank"
-                        rel="noreferrer"
                       >
                         🎥 {isLive ? "Join Live Meet" : "Launch Google Meet"}
                       </a>

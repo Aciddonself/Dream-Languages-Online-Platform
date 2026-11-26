@@ -38,7 +38,7 @@ export default async function TeacherDashboard() {
           <h1 className="display-font text-3xl font-bold">Teacher Dashboard</h1>
           <p className="text-sm opacity-60">Your classes and tasks at a glance.</p>
         </div>
-        <a className="btn-glass btn-glass-primary inline-flex items-center px-4 py-2" href="https://meet.google.com/new" target="_blank" rel="noreferrer">Start live class</a>
+        <a className="btn-glass btn-glass-primary inline-flex items-center px-4 py-2" href="https://meet.google.com/new">Start live class</a>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

@@ -32,6 +32,11 @@ function monthBounds(month: string) {
 function mapSums(rows: Array<{ currency: string; amount: number | string }>) {
   return Object.fromEntries(rows.map((row) => [row.currency, Number(row.amount ?? 0)]));
 }
+function cashbookUnavailable(error: unknown) {
+  const code = error && typeof error === "object" && "code" in error ? String(error.code) : "unknown";
+  console.error("Cashbook database operation failed", { code });
+  return NextResponse.json({ error: "The cashbook could not reach its database tables. Confirm migration 0016 is applied to the Supabase database used by this service, then retry.", code: "CASHBOOK_DATABASE_UNAVAILABLE" }, { status: 503 });
+}
 async function balancesBefore(day: string) {
   const rows = await db.select({
     currency: financeCashEntries.currency,
@@ -51,6 +56,7 @@ export async function GET(request: Request) {
   const bounds = monthBounds(month);
   if (!selectedDate.success || !bounds) return NextResponse.json({ error: "Choose a valid week date and month" }, { status: 400 });
   const selectedStart = weekStart(selectedDate.data);
+  try {
   const [selectedRows, monthRows, openingBalance, monthOpeningRows] = await Promise.all([
     db.select({ entry: financeCashEntries, recorder: users.displayName, email: users.email })
       .from(financeCashEntries).leftJoin(users, eq(financeCashEntries.recordedBy, users.id))
@@ -101,6 +107,9 @@ export async function GET(request: Request) {
     monthOpening,
     monthClosing: Object.fromEntries([...new Set([...Object.keys(monthOpening), ...Object.keys(monthIncome), ...Object.keys(monthExpenses)])].map((currency) => [currency, (monthOpening[currency] ?? 0) + (monthIncome[currency] ?? 0) - (monthExpenses[currency] ?? 0)])),
   });
+  } catch (error) {
+    return cashbookUnavailable(error);
+  }
 }
 
 export async function POST(request: Request) {
@@ -114,6 +123,7 @@ export async function POST(request: Request) {
   const input = parsed.data;
   const parsedDate = new Date(`${input.entryDate}T00:00:00.000Z`);
   if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== input.entryDate) return NextResponse.json({ error: "Enter a valid transaction date" }, { status: 400 });
+  try {
   const [entry] = await db.insert(financeCashEntries).values({
     ...input,
     reference: input.reference || null,
@@ -130,6 +140,9 @@ export async function POST(request: Request) {
     userAgent: request.headers.get("user-agent"),
   });
   return NextResponse.json({ ok: true, entry }, { status: 201 });
+  } catch (error) {
+    return cashbookUnavailable(error);
+  }
 }
 
 export async function DELETE(request: Request) {
@@ -140,9 +153,13 @@ export async function DELETE(request: Request) {
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 }); }
   const parsed = z.object({ id: z.string().uuid(), reason: z.string().trim().min(3).max(300) }).strict().safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  try {
   const [entry] = await db.update(financeCashEntries).set({ reversedAt: new Date(), reversedBy: actor.id, reversalReason: parsed.data.reason })
     .where(and(eq(financeCashEntries.id, parsed.data.id), isNull(financeCashEntries.reversedAt))).returning();
   if (!entry) return NextResponse.json({ error: "Active cashbook entry not found" }, { status: 404 });
   await db.insert(auditLogs).values({ actorId: actor.id, action: "reverse_finance_cash_entry", entityType: "finance_cash_entry", entityId: entry.id, after: { amount: entry.amount, currency: entry.currency, reason: parsed.data.reason }, ip: clientIp(request), userAgent: request.headers.get("user-agent") });
   return NextResponse.json({ ok: true });
+  } catch (error) {
+    return cashbookUnavailable(error);
+  }
 }

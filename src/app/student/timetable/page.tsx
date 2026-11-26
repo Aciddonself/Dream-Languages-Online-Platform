@@ -101,8 +101,6 @@ export default async function StudentTimetablePage() {
                   {session.hasMeeting ? (
                     <a
                       href={`/api/portal/sessions/${session.id}/join`}
-                      target="_blank"
-                      rel="noreferrer"
                       className={`rounded-xl px-5 py-2.5 font-bold text-sm shadow flex items-center gap-2 transition-all ${
                         isLive
                           ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:scale-105"

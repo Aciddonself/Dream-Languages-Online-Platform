@@ -219,8 +219,6 @@ export default async function StudentDashboard() {
           {activeLiveSession.meetUrl && (
             <a
               href={`/api/portal/sessions/${activeLiveSession.id}/join`}
-              target="_blank"
-              rel="noreferrer"
               className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 font-bold text-white shadow-lg hover:opacity-95 hover:scale-105 transition-all flex items-center gap-2 text-sm"
             >
               <span>🔴 Join Google Meet Class</span>
@@ -282,8 +280,6 @@ export default async function StudentDashboard() {
               <a
                 className="btn-glass btn-glass-primary px-4 py-2 rounded-xl font-semibold flex items-center gap-1.5"
                 href={`/api/portal/sessions/${upcomingSessions[0].id}/join`}
-                target="_blank"
-                rel="noreferrer"
               >
                 <span>🎥 Join Meet</span>
               </a>
@@ -301,8 +297,6 @@ export default async function StudentDashboard() {
                     <a
                       className="font-semibold text-emerald-400 underline hover:text-emerald-300"
                       href={`/api/portal/sessions/${session.id}/join`}
-                      target="_blank"
-                      rel="noreferrer"
                     >
                       Join Class ↗
                     </a>

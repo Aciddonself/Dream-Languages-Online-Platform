@@ -120,8 +120,6 @@ export default async function HocTimetablePage() {
                   {session.hasMeeting ? (
                     <a
                       href={`/api/portal/sessions/${session.id}/join`}
-                      target="_blank"
-                      rel="noreferrer"
                       className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-90"
                     >
                       🎥 {isLive ? "Join Live Meet" : "Join Class"}

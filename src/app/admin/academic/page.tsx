@@ -39,7 +39,7 @@ export default async function AdminAcademic() {
                     <div className="text-sm opacity-65">{new Date(session.startsAt).toLocaleString()} to {new Date(session.endsAt).toLocaleString()}</div>
                   </div>
                   {session.meetUrl ? (
-                    <a className="text-sm font-semibold text-[var(--brand-secondary-soft)] underline-offset-4 hover:underline" href={session.meetUrl} target="_blank" rel="noreferrer">Open Google Meet</a>
+                    <a className="text-sm font-semibold text-[var(--brand-secondary-soft)] underline-offset-4 hover:underline" href={session.meetUrl}>Open Google Meet</a>
                   ) : <span className="text-sm opacity-60">No Meet link added</span>}
                 </li>
               ))}

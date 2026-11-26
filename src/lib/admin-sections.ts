@@ -226,7 +226,7 @@ const loaders: Record<string, () => Promise<SectionData>> = {
         detail: typeof value[key] === "string" && value[key] ? `Merchant code ${value[key]}` : "Merchant code not configured",
         status: typeof value[key] === "string" && value[key] ? "Configured" : "Not configured",
       })),
-      { title: "Online Visa and Uganda mobile money checkout", detail: process.env.FLUTTERWAVE_SECRET_KEY ? "Flutterwave secret is configured on the server. Card and UGX mobile money checkout is enabled." : "Not connected. Add FLUTTERWAVE_SECRET_KEY to the deployment environment to enable online checkout. Bank transfers remain available for manual review.", status: process.env.FLUTTERWAVE_SECRET_KEY ? "Configured" : "Not configured" },
+      { title: "Pesapal online checkout", detail: process.env.PESAPAL_CONSUMER_KEY && process.env.PESAPAL_CONSUMER_SECRET && process.env.PESAPAL_IPN_ID ? `Pesapal ${process.env.PESAPAL_ENVIRONMENT?.toLowerCase() === "live" ? "live" : "sandbox"} credentials and IPN are configured.` : "Awaiting Pesapal merchant credentials and a registered IPN ID. Manual bank and mobile money payments remain available.", status: process.env.PESAPAL_CONSUMER_KEY && process.env.PESAPAL_CONSUMER_SECRET && process.env.PESAPAL_IPN_ID ? "Configured" : "Not configured" },
     ];
     return { description: `Official payment instructions read from the same payment_details setting used by the public Pay Now page.${row ? ` Last updated ${when(row.updatedAt)}.` : " No payment_details setting exists yet."}`,
       links: [{ href: "/pay-now", label: "View public payment instructions" }, { href: "/admin/settings", label: "Open system settings" }, { href: "/finance/weekly-cashbook", label: "Weekly cashbook" }], rows: methods };
