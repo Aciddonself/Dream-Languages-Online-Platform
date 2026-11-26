@@ -10,6 +10,7 @@ type StudentOption = {
   registrationNumber: string | null;
   department: string | null;
   category: "new" | "continuing";
+  hasFeeSchedule: boolean;
   balances: { currency: string; amount: number }[];
 };
 
@@ -107,18 +108,18 @@ export function FinanceManualPaymentForm({ departments }: { departments: Departm
       <select className="glass rounded-xl px-3 py-2.5" value={studentId} onChange={(event) => chooseStudent(event.target.value)} required disabled={loadingStudents && !students.length}>
         <option value="">{loadingStudents ? "Searching students…" : "Choose a registered student"}</option>
         {students.map((student) => <option key={student.id} value={student.id}>
-          {student.name}{student.registrationNumber ? ` · ${student.registrationNumber}` : " · no registration number"} · {student.department ?? "Unassigned"} · {student.category === "new" ? "New" : "Continuing"}
+          {student.name}{student.registrationNumber ? ` · ${student.registrationNumber}` : " · no registration number"} · {student.department ?? "Unassigned"} · {student.category === "new" ? "New" : "Continuing"}{!student.hasFeeSchedule ? " · Fee setup needed" : ""}
         </option>)}
       </select>
       <span className="text-xs font-normal opacity-65">Only active or registered students with an outstanding fee balance are listed.</span>
     </label>
     <label className="grid gap-1 text-sm font-semibold">Currency
       <select className="glass rounded-xl px-3 py-2.5" value={currency} onChange={(event) => setCurrency(event.target.value)} required disabled={!balances.length}>
-        {balances.length ? balances.map((balance) => <option key={balance.currency} value={balance.currency}>{balance.currency} · balance {balance.amount.toLocaleString()}</option>) : <option value="">Select a student first</option>}
+        {balances.length ? balances.map((balance) => <option key={balance.currency} value={balance.currency}>{balance.currency} · balance {balance.amount.toLocaleString()}</option>) : <option value="">{selected && !selected.hasFeeSchedule ? "Assign fees first" : "Select a student first"}</option>}
       </select>
     </label>
     <label className="grid gap-1 text-sm font-semibold">Amount received
-      <input className="glass rounded-xl px-3 py-2.5" name="amount" type="number" min="1" max={outstanding || undefined} step="1" required disabled={!selected} />
+      <input className="glass rounded-xl px-3 py-2.5" name="amount" type="number" min="1" max={outstanding || undefined} step="1" required disabled={!selected || !selected.hasFeeSchedule} />
     </label>
     <label className="grid gap-1 text-sm font-semibold">Payment method
       <select className="glass rounded-xl px-3 py-2.5" name="method" required><option value="cash">Cash</option><option value="bank">Bank transfer</option><option value="momo">MTN Mobile Money</option><option value="airtel_money">Airtel Money</option><option value="other">Other</option></select>
@@ -126,11 +127,11 @@ export function FinanceManualPaymentForm({ departments }: { departments: Departm
     <label className="grid gap-1 text-sm font-semibold">Reference or receipt note <span className="font-normal opacity-65">Optional for cash</span>
       <input className="glass rounded-xl px-3 py-2.5" name="reference" maxLength={160} placeholder="Bank reference, transaction ID, or cash note" />
     </label>
-    <div className="flex items-end"><button className="btn-glass btn-glass-primary rounded-xl px-4 py-2.5 font-bold" disabled={busy || !selected}>{busy ? "Saving payment…" : "Record payment and issue receipt"}</button></div>
-    {selected && <p className="text-sm opacity-70 sm:col-span-2 lg:col-span-3">{selected.department ?? "Department unassigned"} · {selected.category === "new" ? "New student" : "Continuing student"} · Outstanding {currency}: {outstanding.toLocaleString()}</p>}
+    <div className="flex items-end"><button className="btn-glass btn-glass-primary rounded-xl px-4 py-2.5 font-bold" disabled={busy || !selected || !selected.hasFeeSchedule || !balances.length}>{busy ? "Saving payment…" : "Record payment and issue receipt"}</button></div>
+    {selected && (selected.hasFeeSchedule ? <p className="text-sm opacity-70 sm:col-span-2 lg:col-span-3">{selected.department ?? "Department unassigned"} · {selected.category === "new" ? "New student" : "Continuing student"} · Outstanding {currency}: {outstanding.toLocaleString()}</p> : <p className="text-sm text-amber-800 sm:col-span-2 lg:col-span-3">No fee schedule is set for this student yet. An admin or finance user must assign their language level and fees on the <a className="font-semibold underline" href="/finance/students">Student fees by language and level</a> page first.</p>)}
     {notice && <p role="status" className="text-sm text-emerald-700 sm:col-span-2 lg:col-span-3">{notice}</p>}
     {receiptUrl && <a className="text-sm font-semibold underline sm:col-span-2 lg:col-span-3" href={receiptUrl}>Download this receipt</a>}
     {error && <p role="alert" className="text-sm text-red-700 sm:col-span-2 lg:col-span-3">{error}</p>}
-    {!loadingStudents && !error && !students.length && <p className="text-sm opacity-70 sm:col-span-2 lg:col-span-3">No matching active or registered students with an outstanding balance were found.</p>}
+    {!loadingStudents && !error && !students.length && <p className="text-sm opacity-70 sm:col-span-2 lg:col-span-3">No matching active or registered students were found.</p>}
   </form>;
 }

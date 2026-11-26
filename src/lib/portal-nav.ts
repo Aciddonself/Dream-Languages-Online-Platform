@@ -54,6 +54,7 @@ const admin = build("/admin", {
   ],
   Finance: [
     ["weekly-cashbook", "Weekly cashbook", "🧾"],
+    ["student-fees", "Student fees by language", "🧮"],
     ["fee-structures", "Fee structures", "🏷️"],
     ["payments", "Payments", "💳"],
     ["holds", "Holds", "⏸️"],
@@ -170,6 +171,7 @@ const finance = build("/finance", {
   ],
   Finance: [
     ["fee-structures", "Fee structures", "🏷️"],
+    ["students", "Student fees by language", "🧮"],
     ["verification", "Payment verification queue", "🔍"],
     ["payments", "Record payment", "💳"],
     ["receipts", "Receipts", "🧾"],

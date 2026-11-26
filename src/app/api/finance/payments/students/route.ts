@@ -22,11 +22,13 @@ export async function GET(request: Request) {
     where prior_payment.student_id = ${users.id}
       and prior_payment.status = 'verified'
   )`;
+  const hasSchedule = sql`exists (select 1 from fee_schedules fs where fs.student_id = ${users.id})`;
+  const hasOutstanding = sql`exists (select 1 from fee_schedules fs where fs.student_id = ${users.id} and fs.amount > fs.paid)`;
   const conditions = [
     eq(users.role, "student"),
     inArray(users.status, ["active", "registered"]),
     isNull(users.deletedAt),
-    sql`${feeSchedules.amount} > ${feeSchedules.paid}`,
+    or(hasOutstanding, sql`not ${hasSchedule}`)!,
   ];
   if (departmentId === "unassigned") conditions.push(isNull(users.departmentId));
   else if (departmentId) conditions.push(eq(users.departmentId, departmentId));
@@ -49,10 +51,10 @@ export async function GET(request: Request) {
     registrationNumber: users.registrationNumber,
     department: departments.name,
     currency: feeSchedules.currency,
-    balance: sql<number>`sum(greatest(${feeSchedules.amount} - ${feeSchedules.paid}, 0))::bigint`,
+    balance: sql<number | null>`sum(greatest(${feeSchedules.amount} - ${feeSchedules.paid}, 0))::bigint`,
   }).from(users)
     .leftJoin(departments, eq(users.departmentId, departments.id))
-    .innerJoin(feeSchedules, eq(feeSchedules.studentId, users.id))
+    .leftJoin(feeSchedules, and(eq(feeSchedules.studentId, users.id), sql`${feeSchedules.amount} > ${feeSchedules.paid}`))
     .where(and(...conditions))
     .groupBy(users.id, users.displayName, users.firstName, users.lastName, users.email, users.registrationNumber, departments.name, feeSchedules.currency)
     .orderBy(asc(departments.name), asc(users.displayName), asc(users.registrationNumber), asc(feeSchedules.currency))
@@ -69,6 +71,7 @@ export async function GET(request: Request) {
     registrationNumber: string | null;
     department: string | null;
     category: "new" | "continuing";
+    hasFeeSchedule: boolean;
     balances: Map<string, number>;
   }>();
   for (const row of rows) {
@@ -78,9 +81,10 @@ export async function GET(request: Request) {
       registrationNumber: row.registrationNumber,
       department: row.department,
       category: priorPayerIds.has(row.id) ? "continuing" : "new",
+      hasFeeSchedule: row.currency !== null,
       balances: new Map<string, number>(),
     };
-    student.balances.set(row.currency, Number(row.balance));
+    if (row.currency && row.balance !== null) student.balances.set(row.currency, Number(row.balance));
     studentMap.set(row.id, student);
   }
   return NextResponse.json({ students: [...studentMap.values()].map((student) => ({ ...student, balances: [...student.balances].map(([currency, amount]) => ({ currency, amount })) })) }, {
