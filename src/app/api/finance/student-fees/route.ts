@@ -24,13 +24,17 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const input = parsed.data;
-  const outcome = await db.transaction(async (tx: any) => {
+  let outcome: { error: string; status: number } | { ok: true; scheduleId: string };
+  try {
+  outcome = await db.transaction(async (tx: any) => {
     const [student] = await tx.select({
       id: users.id, name: users.displayName, firstName: users.firstName, lastName: users.lastName,
       registrationNumber: users.registrationNumber, departmentId: users.departmentId, departmentName: departments.name,
       role: users.role, status: users.status,
     }).from(users).leftJoin(departments, eq(users.departmentId, departments.id))
-      .where(and(eq(users.id, input.studentId), eq(users.role, "student"), isNull(users.deletedAt))).for("update").limit(1);
+      // This is a read-only student lookup. PostgreSQL cannot lock the nullable
+      // side of a LEFT JOIN with FOR UPDATE.
+      .where(and(eq(users.id, input.studentId), eq(users.role, "student"), isNull(users.deletedAt))).limit(1);
     if (!student || !["active", "registered"].includes(student.status)) return { error: "Active or registered student account not found.", status: 404 as const };
     if (!student.departmentId) return { error: "Assign the student to a language department before setting fees.", status: 409 as const };
     const [level] = await tx.select({ id: levels.id, code: levels.code, name: levels.name, departmentId: levels.departmentId }).from(levels).where(eq(levels.id, input.levelId)).limit(1);
@@ -75,6 +79,11 @@ export async function POST(request: Request) {
     });
     return { ok: true as const, scheduleId };
   });
+  } catch (error) {
+    const reference = crypto.randomUUID();
+    console.error("Student fee schedule save failed", { reference, error });
+    return NextResponse.json({ error: "Could not save this fee schedule. Please try again or share reference " + reference + " with support.", reference }, { status: 500 });
+  }
   if ("error" in outcome) return NextResponse.json({ error: outcome.error }, { status: outcome.status });
   return NextResponse.json(outcome, { status: 201 });
 }
