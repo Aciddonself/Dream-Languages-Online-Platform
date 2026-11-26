@@ -173,7 +173,31 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
           <tbody>
             {all.map((u) => (
               <tr key={u.id} className="border-t border-white/10">
-                <td className="p-3"><span className="flex items-center gap-2">{["student", "applicant"].includes(u.role) && u.avatarStorageKey && <Image src={`/api/portal/profile-photo?userId=${u.id}`} alt={`${u.displayName ?? "Student"} passport photo`} width={40} height={48} unoptimized className="h-12 w-10 rounded object-cover" />}{u.displayName}</span>{u.role === "applicant" && <div className="max-w-xs text-xs opacity-65">{u.requestedIntake ? `Requested intake: ${u.requestedIntake} · ` : ""}{u.address ?? "Address missing"} · Next of kin: {u.nextOfKinName ?? "Not provided"} {u.nextOfKinPhone ?? ""} · {u.studyFormat?.replaceAll("_", " ") ?? "Format pending"} {u.studyDurationMonths === 0 ? "Full level" : u.studyDurationMonths ? `${u.studyDurationMonths} month(s)` : ""}</div>}</td>
+                <td className="min-w-[320px] p-3 align-top">
+                  <div className="flex items-start gap-3">
+                    {(["student", "applicant"].includes(u.role)) && (
+                      <div className="flex h-20 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--portal-surface-soft)]">
+                        {u.avatarStorageKey
+                          ? <Image src={`/api/portal/profile-photo?userId=${u.id}`} alt={`${u.displayName ?? "Student"} passport photo`} width={64} height={80} unoptimized className="h-full w-full object-contain" />
+                          : <span className="px-1 text-center text-[10px] opacity-60">No photo</span>}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold leading-tight">{u.displayName}</p>
+                      {u.role === "applicant" && (
+                        <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                          <div className="min-w-0"><dt className="font-semibold opacity-60">Requested intake</dt><dd className="break-words">{u.requestedIntake ?? "Not selected"}</dd></div>
+                          <div className="min-w-0"><dt className="font-semibold opacity-60">Phone</dt><dd className="break-words">{u.phone ?? "Not provided"}</dd></div>
+                          <div className="min-w-0"><dt className="font-semibold opacity-60">Next of kin</dt><dd className="break-words">{u.nextOfKinName ?? "Not provided"}</dd></div>
+                          <div className="min-w-0"><dt className="font-semibold opacity-60">Next of kin phone</dt><dd className="break-words">{u.nextOfKinPhone ?? "Not provided"}</dd></div>
+                          <div className="min-w-0"><dt className="font-semibold opacity-60">Study plan</dt><dd className="break-words">{u.studyFormat?.replaceAll("_", " ") ?? "Not selected"}</dd></div>
+                          <div className="min-w-0"><dt className="font-semibold opacity-60">Duration</dt><dd>{u.studyDurationMonths === 0 ? "Full level" : u.studyDurationMonths ? `${u.studyDurationMonths} month(s)` : "Not selected"}</dd></div>
+                          <div className="col-span-2 min-w-0"><dt className="font-semibold opacity-60">Address</dt><dd className="break-words">{u.address ?? "Not provided"}</dd></div>
+                        </dl>
+                      )}
+                    </div>
+                  </div>
+                </td>
                 <td className="p-3 font-mono text-xs">{u.registrationNumber ?? "Not assigned"}</td>
                 <td className="p-3">{u.departmentName ?? <span className="opacity-50">Not assigned</span>}</td>
                 <td className="p-3">{(u.role === "teacher" || u.role === "student") && u.status !== "archived"
