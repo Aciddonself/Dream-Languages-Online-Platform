@@ -8,6 +8,13 @@ import { prepareProfilePhoto } from "@/lib/prepare-profile-photo";
 
 type DepartmentOption = { id: string; name: string };
 type ClassOption = { id: string; name: string; departmentId: string | null; departmentName: string | null; teacherId: string | null };
+const teachingLevelOptions = [
+  { value: "A1", label: "A1 only" }, { value: "A2", label: "A2 only" },
+  { value: "B1", label: "B1 only" }, { value: "B2", label: "B2 only" },
+  { value: "C1", label: "C1 only" }, { value: "C2", label: "C2 only" },
+  { value: "A1-A2", label: "A1–A2 range" }, { value: "B1-B2", label: "B1–B2 range" },
+  { value: "C1-C2", label: "C1–C2 range" }, { value: "GENERAL", label: "General · all levels" },
+];
 
 export function AdminUserCreate({ canCreateAdmin = false, departments = [], classes = [] }: { canCreateAdmin?: boolean; departments?: DepartmentOption[]; classes?: ClassOption[] }) {
   const router = useRouter();
@@ -20,7 +27,7 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
     role: "student",
     departmentId: "",
     classId: "",
-    teachingLevel: "",
+    teachingLevels: [] as string[],
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -30,10 +37,20 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
     event.preventDefault();
     setError("");
     setSuccess("");
+    if (form.role === "teacher" && !form.teachingLevels.length) {
+      const text = "Choose at least one teaching level or range.";
+      setError(text);
+      toast.error(text);
+      return;
+    }
     setLoading(true);
     try {
       const payload = new FormData();
-      for (const [key, value] of Object.entries(form)) payload.set(key, value);
+      for (const [key, value] of Object.entries(form)) {
+        if (key === "teachingLevels") continue;
+        payload.set(key, value);
+      }
+      for (const level of form.teachingLevels) payload.append("teachingLevel", level);
       const photo = photoInput.current?.files?.[0];
       if (photo) payload.set("profilePhoto", await prepareProfilePhoto(photo));
       const response = await fetch("/api/admin/users", {
@@ -56,7 +73,7 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
         : `${roleLabel} ${name} created successfully.`;
       setSuccess(message);
       toast.success(message);
-      setForm({ email: "", password: "", firstName: "", lastName: "", role: "student", departmentId: "", classId: "", teachingLevel: "" });
+      setForm({ email: "", password: "", firstName: "", lastName: "", role: "student", departmentId: "", classId: "", teachingLevels: [] });
       if (photoInput.current) photoInput.current.value = "";
       router.refresh();
     } catch (createError) {
@@ -70,6 +87,14 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
 
   const needsLanguage = ["student", "applicant", "teacher"].includes(form.role);
   const availableClasses = classes.filter((schoolClass) => schoolClass.departmentId === form.departmentId);
+
+  function toggleTeachingLevel(value: string) {
+    setForm((current) => {
+      if (value === "GENERAL") return { ...current, teachingLevels: current.teachingLevels.includes("GENERAL") ? [] : ["GENERAL"] };
+      const withoutGeneral = current.teachingLevels.filter((level) => level !== "GENERAL");
+      return { ...current, teachingLevels: withoutGeneral.includes(value) ? withoutGeneral.filter((level) => level !== value) : [...withoutGeneral, value] };
+    });
+  }
 
   return (
     <div className="admin-user-create-scroll -mx-4 overflow-x-auto px-4 pb-3" role="region" aria-label="Add user form. Scroll horizontally to see all fields." tabIndex={0}>
@@ -92,7 +117,7 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
         </label>
         <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
           <span>Account role</span>
-          <select className="glass min-w-0 w-full px-3 py-2.5" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, departmentId: "", classId: "", teachingLevel: "" })}>
+          <select className="glass min-w-0 w-full px-3 py-2.5" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, departmentId: "", classId: "", teachingLevels: [] })}>
             <option value="student">Student</option>
             <option value="applicant">Applicant</option>
             <option value="teacher">Teacher</option>
@@ -112,7 +137,7 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
           <select
             className="glass min-w-0 w-full px-3 py-2.5"
             value={form.departmentId}
-            onChange={(event) => setForm({ ...form, departmentId: event.target.value, classId: "" })}
+            onChange={(event) => setForm({ ...form, departmentId: event.target.value, classId: "", teachingLevels: [] })}
             required={needsLanguage}
           >
             <option value="">Choose a language department</option>
@@ -120,15 +145,14 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
           </select>
         </label>
         {form.role === "teacher" && (
-          <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
-            <span>Teaching level <span className="font-normal">(required)</span></span>
-            <select className="glass min-w-0 w-full px-3 py-2.5" value={form.teachingLevel} onChange={(event) => setForm({ ...form, teachingLevel: event.target.value })} required disabled={!form.departmentId}>
-              <option value="">{form.departmentId ? "Choose a level" : "Choose a language first"}</option>
-              {["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => <option key={level} value={level}>{level}</option>)}
-              <option value="GENERAL">General · all levels</option>
-            </select>
-            <span className="text-xs font-normal opacity-70">General assigns this teacher to every level in the selected language department.</span>
-          </label>
+          <fieldset className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-1 rounded-xl border border-[var(--border)] p-3 text-sm sm:col-span-2">
+            <legend className="px-1 font-semibold">Teaching levels and ranges <span className="font-normal">(choose one or more)</span></legend>
+            {teachingLevelOptions.map((option) => <label key={option.value} className="flex items-center gap-2 font-medium">
+              <input type="checkbox" checked={form.teachingLevels.includes(option.value)} onChange={() => toggleTeachingLevel(option.value)} disabled={!form.departmentId} />
+              <span>{option.label}</span>
+            </label>)}
+            <span className="text-xs font-normal opacity-70 sm:col-span-2">Select any combination of levels or ranges. General covers every level in the selected language department.</span>
+          </fieldset>
         )}
         {form.role === "student" && (
           <label className="grid min-w-0 gap-1.5 text-sm font-semibold">

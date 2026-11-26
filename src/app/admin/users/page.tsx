@@ -68,14 +68,9 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
     assignments.add(code);
     teacherLevelAssignments.set(assignmentKey, assignments);
   }
-  const assignedLevelByTeacher = new Map<string, string>();
-  const assignedLevelSummaryByTeacher = new Map<string, string>();
+  const assignedLevelCodesByTeacher = new Map<string, string[]>();
   for (const [assignmentKey, assignedLevels] of teacherLevelAssignments) {
-    if (levelCodes.every((code) => assignedLevels.has(code))) assignedLevelByTeacher.set(assignmentKey, "GENERAL");
-    else if (assignedLevels.size === 1) assignedLevelByTeacher.set(assignmentKey, [...assignedLevels][0]);
-    if (assignedLevels.size > 1 && !levelCodes.every((code) => assignedLevels.has(code))) {
-      assignedLevelSummaryByTeacher.set(assignmentKey, [...assignedLevels].join(", "));
-    }
+    assignedLevelCodesByTeacher.set(assignmentKey, levelCodes.filter((code) => assignedLevels.has(code)));
   }
   const filters = [
     includeArchived ? undefined : isNull(users.deletedAt),
@@ -201,7 +196,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                 <td className="p-3 font-mono text-xs">{u.registrationNumber ?? "Not assigned"}</td>
                 <td className="p-3">{u.departmentName ?? <span className="opacity-50">Not assigned</span>}</td>
                 <td className="p-3">{(u.role === "teacher" || u.role === "student") && u.status !== "archived"
-                  ? <AdminUserClassAssignment userId={u.id} role={u.role} departmentId={u.departmentId} assignedClassId={u.role === "student" ? classByStudent.get(u.id) ?? "" : ""} assignedLevelCode={u.role === "teacher" ? assignedLevelByTeacher.get(`${u.id}:${u.departmentId ?? ""}`) ?? "" : ""} assignedLevelSummary={u.role === "teacher" ? assignedLevelSummaryByTeacher.get(`${u.id}:${u.departmentId ?? ""}`) ?? "" : ""} departments={languageDepartments} classes={classOptions} />
+                  ? <AdminUserClassAssignment userId={u.id} role={u.role} departmentId={u.departmentId} assignedClassId={u.role === "student" ? classByStudent.get(u.id) ?? "" : ""} assignedLevelCodes={u.role === "teacher" ? assignedLevelCodesByTeacher.get(`${u.id}:${u.departmentId ?? ""}`) ?? [] : []} departments={languageDepartments} classes={classOptions} />
                   : <span className="opacity-50">Not applicable</span>}</td>
                 <td className="p-3 opacity-70">{u.email}</td>
                         <td className="p-3">

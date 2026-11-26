@@ -16,9 +16,10 @@ import { sendEmail } from "@/lib/email";
 import { getCourseTuition } from "@/lib/course-pricing";
 
 const COURSE_LEVEL_CODES = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
-type TeachingLevel = typeof COURSE_LEVEL_CODES[number] | "GENERAL";
+const TEACHING_SELECTION_CODES = ["A1", "A2", "B1", "B2", "C1", "C2", "A1-A2", "B1-B2", "C1-C2", "GENERAL"] as const;
+type TeachingSelection = typeof TEACHING_SELECTION_CODES[number];
 
-async function assignTeacherLevels(tx: any, teacherId: string, departmentId: string, selection: TeachingLevel) {
+async function assignTeacherLevels(tx: any, teacherId: string, departmentId: string, selections: TeachingSelection[]) {
   const [department] = await tx.select({ id: departments.id, name: departments.name })
     .from(departments)
     .where(and(eq(departments.id, departmentId), eq(departments.isLanguage, true), isNull(departments.deletedAt)))
@@ -35,7 +36,12 @@ async function assignTeacherLevels(tx: any, teacherId: string, departmentId: str
     if (createdLevel) levelsByCode.set(code, createdLevel);
   }
 
-  const selectedCodes = selection === "GENERAL" ? [...COURSE_LEVEL_CODES] : [selection];
+  const selectedCodes = selections.includes("GENERAL") ? [...COURSE_LEVEL_CODES] : [...new Set(selections.flatMap((selection) => {
+    if (selection === "A1-A2") return ["A1", "A2"];
+    if (selection === "B1-B2") return ["B1", "B2"];
+    if (selection === "C1-C2") return ["C1", "C2"];
+    return [selection];
+  }))];
   const allClasses = await tx.select({ id: classes.id, name: classes.name, levelId: classes.levelId, teacherId: classes.teacherId })
     .from(classes).where(and(eq(classes.departmentId, department.id), isNull(classes.deletedAt))).for("update");
 
@@ -55,8 +61,9 @@ async function assignTeacherLevels(tx: any, teacherId: string, departmentId: str
     if (!level) throw Object.assign(new Error(`Level ${code} is unavailable for ${department.name}.`), { code: "TEACHING_LEVEL_MISSING" });
     const matchingClasses = (allClasses as Array<{ id: string; name: string; levelId: string | null; teacherId: string | null }>)
       .filter((schoolClass) => schoolClass.levelId === level.id);
-    if (matchingClasses.length) {
-      targetClasses.push(...matchingClasses.map(({ id, name, teacherId }) => ({ id, name, teacherId })));
+    const availableClasses = matchingClasses.filter((schoolClass) => schoolClass.teacherId === teacherId || !schoolClass.teacherId);
+    if (availableClasses.length) {
+      targetClasses.push(...availableClasses.map(({ id, name, teacherId }) => ({ id, name, teacherId })));
     } else {
       const [createdClass] = await tx.insert(classes).values({
         name: `${department.name} ${code}`,
@@ -64,19 +71,6 @@ async function assignTeacherLevels(tx: any, teacherId: string, departmentId: str
         levelId: level.id,
       }).returning({ id: classes.id, name: classes.name, teacherId: classes.teacherId });
       if (createdClass) targetClasses.push(createdClass);
-    }
-  }
-
-  const otherTeacherIds = [...new Set(targetClasses.flatMap((schoolClass) => schoolClass.teacherId && schoolClass.teacherId !== teacherId ? [schoolClass.teacherId] : []))];
-  if (otherTeacherIds.length) {
-    const activeTeachers = await tx.select({ id: users.id }).from(users).where(and(
-      inArray(users.id, otherTeacherIds), eq(users.role, "teacher"), ne(users.status, "archived"), isNull(users.deletedAt),
-    ));
-    const activeTeacherIds = new Set(activeTeachers.map((teacher: { id: string }) => teacher.id));
-    const conflict = targetClasses.find((schoolClass) => schoolClass.teacherId && activeTeacherIds.has(schoolClass.teacherId));
-    if (conflict) {
-      const code = conflict.name.match(/(?:^|[^A-Z0-9])(A1|A2|B1|B2|C1|C2)(?=$|[^A-Z0-9])/i)?.[1]?.toUpperCase();
-      throw Object.assign(new Error(`${code ?? "One selected level"} already has an active teacher. Reassign that teacher or choose another level.`), { code: "TEACHING_LEVEL_TAKEN" });
     }
   }
 
@@ -103,7 +97,7 @@ const createUserSchema = z.object({
   role: z.enum(["admin", "head_academics", "teacher", "finance", "student", "applicant"]),
   departmentId: z.string().uuid().optional().or(z.literal("")),
   classId: z.string().uuid().optional().or(z.literal("")),
-  teachingLevel: z.enum(["A1", "A2", "B1", "B2", "C1", "C2", "GENERAL"]).optional().or(z.literal("")),
+  teachingLevels: z.array(z.enum(TEACHING_SELECTION_CODES)).optional(),
 }).strict();
 
 /** Creates (or updates) the Supabase Auth identity for a profile row. Returns the auth user id. */
@@ -156,13 +150,16 @@ async function createUserRequest(req: Request) {
   } catch {
     return NextResponse.json({ error: "Could not read the new user form" }, { status: 400 });
   }
-  const body = Object.fromEntries(["email", "password", "firstName", "lastName", "role", "departmentId", "classId", "teachingLevel"].map((key) => [key, form.get(key)]));
+  const body = {
+    ...Object.fromEntries(["email", "password", "firstName", "lastName", "role", "departmentId", "classId"].map((key) => [key, form.get(key)])),
+    teachingLevels: form.getAll("teachingLevel"),
+  };
   const parsed = createUserSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { email, password, firstName, lastName, role, departmentId, classId, teachingLevel } = parsed.data;
+  const { email, password, firstName, lastName, role, departmentId, classId, teachingLevels = [] } = parsed.data;
   let selectedClass: { id: string; teacherId: string | null; departmentId: string | null } | undefined;
   if (role === "student") {
     if (!classId) return NextResponse.json({ error: "Choose the class this student will join." }, { status: 400 });
@@ -175,10 +172,10 @@ async function createUserRequest(req: Request) {
   } else if (classId) {
     return NextResponse.json({ error: "Only a student account is assigned to an enrolled class during creation." }, { status: 400 });
   }
-  if (role === "teacher" && !teachingLevel) {
-    return NextResponse.json({ error: "Choose A1, A2, B1, B2, C1, C2, or General for this teacher." }, { status: 400 });
+  if (role === "teacher" && !teachingLevels.length) {
+    return NextResponse.json({ error: "Choose one or more levels or ranges for this teacher." }, { status: 400 });
   }
-  if (role !== "teacher" && teachingLevel) {
+  if (role !== "teacher" && teachingLevels.length) {
     return NextResponse.json({ error: "A teaching level can only be selected for a teacher account." }, { status: 400 });
   }
   if (["student", "applicant", "teacher"].includes(role) && !departmentId) {
@@ -235,8 +232,8 @@ async function createUserRequest(req: Request) {
         })
         .onConflictDoNothing()
         .returning({ id: users.id, email: users.email, role: users.role, registrationNumber: users.registrationNumber });
-      if (createdUser && role === "teacher" && teachingLevel) {
-        await assignTeacherLevels(tx, createdUser.id, departmentId!, teachingLevel as TeachingLevel);
+      if (createdUser && role === "teacher" && teachingLevels.length) {
+        await assignTeacherLevels(tx, createdUser.id, departmentId!, teachingLevels);
       }
       if (createdUser && role === "student" && selectedClass) {
         await tx.insert(enrolments).values({ studentId: createdUser.id, classId: selectedClass.id, status: "active" }).onConflictDoNothing();
@@ -298,7 +295,8 @@ async function updateUserRequest(req: Request) {
     z.object({ userId: z.string().uuid(), action: z.literal("set_class"), classId: z.string().uuid() }),
     z.object({
       userId: z.string().uuid(), action: z.literal("set_teacher_level"), departmentId: z.string().uuid(),
-      teachingLevel: z.enum(["A1", "A2", "B1", "B2", "C1", "C2", "GENERAL"]),
+      teachingLevels: z.array(z.enum(TEACHING_SELECTION_CODES)).optional(),
+      teachingLevel: z.enum(TEACHING_SELECTION_CODES).optional(),
     }),
     z.object({
       userId: z.string().uuid(), action: z.literal("edit_profile"),
@@ -326,9 +324,11 @@ async function updateUserRequest(req: Request) {
     const [account] = await db.select().from(users).where(eq(users.id, action.userId)).limit(1);
     if (!account || account.deletedAt || account.status === "archived") return NextResponse.json({ error: "Active teacher account not found." }, { status: 404 });
     if (account.role !== "teacher") return NextResponse.json({ error: "Teaching levels can only be assigned to a teacher account." }, { status: 400 });
+    const teachingSelections = action.teachingLevels?.length ? action.teachingLevels : action.teachingLevel ? [action.teachingLevel] : [];
+    if (!teachingSelections.length) return NextResponse.json({ error: "Choose one or more levels or ranges for this teacher." }, { status: 400 });
     try {
       const assigned = await db.transaction(async (tx: any) => {
-        const result = await assignTeacherLevels(tx, account.id, action.departmentId, action.teachingLevel);
+        const result = await assignTeacherLevels(tx, account.id, action.departmentId, teachingSelections);
         await tx.insert(auditLogs).values({
           actorId: actor.id,
           action: "assign_teacher_levels",

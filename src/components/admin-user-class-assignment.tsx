@@ -5,13 +5,33 @@ import { useRouter } from "next/navigation";
 
 type ClassOption = { id: string; name: string; departmentId: string | null; departmentName: string | null; teacherId: string | null };
 type DepartmentOption = { id: string; name: string };
+const courseLevels = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const levelSelections = [
+  { value: "A1", label: "A1 only" }, { value: "A2", label: "A2 only" },
+  { value: "B1", label: "B1 only" }, { value: "B2", label: "B2 only" },
+  { value: "C1", label: "C1 only" }, { value: "C2", label: "C2 only" },
+  { value: "A1-A2", label: "A1–A2 range" }, { value: "B1-B2", label: "B1–B2 range" },
+  { value: "C1-C2", label: "C1–C2 range" }, { value: "GENERAL", label: "General · all levels" },
+];
+
+function selectionsFromAssignedCodes(codes: string[]) {
+  const selected = new Set(codes.map((code) => code.toUpperCase()));
+  if (courseLevels.every((code) => selected.has(code))) return ["GENERAL"];
+  const result: string[] = [];
+  for (const [range, pair] of [["A1-A2", ["A1", "A2"]], ["B1-B2", ["B1", "B2"]], ["C1-C2", ["C1", "C2"]]] as const) {
+    if (pair.every((code) => selected.has(code))) {
+      result.push(range);
+      pair.forEach((code) => selected.delete(code));
+    }
+  }
+  return [...result, ...courseLevels.filter((code) => selected.has(code))];
+}
 
 export function AdminUserClassAssignment({
   userId,
   role,
   assignedClassId,
-  assignedLevelCode = "",
-  assignedLevelSummary = "",
+  assignedLevelCodes = [],
   departmentId,
   departments,
   classes,
@@ -19,8 +39,7 @@ export function AdminUserClassAssignment({
   userId: string;
   role: "student" | "teacher";
   assignedClassId: string;
-  assignedLevelCode?: string;
-  assignedLevelSummary?: string;
+  assignedLevelCodes?: string[];
   departmentId: string | null;
   departments: DepartmentOption[];
   classes: ClassOption[];
@@ -28,9 +47,10 @@ export function AdminUserClassAssignment({
   const router = useRouter();
   const [selectedDepartment, setSelectedDepartment] = useState(departmentId ?? "");
   const [selectedClass, setSelectedClass] = useState(assignedClassId);
-  const [selectedLevel, setSelectedLevel] = useState(assignedLevelCode);
+  const [selectedLevels, setSelectedLevels] = useState(() => selectionsFromAssignedCodes(assignedLevelCodes));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const assignedLevelCodesKey = assignedLevelCodes.join(",");
   const options = classes.filter((schoolClass) =>
     schoolClass.departmentId === selectedDepartment,
   );
@@ -38,8 +58,16 @@ export function AdminUserClassAssignment({
   useEffect(() => {
     setSelectedDepartment(departmentId ?? "");
     setSelectedClass(assignedClassId);
-    setSelectedLevel(assignedLevelCode);
-  }, [assignedClassId, assignedLevelCode, departmentId]);
+    setSelectedLevels(selectionsFromAssignedCodes(assignedLevelCodesKey ? assignedLevelCodesKey.split(",") : []));
+  }, [assignedClassId, assignedLevelCodesKey, departmentId]);
+
+  function toggleLevel(value: string) {
+    setSelectedLevels((current) => {
+      if (value === "GENERAL") return current.includes(value) ? [] : [value];
+      const withoutGeneral = current.filter((level) => level !== "GENERAL");
+      return withoutGeneral.includes(value) ? withoutGeneral.filter((level) => level !== value) : [...withoutGeneral, value];
+    });
+  }
 
   async function save() {
     setSaving(true);
@@ -49,13 +77,13 @@ export function AdminUserClassAssignment({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(role === "teacher"
-          ? { action: "set_teacher_level", userId, departmentId: selectedDepartment, teachingLevel: selectedLevel }
+          ? { action: "set_teacher_level", userId, departmentId: selectedDepartment, teachingLevels: selectedLevels }
           : { action: "set_class", userId, classId: selectedClass }),
       });
       const result = await response.json().catch(() => ({})) as { error?: string; levelCodes?: string[] };
       if (!response.ok) throw new Error(result.error ?? `Could not assign class (HTTP ${response.status}).`);
       setMessage(role === "teacher"
-        ? `Teacher assigned to ${selectedLevel === "GENERAL" ? "all levels" : selectedLevel}${result.levelCodes?.length ? ` (${result.levelCodes.join(", ")})` : ""}.`
+        ? `Teacher assigned to ${result.levelCodes?.join(", ") || "selected levels"}.`
         : "Department and class assignment saved.");
       router.refresh();
     } catch (error) {
@@ -78,18 +106,14 @@ export function AdminUserClassAssignment({
       </select>
       {role === "teacher" ? (
         <>
-          <select
-            className="glass rounded-lg px-2 py-2 text-xs"
-            aria-label="Assigned teaching level"
-            value={selectedLevel}
-            disabled={!selectedDepartment}
-            onChange={(event) => { setSelectedLevel(event.target.value); setMessage(""); }}
-          >
-            <option value="">{selectedDepartment ? "Choose a level" : "Choose a department first"}</option>
-            {["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => <option key={level} value={level}>{level}</option>)}
-            <option value="GENERAL">General · all levels</option>
-          </select>
-          {assignedLevelSummary && <span className="text-xs opacity-70">Currently assigned to {assignedLevelSummary}. Saving a level replaces that teacher’s current level assignments.</span>}
+          <fieldset className="grid grid-cols-2 gap-x-2 gap-y-1 rounded-lg border border-[var(--border)] p-2 text-xs" disabled={!selectedDepartment}>
+            <legend className="px-1">Teaching levels / ranges</legend>
+            {levelSelections.map((option) => <label key={option.value} className="flex items-center gap-1.5">
+              <input type="checkbox" checked={selectedLevels.includes(option.value)} onChange={() => { toggleLevel(option.value); setMessage(""); }} />
+              <span>{option.label}</span>
+            </label>)}
+          </fieldset>
+          <span className="text-xs opacity-70">Currently assigned to {assignedLevelCodes.length ? assignedLevelCodes.join(", ") : "no levels"}. General covers all levels in this language.</span>
         </>
       ) : (
         <select
@@ -107,7 +131,7 @@ export function AdminUserClassAssignment({
         type="button"
         onClick={() => void save()}
         disabled={saving || (role === "teacher"
-          ? !selectedLevel || (selectedLevel === assignedLevelCode && selectedDepartment === (departmentId ?? ""))
+          ? !selectedDepartment || !selectedLevels.length
           : !selectedClass || selectedClass === assignedClassId)}
         className="glass w-fit rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-45"
       >
