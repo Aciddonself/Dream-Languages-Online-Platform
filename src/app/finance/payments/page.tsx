@@ -1,8 +1,8 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, or, sql } from "drizzle-orm";
 import Link from "next/link";
 import { requireRole } from "@/lib/rbac";
 import { db } from "@/db";
-import { departments, feeSchedules, payments, users } from "@/db/schema";
+import { departments, payments, users } from "@/db/schema";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { PaymentReviewControls } from "@/components/payment-review-controls";
@@ -29,33 +29,46 @@ export default async function FinancePaymentsPage({ searchParams }: { searchPara
     departmentName: departments.name,
   }).from(payments).leftJoin(users, eq(payments.studentId, users.id)).leftJoin(departments, eq(users.departmentId, departments.id))
     .where(departmentId === "unassigned" ? isNull(users.departmentId) : departmentId ? eq(users.departmentId, departmentId) : undefined).orderBy(desc(payments.createdAt)).limit(250);
-  const studentRows = await db.select({
-    id: users.id, name: users.displayName, firstName: users.firstName, lastName: users.lastName,
-    email: users.email, registrationNumber: users.registrationNumber, department: departments.name,
-    amount: feeSchedules.amount, paid: feeSchedules.paid, currency: feeSchedules.currency,
-  }).from(users).leftJoin(departments, eq(users.departmentId, departments.id))
-    .leftJoin(feeSchedules, eq(feeSchedules.studentId, users.id))
-    .where(and(eq(users.role, "student"), isNull(users.deletedAt))).orderBy(asc(departments.name), asc(users.displayName)).limit(2000);
-  const studentMap = new Map<string, { id: string; name: string; registrationNumber: string | null; department: string | null; balances: Map<string, number> }>();
-  for (const row of studentRows) {
-    const current = studentMap.get(row.id) ?? {
-      id: row.id,
-      name: row.name || [row.firstName, row.lastName].filter(Boolean).join(" ") || row.email,
-      registrationNumber: row.registrationNumber,
-      department: row.department,
-      balances: new Map<string, number>(),
-    };
-    if (row.amount !== null && row.paid !== null && row.currency && row.amount > row.paid) {
-      current.balances.set(row.currency, (current.balances.get(row.currency) ?? 0) + row.amount - row.paid);
-    }
-    studentMap.set(row.id, current);
+  const departmentCollections = await db.select({
+    departmentId: departments.id,
+    departmentName: departments.name,
+    currency: payments.currency,
+    amount: sql<number>`coalesce(sum(${payments.amount}), 0)::bigint`,
+  }).from(payments)
+    .innerJoin(users, eq(payments.studentId, users.id))
+    .leftJoin(departments, eq(users.departmentId, departments.id))
+    .where(and(eq(payments.status, "verified"), or(eq(departments.isLanguage, true), isNull(departments.id))))
+    .groupBy(departments.id, departments.name, payments.currency)
+    .orderBy(asc(departments.name), asc(payments.currency));
+  const languageTotalsByCurrency = new Map<string, number>();
+  const unassignedTotalsByCurrency = new Map<string, number>();
+  for (const row of departmentCollections) {
+    const totals = row.departmentId ? languageTotalsByCurrency : unassignedTotalsByCurrency;
+    totals.set(row.currency, (totals.get(row.currency) ?? 0) + Number(row.amount));
   }
-  const manualPaymentStudents = [...studentMap.values()].map((student) => ({ ...student, balances: [...student.balances].map(([currency, amount]) => ({ currency, amount })) })).filter((student) => student.balances.length > 0);
 
   return <PortalShell title="Payment Verification" nav={nav}>
     <h1 className="display-font mb-2 text-3xl font-bold">Payment Verification</h1>
     <p className="mb-5 text-sm opacity-70">Verify reported transfers to credit the student&apos;s fee balance, or reject them with a reason.</p>
-    <div className="mb-6"><FinanceManualPaymentForm students={manualPaymentStudents} /></div>
+    <GlassCard className="mb-6 p-5">
+      <h2 className="font-semibold">Fees collected by language department</h2>
+      <p className="mb-4 mt-1 text-sm opacity-65">All time totals from verified payments, including payments recorded manually and online.</p>
+      {departmentCollections.length ? <>
+        <div className="space-y-2">
+          {departmentCollections.map((row) => <div key={`${row.departmentId ?? "unassigned"}-${row.currency}`} className="flex flex-wrap justify-between gap-2 rounded-xl border border-[var(--border)] p-3 text-sm">
+            <span>{row.departmentName ?? "Department unassigned"}</span><strong>{row.currency} {Number(row.amount).toLocaleString()}</strong>
+          </div>)}
+        </div>
+        <div className="mt-4 border-t border-[var(--border)] pt-3">
+          <div className="text-xs font-semibold uppercase opacity-60">Total collected across language departments</div>
+          <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-lg font-bold text-[var(--success)]">
+            {[...languageTotalsByCurrency].map(([currency, amount]) => <span key={currency}>{currency} {amount.toLocaleString()}</span>)}
+          </div>
+          {unassignedTotalsByCurrency.size > 0 && <p className="mt-2 text-xs opacity-65">Department unassigned: {[...unassignedTotalsByCurrency].map(([currency, amount]) => `${currency} ${amount.toLocaleString()}`).join(" · ")}. This is shown separately and is not included in the language totals.</p>}
+        </div>
+      </> : <p className="text-sm opacity-65">No verified payments have been collected yet.</p>}
+    </GlassCard>
+    <div className="mb-6"><FinanceManualPaymentForm departments={languageDepartments} /></div>
     <form method="get" className="mb-5 flex flex-wrap gap-2">
       <select name="departmentId" defaultValue={departmentId} className="glass min-w-56 px-3 py-2.5">
         <option value="">All language departments</option>
