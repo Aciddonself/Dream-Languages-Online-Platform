@@ -4,6 +4,8 @@ import { StudentRecordingList } from "@/components/student-recording-list";
 import { db } from "@/db";
 import { classes, classRecordings, enrolments } from "@/db/schema";
 import { requireRole } from "@/lib/rbac";
+import { StudentFeeAccessNotice } from "@/components/student-fee-access-notice";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,8 @@ const nav = [
 
 export default async function StudentRecordingsPage() {
   const user = await requireRole(["student"]);
+  const financeAccess = await getStudentFinanceAccess(user.id);
+  if (!financeAccess.canLearn) return <PortalShell title="Student Portal" nav={nav}><StudentFeeAccessNotice hasFeeSchedule={financeAccess.balanceByCurrency.length > 0} balances={financeAccess.balanceByCurrency} /></PortalShell>;
   const enrolled = await db.select({ id: enrolments.classId }).from(enrolments).where(and(eq(enrolments.studentId, user.id), eq(enrolments.status, "active")));
   const classIds = enrolled.map((item) => item.id);
   const recordings = classIds.length ? await db.select({ id: classRecordings.id, title: classRecordings.title, description: classRecordings.description, fileName: classRecordings.fileName, createdAt: classRecordings.createdAt, className: classes.name })

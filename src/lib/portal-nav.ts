@@ -53,6 +53,7 @@ const admin = build("/admin", {
     ["materials", "Learning materials library", "📄"],
   ],
   Finance: [
+    ["weekly-cashbook", "Weekly cashbook", "🧾"],
     ["fee-structures", "Fee structures", "🏷️"],
     ["payments", "Payments", "💳"],
     ["holds", "Holds", "⏸️"],

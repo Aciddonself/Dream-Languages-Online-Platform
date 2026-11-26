@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { classes, classRecordings, enrolments } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { createMaterialDownload } from "@/lib/class-material-storage";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ rec
   const [recording] = await db.select().from(classRecordings).where(eq(classRecordings.id, recordingId)).limit(1);
   if (!recording?.storagePath || !recording.uploadComplete) return NextResponse.json({ error: "Recording not found" }, { status: 404 });
   if (user.role === "student") {
+    const financeAccess = await getStudentFinanceAccess(user.id);
+    if (!financeAccess.canLearn) return NextResponse.json({ error: "Clear your fees or ask an administrator to record an access exception before viewing class recordings" }, { status: 403 });
     const [enrolment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(
       eq(enrolments.studentId, user.id), eq(enrolments.classId, recording.classId), eq(enrolments.status, "active"),
     )).limit(1);

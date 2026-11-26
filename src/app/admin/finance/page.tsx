@@ -60,7 +60,8 @@ export default async function AdminFinance() {
         <div className="flex flex-wrap gap-3">{[
           ["Fee structures", "/admin/fee-structures"], ["Payments", "/admin/payments"], ["Holds", "/admin/holds"],
           ["Receipts", "/admin/receipts"], ["Refunds", "/admin/refunds"], ["Debtors", "/admin/debtors"],
-          ["Payment settings", "/admin/payment-settings"],
+          ["Payment settings", "/admin/payment-settings"], ["Weekly cashbook", "/finance/weekly-cashbook"],
+          ["Fee access exceptions", "/finance/student-access"],
         ].map(([label, href]) => <Link key={href} href={href} className="btn-glass px-4 py-2">{label}</Link>)}</div>
       </GlassCard>
     </PortalShell>

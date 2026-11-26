@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { departments, examAttempts, exams, results, users } from "@/db/schema";
+import { classes, departments, examAttempts, exams, results, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { createTextPdf, readDlaLogoJpeg, readProfilePhotoJpeg, type PdfStamp } from "@/lib/pdf";
 
@@ -22,7 +22,7 @@ export async function GET(
   let lines: string[];
 
   if (document === "admission") {
-    title = "DLA Admission and Registration Form";
+    title = "DLA Student Registration Form";
     const [admissionProfile] = await db
       .select({ departmentName: departments.name })
       .from(users)
@@ -47,9 +47,6 @@ export async function GET(
     if (user.role !== "student") {
       return NextResponse.json({ error: "Results are available after student enrolment" }, { status: 403 });
     }
-    if (!user.documentStampedAt || !user.documentStamperName || !user.documentStamperTitle) {
-      return NextResponse.json({ error: "Your report cards are waiting for an official administrator or Head of Academics stamp." }, { status: 409 });
-    }
     title = document === "test-report"
       ? "Dream Languages Uganda Test Report Card"
       : document === "final-report"
@@ -64,7 +61,9 @@ export async function GET(
     const [publishedResults, submittedAttempts] = await Promise.all([
       db
         .select({
-          title: exams.title,
+      title: exams.title,
+      className: classes.name,
+      departmentName: departments.name,
           score: results.score,
           grade: results.grade,
           comments: results.comments,
@@ -74,6 +73,8 @@ export async function GET(
         })
         .from(results)
         .innerJoin(exams, eq(results.examId, exams.id))
+        .innerJoin(classes, eq(exams.classId, classes.id))
+        .leftJoin(departments, eq(classes.departmentId, departments.id))
         .where(and(...resultFilters)),
       db
         .select({ title: exams.title, score: examAttempts.score, status: examAttempts.status, submittedAt: examAttempts.submittedAt })
@@ -82,15 +83,20 @@ export async function GET(
         .where(document === "results" ? eq(examAttempts.studentId, user.id) : and(eq(examAttempts.studentId, user.id), eq(exams.assessmentType, document === "test-report" ? "test" : "final_exam"))),
     ]);
 
+    if (publishedResults.length === 0) {
+      return NextResponse.json({ error: "A report card is available after an assessment result has been computed and published for you." }, { status: 409 });
+    }
+
     lines = [
       "Dream Languages Uganda",
       `Name: ${name}`,
       `Registration number: ${registrationNumber}`,
+      `Language department: ${publishedResults[0]?.departmentName ?? "Not assigned"}`,
       "",
       document === "test-report" ? "Published test results" : document === "final-report" ? "Published final examination results" : "Published results",
       ...(publishedResults.length
         ? publishedResults.map((result) =>
-            `${result.title ?? "Assessment"} | ${result.assessmentType.replaceAll("_", " ")} | Score: ${result.score ?? "Pending"}% | Grade: ${result.grade ?? "Not graded"}${result.comments ? ` | ${result.comments}` : ""}${result.promotionStatus ? ` | Promotion: ${result.promotionStatus}${result.promotionReason ? ` (${result.promotionReason})` : ""}` : ""}`,
+            `${result.title ?? "Assessment"} | ${result.departmentName ?? "Language department"} | ${result.className} | ${result.assessmentType.replaceAll("_", " ")} | Score: ${result.score ?? "Pending"}% | Grade: ${result.grade ?? "Not graded"}${result.comments ? ` | ${result.comments}` : ""}${result.promotionStatus ? ` | Promotion: ${result.promotionStatus}${result.promotionReason ? ` (${result.promotionReason})` : ""}` : ""}`,
           )
         : ["No published results are available yet."]),
       "",
@@ -108,9 +114,6 @@ export async function GET(
   }
 
   const portrait = await readProfilePhotoJpeg(user.avatarStorageKey);
-  if (["results", "test-report", "final-report"].includes(document) && !portrait) {
-    return NextResponse.json({ error: "Upload a passport photo before downloading your report card." }, { status: 409 });
-  }
   const stamp: PdfStamp | undefined = user.documentStampedAt && user.documentStamperName && user.documentStamperTitle
     ? {
         stamperName: user.documentStamperName,

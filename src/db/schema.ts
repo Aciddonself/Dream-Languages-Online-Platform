@@ -488,6 +488,36 @@ export const holds = pgTable("holds", {
   liftedAt: timestamp("lifted_at"),
 });
 
+// Cashbook entries are immutable accounting events. Corrections are recorded as
+// reversals so weekly and monthly statements retain an audit trail.
+export const financeCashEntries = pgTable("finance_cash_entries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  direction: varchar("direction", { length: 12 }).notNull(),
+  entryDate: date("entry_date").notNull(),
+  weekStart: date("week_start").notNull(),
+  amount: integer("amount").notNull(),
+  currency: varchar("currency", { length: 8 }).default("UGX").notNull(),
+  category: varchar("category", { length: 64 }).notNull(),
+  purpose: text("purpose").notNull(),
+  reference: text("reference"),
+  recordedBy: uuid("recorded_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  reversedAt: timestamp("reversed_at"),
+  reversedBy: uuid("reversed_by").references(() => users.id),
+  reversalReason: text("reversal_reason"),
+}, (t) => [
+  index("finance_cash_entries_week_currency_idx").on(t.weekStart, t.currency),
+  index("finance_cash_entries_created_idx").on(t.createdAt),
+]);
+
+// An explicit, audited exception to the normal fee-completion access gate.
+export const studentAccessOverrides = pgTable("student_access_overrides", {
+  studentId: uuid("student_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  reason: text("reason").notNull(),
+  grantedBy: uuid("granted_by").notNull().references(() => users.id),
+  grantedAt: timestamp("granted_at").defaultNow().notNull(),
+});
+
 export const discounts = pgTable("discounts", {
   id: uuid("id").defaultRandom().primaryKey(),
   studentId: uuid("student_id").references(() => users.id),

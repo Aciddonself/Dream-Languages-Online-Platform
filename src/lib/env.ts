@@ -11,6 +11,8 @@ const serverSchema = z.object({
   DATABASE_URL: z.string().min(10),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   APP_URL: z.string().url(),
+  FLUTTERWAVE_SECRET_KEY: z.string().optional(),
+  FLUTTERWAVE_SECRET_HASH: z.string().optional(),
   CPANEL_WEBMAIL_URL: z.preprocess((value) => value === "" ? undefined : value, z.string().url().optional()),
   // A missing or short cron secret must disable only cron endpoints. It must
   // not prevent the Supabase admin client from serving uploads or user flows.

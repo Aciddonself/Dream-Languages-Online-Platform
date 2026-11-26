@@ -113,6 +113,13 @@
       "when": 1795014452000,
       "tag": "0015_assign_designated_admin_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795676813103,
+      "tag": "0016_weekly_cashbook_student_access",
+      "breakpoints": true
     }
   ]
 }

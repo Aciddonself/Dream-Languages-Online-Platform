@@ -25,6 +25,7 @@ import { requireRole } from "@/lib/rbac";
 import { portalSection } from "@/lib/portal-sections";
 import { PORTAL_NAVS } from "@/lib/portal-nav";
 import { PortalInbox } from "@/components/portal-inbox";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 const portalConfig = {
   admin: { title: "Admin Console", roles: ["super_admin", "admin"] },
@@ -65,6 +66,16 @@ export default async function PortalSectionPage({
   const links: { href: string; label: string }[] = [];
   let teacherLanguageOptions: { id: string; name: string }[] = [];
 
+  const feeGatedSections = new Set(["classes", "timetable", "assignments", "exams", "materials", "recordings", "community"]);
+  const financeAccess = portal === "student" && user.role === "student" && feeGatedSections.has(currentSection)
+    ? await getStudentFinanceAccess(user.id)
+    : null;
+  if (financeAccess && !financeAccess.canLearn) {
+    description = financeAccess.balanceByCurrency.length
+      ? `Learning access is paused until your fees are cleared. Outstanding: ${financeAccess.balanceByCurrency.map((item) => `${item.currency} ${item.amount.toLocaleString()}`).join(" · ")}. An administrator can record an approved exception.`
+      : "No fee schedule is assigned to your account yet. Contact the finance office to confirm your fee record or ask an administrator about an exception.";
+    links.push({ href: "/student/fees", label: "View fees and payment information" });
+  } else {
   const extra = await portalSection(portal, currentSection, user);
   if (extra) {
     rows = extra.rows;
@@ -91,7 +102,7 @@ export default async function PortalSectionPage({
         .orderBy(desc(results.createdAt));
       rows = records.map((record: { title?: string | null; score?: number | string | null; grade?: string | null; comments?: string | null }) => ({ title: record.title ?? "Assessment", detail: `Score: ${record.score ?? "Pending"} · Grade: ${record.grade ?? "Not graded"}${record.comments ? ` · ${record.comments}` : ""}` }));
       description = "Results released by your academic team. Download the full exam and test statement below.";
-      links.push({ href: "/api/portal/documents/results", label: "Download results PDF" });
+      if (records.length) links.push({ href: "/api/portal/documents/results", label: "Download results PDF" });
     } else if (currentSection === "attendance") {
       const records = await db.select().from(attendance).where(eq(attendance.studentId, user.id)).orderBy(desc(attendance.markedAt)).limit(50);
       rows = records.map((record: { status: string; markedAt: Date | string; note?: string | null }) => ({ title: record.status, detail: `${new Date(record.markedAt).toLocaleString()}${record.note ? ` · ${record.note}` : ""}` }));
@@ -167,6 +178,7 @@ export default async function PortalSectionPage({
       rows = records.map((record: { title: string; teacherId?: string | null; createdAt: Date | string }) => ({ title: record.title, detail: `Teacher: ${record.teacherId ?? "Unassigned"} · Created ${new Date(record.createdAt).toLocaleDateString()}`, status: "Needs review" }));
       description = "Assessments awaiting academic approval.";
     }
+  }
   }
 
   return (

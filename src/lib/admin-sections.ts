@@ -226,9 +226,10 @@ const loaders: Record<string, () => Promise<SectionData>> = {
         detail: typeof value[key] === "string" && value[key] ? `Merchant code ${value[key]}` : "Merchant code not configured",
         status: typeof value[key] === "string" && value[key] ? "Configured" : "Not configured",
       })),
+      { title: "Online Visa and Uganda mobile money checkout", detail: process.env.FLUTTERWAVE_SECRET_KEY ? "Flutterwave secret is configured on the server. Card and UGX mobile money checkout is enabled." : "Not connected. Add FLUTTERWAVE_SECRET_KEY to the deployment environment to enable online checkout. Bank transfers remain available for manual review.", status: process.env.FLUTTERWAVE_SECRET_KEY ? "Configured" : "Not configured" },
     ];
     return { description: `Official payment instructions read from the same payment_details setting used by the public Pay Now page.${row ? ` Last updated ${when(row.updatedAt)}.` : " No payment_details setting exists yet."}`,
-      links: [{ href: "/pay-now", label: "View public payment instructions" }, { href: "/admin/settings", label: "Open system settings" }], rows: methods };
+      links: [{ href: "/pay-now", label: "View public payment instructions" }, { href: "/admin/settings", label: "Open system settings" }, { href: "/finance/weekly-cashbook", label: "Weekly cashbook" }], rows: methods };
   },
   "dead-semester": async () => {
     const list = await db.select().from(pauseRequests).orderBy(desc(pauseRequests.createdAt)).limit(100);

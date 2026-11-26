@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { classes, enrolments, timetableSessions } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupportedMeetingUrl } from "@/lib/meeting-links";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ sessionId: string }> }) {
   const user = await getCurrentUser();
@@ -29,6 +30,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ses
   }
 
   if (user.role === "student") {
+    const financeAccess = await getStudentFinanceAccess(user.id);
+    if (!financeAccess.canLearn) return NextResponse.json({ error: "Clear your fees or ask an administrator to record an access exception before joining classes" }, { status: 403 });
     // If assigned to a specific class, verify enrolment
     if (session.classId) {
       const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments)

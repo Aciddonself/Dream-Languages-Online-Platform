@@ -76,6 +76,7 @@ export default async function FinanceDashboard() {
         <div className="flex flex-wrap gap-3">
           <Link href="/finance/payments" className="btn-glass inline-flex px-4 py-2">Payment records</Link>
           <Link href="/finance/reports" className="btn-glass inline-flex px-4 py-2">Debtors report</Link>
+          <Link href="/finance/weekly-cashbook" className="btn-glass btn-glass-primary inline-flex px-4 py-2">Weekly cashbook</Link>
         </div>
       </GlassCard>
     </PortalShell>

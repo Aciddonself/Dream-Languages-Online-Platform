@@ -5,6 +5,8 @@ import { GlassCard } from "@/components/ui/glass";
 import { db } from "@/db";
 import { classes, enrolments, materials } from "@/db/schema";
 import { requireRole } from "@/lib/rbac";
+import { StudentFeeAccessNotice } from "@/components/student-fee-access-notice";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,8 @@ const nav = [
 
 export default async function StudentMaterialsPage() {
   const user = await requireRole(["student"]);
+  const financeAccess = await getStudentFinanceAccess(user.id);
+  if (!financeAccess.canLearn) return <PortalShell title="Student Portal" nav={nav}><StudentFeeAccessNotice hasFeeSchedule={financeAccess.balanceByCurrency.length > 0} balances={financeAccess.balanceByCurrency} /></PortalShell>;
   const classIds = await db.select({ id: enrolments.classId }).from(enrolments).where(and(eq(enrolments.studentId, user.id), eq(enrolments.status, "active")));
   const ids = classIds.map((item) => item.id);
   const items = ids.length

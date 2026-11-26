@@ -6,6 +6,8 @@ import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { AssignmentSubmissionForm } from "@/components/assignment-submission-form";
 import { formatSchoolDateTime } from "@/lib/school-time";
+import { StudentFeeAccessNotice } from "@/components/student-fee-access-notice";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,8 @@ const nav = [
 
 export default async function StudentAssignmentsPage() {
   const student = await requireRole(["student"]);
+  const financeAccess = await getStudentFinanceAccess(student.id);
+  if (!financeAccess.canLearn) return <PortalShell title="My Assignments" nav={nav}><StudentFeeAccessNotice hasFeeSchedule={financeAccess.balanceByCurrency.length > 0} balances={financeAccess.balanceByCurrency} /></PortalShell>;
   const activeEnrollments = await db.select({ classId: enrolments.classId, className: classes.name })
     .from(enrolments).innerJoin(classes, eq(enrolments.classId, classes.id))
     .where(and(eq(enrolments.studentId, student.id), eq(enrolments.status, "active")));

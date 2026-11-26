@@ -5,6 +5,7 @@ import { formatSchoolDateTime } from "@/lib/school-time";
 import { StudentIdCard } from "@/components/id-card";
 import { ProfilePhotoControl } from "@/components/profile-photo-control";
 import { AttendanceRing } from "@/components/attendance-ring";
+import { StudentFeeAccessNotice } from "@/components/student-fee-access-notice";
 import { db } from "@/db";
 import {
   assignments,
@@ -17,10 +18,13 @@ import {
   holds,
   levels,
   notifications,
+  exams,
+  results,
   timetableSessions,
 } from "@/db/schema";
 import { and, count, desc, eq, gt, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 import { calculateAttendancePercent } from "@/lib/attendance";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 import Link from "next/link";
 
 const nav = [
@@ -41,6 +45,9 @@ const nav = [
 
 export default async function StudentDashboard() {
   const user = await requireRole(["student", "super_admin"]);
+  const financeAccess = user.role === "student"
+    ? await getStudentFinanceAccess(user.id)
+    : { canLearn: true, feesComplete: true, override: null, balanceByCurrency: [] };
   const studentEnrollments = await db
     .select({
       classId: classes.id,
@@ -165,6 +172,8 @@ export default async function StudentDashboard() {
   const hasFeeBalance = feeSummary.some((item) => Number(item.balance) > 0);
   const feeBalanceLabel = feeSummary.map((item) => `${item.currency} ${Number(item.balance).toLocaleString()}`).join(" · ") || "No fee schedule";
   const registrationNumber = user.registrationNumber ?? "Not assigned";
+  const publishedResults = user.role === "student" ? await db.select({ assessmentType: exams.assessmentType }).from(results)
+    .innerJoin(exams, eq(results.examId, exams.id)).where(and(eq(results.studentId, user.id), eq(results.published, true))) : [];
 
   return (
     <PortalShell title="Student Portal" nav={nav}>
@@ -180,12 +189,13 @@ export default async function StudentDashboard() {
             </GlassButton>
           </Link>
           <Link href="/api/portal/documents/admission"><GlassButton variant="glass">Admission form PDF</GlassButton></Link>
-          <Link href="/api/portal/documents/results"><GlassButton>Test & exam results PDF</GlassButton></Link>
+          {publishedResults.length > 0 && <Link href="/api/portal/documents/results"><GlassButton>Test & exam results PDF</GlassButton></Link>}
         </div>
       </div>
+      {!financeAccess.canLearn && <div className="mb-6"><StudentFeeAccessNotice hasFeeSchedule={financeAccess.balanceByCurrency.length > 0} balances={financeAccess.balanceByCurrency} /></div>}
 
       {/* Prominent Active Google Meet Live Class Notification */}
-      {activeLiveSession && (
+      {financeAccess.canLearn && activeLiveSession && (
         <div className="mb-6 rounded-2xl border-2 border-emerald-500 bg-gradient-to-r from-emerald-950/40 via-blue-950/30 to-slate-900/40 p-5 shadow-xl shadow-emerald-500/10 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500 text-black text-2xl font-bold shadow animate-pulse">
@@ -252,7 +262,7 @@ export default async function StudentDashboard() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-6">
-        <GlassCard className="p-5 md:col-span-2">
+        {financeAccess.canLearn ? <GlassCard className="p-5 md:col-span-2">
           <div className="flex items-center justify-between mb-3">
             <div className="font-semibold">Next Scheduled Class</div>
             <Link href="/student/timetable" className="text-xs text-indigo-400 underline hover:text-indigo-300">
@@ -301,7 +311,7 @@ export default async function StudentDashboard() {
               )) : <li className="glass px-3 py-2">No upcoming sessions.</li>}
             </ul>
           </div>
-        </GlassCard>
+        </GlassCard> : <GlassCard className="p-5 md:col-span-2"><div className="font-semibold">Class schedule</div><p className="mt-2 text-sm opacity-70">Your timetable and live classes open after fees are cleared or an administrator records an exception.</p></GlassCard>}
         <GlassCard className="p-5">
           <div className="font-semibold mb-3">Digital ID Card</div>
           <StudentIdCard

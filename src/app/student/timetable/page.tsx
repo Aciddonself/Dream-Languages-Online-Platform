@@ -5,6 +5,8 @@ import { classes, departments, enrolments, timetableSessions } from "@/db/schema
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { formatSchoolDate, formatSchoolTime } from "@/lib/school-time";
+import { StudentFeeAccessNotice } from "@/components/student-fee-access-notice";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 const nav = [
   { href: "/student", label: "Dashboard", icon: "🏠" },
@@ -18,6 +20,8 @@ export const dynamic = "force-dynamic";
 
 export default async function StudentTimetablePage() {
   const user = await requireRole(["student"]);
+  const financeAccess = await getStudentFinanceAccess(user.id);
+  if (!financeAccess.canLearn) return <PortalShell title="Student Portal" nav={nav}><StudentFeeAccessNotice hasFeeSchedule={financeAccess.balanceByCurrency.length > 0} balances={financeAccess.balanceByCurrency} /></PortalShell>;
   const activeClasses = await db.select({ id: enrolments.classId }).from(enrolments)
     .where(and(eq(enrolments.studentId, user.id), eq(enrolments.status, "active")));
   const classIds = activeClasses.map((item) => item.id).filter((id): id is string => Boolean(id));

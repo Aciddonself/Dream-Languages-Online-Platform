@@ -75,7 +75,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ exa
       if (exam.startsAt && exam.startsAt > now) return NextResponse.json({ error: "This assessment has not started yet" }, { status: 409 });
       if (exam.endsAt && exam.endsAt <= now) return NextResponse.json({ error: "The assessment window has closed" }, { status: 409 });
       const eligibility = await getStudentExamEligibility(actor.id, exam.classId);
-      if (!eligibility.eligible) return NextResponse.json({ error: "You do not meet the attendance or fee requirements for this assessment" }, { status: 403 });
+      if (!eligibility.eligible) return NextResponse.json({ error: "Clear your fees or ask an administrator to record an access exception before taking this assessment" }, { status: 403 });
     }
     const outcome = await db.transaction(async (tx: any) => {
       const [lockedStudent] = await tx.select({ id: users.id }).from(users).where(eq(users.id, actor.id)).for("update").limit(1);

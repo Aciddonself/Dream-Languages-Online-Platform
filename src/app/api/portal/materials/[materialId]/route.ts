@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { classes, enrolments, materials } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { createMaterialDownload, MATERIAL_TYPES } from "@/lib/class-material-storage";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mat
   if (!material?.classId || !material.type || !material.uploadComplete) return NextResponse.json({ error: "Material not found" }, { status: 404 });
 
   if (user.role === "student") {
+    const financeAccess = await getStudentFinanceAccess(user.id);
+    if (!financeAccess.canLearn) return NextResponse.json({ error: "Clear your fees or ask an administrator to record an access exception before downloading class materials" }, { status: 403 });
     const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(
       eq(enrolments.studentId, user.id), eq(enrolments.classId, material.classId), eq(enrolments.status, "active"),
     )).limit(1);

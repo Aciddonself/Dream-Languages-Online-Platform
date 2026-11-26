@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { auditLogs, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { z } from "zod";
 
 export async function POST(
   request: Request,
@@ -16,6 +17,11 @@ export async function POST(
   }
   const limited = await rateLimit("student-document-stamp", actor.id, 30, "10 m");
   if (!limited.ok) return tooManyRequests(limited.retryAfter);
+
+  let body: unknown;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Enter the authorized signatory name for the stamp" }, { status: 400 }); }
+  const parsed = z.object({ stamperName: z.string().trim().min(2).max(120) }).strict().safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Enter an authorized signatory name of at least two characters" }, { status: 400 });
 
   const { userId } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
@@ -32,7 +38,7 @@ export async function POST(
   if (!student) return NextResponse.json({ error: "Student account not found" }, { status: 404 });
 
   const stampedAt = new Date();
-  const stamperName = actor.displayName || [actor.firstName, actor.lastName].filter(Boolean).join(" ") || actor.email;
+  const stamperName = parsed.data.stamperName;
   const stamperTitle = actor.role === "super_admin" || actor.role === "admin" ? "School Administrator" : "Head of Academics";
   await db.transaction(async (tx) => {
     await tx.update(users).set({

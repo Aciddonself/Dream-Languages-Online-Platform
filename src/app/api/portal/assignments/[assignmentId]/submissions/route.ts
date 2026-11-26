@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { assignments, auditLogs, classes, enrolments, submissions, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { deleteAssignmentFile, storeAssignmentFile } from "@/lib/assignment-storage";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 export const runtime = "nodejs";
 
@@ -33,6 +34,8 @@ async function assignmentAccess(assignmentId: string, actor: { id: string; role:
     .from(assignments).where(eq(assignments.id, assignmentId)).limit(1);
   if (!assignment?.classId) return { error: NextResponse.json({ error: "Assignment not found" }, { status: 404 }) };
   if (actor.role === "student") {
+    const financeAccess = await getStudentFinanceAccess(actor.id);
+    if (!financeAccess.canLearn) return { error: NextResponse.json({ error: "Clear your fees or ask an administrator to record an access exception before accessing class assignments" }, { status: 403 }) };
     const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(
       eq(enrolments.studentId, actor.id), eq(enrolments.classId, assignment.classId), eq(enrolments.status, "active"),
     )).limit(1);
