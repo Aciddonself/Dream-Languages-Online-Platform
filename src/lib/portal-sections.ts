@@ -242,8 +242,22 @@ async function discountList(): Promise<SectionData> {
 }
 
 async function refunds(): Promise<SectionData> {
-  const list = await db.select().from(payments).where(or(eq(payments.status, "reversed"), eq(payments.status, "rejected"))).orderBy(desc(payments.createdAt)).limit(100);
-  return { description: "Payments that were reversed or rejected.", rows: list.map((p) => ({ title: `${money(p.amount, p.currency)} · ${p.method}`, detail: day(p.createdAt), status: p.status })) };
+  const [list, [rejected]] = await Promise.all([
+    db.select({ amount: payments.amount, currency: payments.currency, method: payments.method, reference: payments.reference,
+      createdAt: payments.createdAt, displayName: users.displayName, firstName: users.firstName, lastName: users.lastName,
+      email: users.email, registrationNumber: users.registrationNumber,
+    }).from(payments).leftJoin(users, eq(payments.studentId, users.id))
+      .where(eq(payments.status, "reversed")).orderBy(desc(payments.createdAt)).limit(100),
+    db.select({ total: sql<number>`count(*)::int` }).from(payments).where(eq(payments.status, "rejected")),
+  ]);
+  return {
+    description: `Reversed payments only. Rejected payments are not refunds. Refund requests, approvals, and payout transactions are not stored in the current database. ${rejected?.total ?? 0} rejected payment(s) are recorded separately.`,
+    rows: list.map((payment) => ({
+      title: `${money(payment.amount, payment.currency)} · ${payment.displayName ?? ([payment.firstName, payment.lastName].filter(Boolean).join(" ") || payment.email || "Student not linked")}`,
+      detail: `${payment.registrationNumber ?? "No registration number"} · ${payment.method.replaceAll("_", " ")} · reference ${payment.reference ?? "not supplied"} · ${when(payment.createdAt)}`,
+      status: "Reversed",
+    })),
+  };
 }
 
 async function financeReports(): Promise<SectionData> {

@@ -17,7 +17,7 @@ const nav = [
 ];
 
 export default async function FinancePaymentsPage({ searchParams }: { searchParams: Promise<{ departmentId?: string }> }) {
-  await requireRole(["finance", "super_admin"]);
+  await requireRole(["finance", "admin", "super_admin"]);
   const { departmentId = "" } = await searchParams;
   const languageDepartments = await db.select({ id: departments.id, name: departments.name }).from(departments)
     .where(and(eq(departments.isLanguage, true), isNull(departments.deletedAt))).orderBy(asc(departments.name));

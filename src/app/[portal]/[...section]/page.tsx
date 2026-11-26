@@ -31,11 +31,11 @@ const portalConfig = {
   applicant: { title: "Applicant Portal", roles: ["applicant", "student", "super_admin"] },
   student: { title: "Student Portal", roles: ["student", "super_admin"] },
   teacher: { title: "Teacher Portal", roles: ["teacher", "head_academics", "super_admin"] },
-  finance: { title: "Finance Portal", roles: ["finance", "super_admin"] },
+  finance: { title: "Finance Portal", roles: ["finance", "admin", "super_admin"] },
   hoc: { title: "Head of Academics", roles: ["head_academics", "super_admin"] },
 } as const;
 
-type Row = { title: string; detail: string; status?: string };
+type Row = { title: string; detail: string; status?: string; href?: string };
 
 function headingFromSlug(slug: string) {
   return slug
@@ -207,7 +207,10 @@ export default async function PortalSectionPage({
                   <div className="font-medium">{row.title}</div>
                   <div className="text-sm opacity-65">{row.detail}</div>
                 </div>
-                {row.status && <Badge tone={row.status.toLowerCase().includes("pending") || row.status.toLowerCase().includes("review") ? "warning" : "success"}>{row.status}</Badge>}
+                <div className="flex items-center gap-3">
+                  {row.status && <Badge tone={row.status.toLowerCase().includes("pending") || row.status.toLowerCase().includes("review") || row.status.toLowerCase().includes("overdue") ? "warning" : "success"}>{row.status}</Badge>}
+                  {row.href && <Link className="text-sm font-semibold text-[var(--brand-primary)] underline" href={row.href} target={row.href.startsWith("http") ? "_blank" : undefined} rel={row.href.startsWith("http") ? "noreferrer" : undefined}>Download receipt</Link>}
+                </div>
               </li>
             ))}
           </ul>

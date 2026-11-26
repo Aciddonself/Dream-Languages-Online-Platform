@@ -3,7 +3,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { GlassCard, Badge } from "@/components/ui/glass";
 import Link from "next/link";
 import { db } from "@/db";
-import { feeSchedules, holds, payments } from "@/db/schema";
+import { feeSchedules, holds, payments, settings, users } from "@/db/schema";
 import { count, desc, eq, sql } from "drizzle-orm";
 
 const nav = [
@@ -15,14 +15,21 @@ const nav = [
 ];
 
 export default async function FinanceDashboard() {
-  await requireRole(["finance", "super_admin"]);
-  const [collected, outstanding, holdCount, pendingCount, recentPayments] = await Promise.all([
+  await requireRole(["finance", "admin", "super_admin"]);
+  const [collected, outstanding, holdCount, pendingCount, recentPayments, paymentSetting] = await Promise.all([
     db.select({ currency: payments.currency, amount: sql<number>`coalesce(sum(${payments.amount}), 0)` }).from(payments).where(eq(payments.status, "verified")).groupBy(payments.currency),
-    db.select({ currency: feeSchedules.currency, amount: sql<number>`coalesce(sum(${feeSchedules.amount} - ${feeSchedules.paid}), 0)` }).from(feeSchedules).groupBy(feeSchedules.currency),
+    db.select({ currency: feeSchedules.currency, amount: sql<number>`coalesce(sum(greatest(${feeSchedules.amount} - ${feeSchedules.paid}, 0)), 0)::bigint` }).from(feeSchedules).groupBy(feeSchedules.currency),
     db.select({ total: count() }).from(holds).where(eq(holds.status, "active")),
     db.select({ total: count() }).from(payments).where(eq(payments.status, "pending")),
-    db.select().from(payments).orderBy(desc(payments.createdAt)).limit(5),
+    db.select({ id: payments.id, currency: payments.currency, amount: payments.amount, method: payments.method,
+      status: payments.status, createdAt: payments.createdAt, displayName: users.displayName,
+      firstName: users.firstName, lastName: users.lastName, email: users.email,
+      registrationNumber: users.registrationNumber,
+    }).from(payments).leftJoin(users, eq(payments.studentId, users.id)).orderBy(desc(payments.createdAt)).limit(5),
+    db.select({ value: settings.value }).from(settings).where(eq(settings.key, "payment_details")).limit(1),
   ]);
+  const paymentDetails = paymentSetting[0]?.value && typeof paymentSetting[0].value === "object" ? paymentSetting[0].value as Record<string, unknown> : {};
+  const bankAccounts = Array.isArray(paymentDetails.bankAccounts) ? paymentDetails.bankAccounts.join(", ") : "Not configured";
   return (
     <PortalShell title="Finance" nav={nav}>
       <div className="flex items-center justify-between mb-6">
@@ -46,7 +53,7 @@ export default async function FinanceDashboard() {
           <ul className="space-y-2 text-sm">
             {recentPayments.length ? recentPayments.map((payment) => (
               <li key={payment.id} className="glass px-3 py-2 flex items-center justify-between gap-3">
-                <span>{payment.currency} {payment.amount.toLocaleString()} · {payment.method} · {payment.createdAt.toLocaleDateString()}</span>
+                <span>{payment.displayName ?? ([payment.firstName, payment.lastName].filter(Boolean).join(" ") || payment.email || "Student not linked")}{payment.registrationNumber ? ` · ${payment.registrationNumber}` : ""} · {payment.currency} {payment.amount.toLocaleString()} · {payment.method.replaceAll("_", " ")} · {payment.createdAt.toLocaleDateString()}</span>
                 <Badge tone={payment.status === "verified" ? "success" : payment.status === "rejected" ? "danger" : "warning"}>{payment.status}</Badge>
               </li>
             )) : <li className="glass px-3 py-2">No payments have been recorded.</li>}
@@ -55,10 +62,10 @@ export default async function FinanceDashboard() {
         <GlassCard className="p-5">
           <div className="font-semibold mb-3">Official Payment Details</div>
           <div className="text-sm space-y-1 opacity-80 glass p-3">
-            <div>Account name: Dream Languages And Adult Literacy Uganda Limited</div>
-            <div>Bank accounts: 3100104612, 3100112636</div>
-            <div>MTN MoMo merchant: 588449</div>
-            <div>Airtel Money merchant: 4365181</div>
+            <div>Account name: {typeof paymentDetails.accountName === "string" ? paymentDetails.accountName : "Not configured"}</div>
+            <div>Bank accounts: {bankAccounts}</div>
+            <div>MTN MoMo merchant: {typeof paymentDetails.mtnMerchant === "string" ? paymentDetails.mtnMerchant : "Not configured"}</div>
+            <div>Airtel Money merchant: {typeof paymentDetails.airtelMerchant === "string" ? paymentDetails.airtelMerchant : "Not configured"}</div>
           </div>
           <Link href="/finance/holds" className="mt-4 inline-flex text-sm font-semibold hover:underline">Review active holds →</Link>
         </GlassCard>
