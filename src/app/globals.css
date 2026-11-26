@@ -1299,3 +1299,14 @@ p, li, td, th, label, summary, blockquote { font-weight: 600; }
 .admin-user-create-scroll::-webkit-scrollbar-track { border-radius: 999px; background: color-mix(in srgb, var(--surface) 78%, #9aa8ba); }
 .admin-user-create-scroll::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: var(--brand-secondary); background-clip: padding-box; }
 .admin-user-create-scroll:focus-visible { outline: 2px solid var(--brand-accent); outline-offset: 2px; }
+
+/* Keep scrolling page content fully hidden behind sticky site and portal headers. */
+.site-nav-scrolled { background: #07172d; background-image: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.light .site-nav-scrolled { background: #f8f7f1; }
+.portal-shell .portal-topbar,
+.dark .portal-shell .portal-topbar {
+  background: var(--portal-surface);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
