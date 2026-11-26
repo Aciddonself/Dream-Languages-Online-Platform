@@ -54,9 +54,9 @@ export default async function HomePage() {
     <main className="min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: organizationJson }} />
       {/* Hero */}
-      <section className="px-4 pt-6 pb-12 sm:px-6 sm:pt-8 sm:pb-14 max-w-6xl mx-auto">
+      <section className="mx-auto w-full max-w-[1600px] px-3 pt-6 pb-12 sm:px-5 sm:pt-8 sm:pb-14">
         <GlassCard className="source-hero p-5 sm:p-7 md:p-9" strong>
-          <div className="mx-auto max-w-5xl">
+          <div className="w-full">
             <Badge tone="primary">Dream Languages Uganda</Badge>
             <h1 className="hero-heading mt-4">
               Lifelong Training <span>For All Ages</span>
