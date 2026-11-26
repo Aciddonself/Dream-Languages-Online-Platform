@@ -1,16 +1,30 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { GlassCard } from "@/components/ui/glass";
 
 type Level = { id: string; code: string; name: string; departmentId: string; departmentName: string };
 type Schedule = { id: string; amount: number; paid: number; currency: string; dueDate: string; status: string; levelId: string | null; levelCode: string | null };
-type Student = { id: string; name: string; email: string; registrationNumber: string | null; departmentId: string | null; departmentName: string | null; currentLevelId: string | null; currentLevelCode: string | null; schedules: Schedule[] };
+type Receipt = { paymentId: string; amount: number; currency: string; method: string; paidAt: string };
+type Student = { id: string; name: string; email: string; registrationNumber: string | null; departmentId: string | null; departmentName: string | null; currentLevelId: string | null; currentLevelCode: string | null; schedules: Schedule[]; receipts: Receipt[] };
 
 export function FinanceStudentFeesManager({ students, levels }: { students: Student[]; levels: Level[] }) {
+  const [group, setGroup] = useState<"balance" | "clear">("balance");
+  const studentsWithBalance = useMemo(() => students.filter((student) => student.schedules.some((schedule) => schedule.amount > schedule.paid)), [students]);
+  const studentsWithoutBalance = useMemo(() => students.filter((student) => !student.schedules.some((schedule) => schedule.amount > schedule.paid)), [students]);
+  const visibleStudents = group === "balance" ? studentsWithBalance : studentsWithoutBalance;
   if (!students.length) return <GlassCard className="p-5 text-sm opacity-70">No active or registered students match this search.</GlassCard>;
-  return <div className="grid gap-4">{students.map((student) => {
+  return <div className="grid gap-4">
+    <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter students by fee balance">
+      <button type="button" role="tab" aria-selected={group === "balance"} onClick={() => setGroup("balance")} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${group === "balance" ? "border-[var(--accent)] bg-[var(--accent)]/15" : "border-[var(--border)]"}`}>
+        Balance due <span className="ml-1 rounded-full bg-black/10 px-2 py-0.5">{studentsWithBalance.length}</span>
+      </button>
+      <button type="button" role="tab" aria-selected={group === "clear"} onClick={() => setGroup("clear")} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${group === "clear" ? "border-[var(--accent)] bg-[var(--accent)]/15" : "border-[var(--border)]"}`}>
+        No balance due <span className="ml-1 rounded-full bg-black/10 px-2 py-0.5">{studentsWithoutBalance.length}</span>
+      </button>
+    </div>
+    {!visibleStudents.length ? <GlassCard className="p-5 text-sm opacity-70">{group === "balance" ? "No students currently have a balance due." : "No students without a balance match this search."}</GlassCard> : <div className="grid gap-4">{visibleStudents.map((student) => {
     const options = levels.filter((level) => level.departmentId === student.departmentId);
     return <GlassCard key={student.id} className="space-y-4 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--border)] pb-3">
@@ -25,8 +39,16 @@ export function FinanceStudentFeesManager({ students, levels }: { students: Stud
       />) : <p className="rounded-xl border border-dashed border-[var(--border)] p-3 text-sm opacity-70">No fee schedule yet. Add this student’s fees by language level before recording a payment.</p>}
       {student.departmentId ? <FeeScheduleEditor key={student.id + ":new"} student={student} levels={options} /> : <p className="text-sm text-amber-800">Assign a language department before setting fees by level.</p>}
       {student.departmentId && !options.length && <p className="text-sm text-amber-800">No active classes with language levels are available in this department.</p>}
+      <section className="border-t border-[var(--border)] pt-3" aria-label={`Receipts for ${student.name}`}>
+        <h3 className="font-semibold">Verified payments and receipts</h3>
+        {student.receipts.length ? <ul className="mt-2 grid gap-2">{student.receipts.map((receipt) => <li key={receipt.paymentId} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] p-3 text-sm">
+          <span>{receipt.currency} {receipt.amount.toLocaleString()} · {receipt.method.replaceAll("_", " ")} · {receipt.paidAt}</span>
+          <a className="font-semibold underline" href={`/api/portal/documents/receipt/${receipt.paymentId}`} target="_blank" rel="noreferrer">Download / print receipt</a>
+        </li>)}</ul> : <p className="mt-1 text-sm opacity-65">No verified payments or receipts yet.</p>}
+      </section>
     </GlassCard>;
-  })}</div>;
+  })}</div>}
+  </div>;
 }
 
 function FeeScheduleEditor({ student, levels, schedule }: { student: Student; levels: Level[]; schedule?: Schedule }) {

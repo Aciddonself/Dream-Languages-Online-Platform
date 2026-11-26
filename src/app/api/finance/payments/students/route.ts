@@ -22,13 +22,10 @@ export async function GET(request: Request) {
     where prior_payment.student_id = ${users.id}
       and prior_payment.status = 'verified'
   )`;
-  const hasSchedule = sql`exists (select 1 from fee_schedules fs where fs.student_id = ${users.id})`;
-  const hasOutstanding = sql`exists (select 1 from fee_schedules fs where fs.student_id = ${users.id} and fs.amount > fs.paid)`;
   const conditions = [
     eq(users.role, "student"),
     inArray(users.status, ["active", "registered"]),
     isNull(users.deletedAt),
-    or(hasOutstanding, sql`not ${hasSchedule}`)!,
   ];
   if (departmentId === "unassigned") conditions.push(isNull(users.departmentId));
   else if (departmentId) conditions.push(eq(users.departmentId, departmentId));
@@ -61,6 +58,9 @@ export async function GET(request: Request) {
     .limit(300);
 
   const studentIds: string[] = [...new Set<string>(rows.map((row) => row.id))];
+  const scheduledStudents = studentIds.length ? await db.select({ studentId: feeSchedules.studentId }).from(feeSchedules)
+    .where(inArray(feeSchedules.studentId, studentIds)).groupBy(feeSchedules.studentId) : [];
+  const scheduledStudentIds = new Set(scheduledStudents.flatMap((row) => row.studentId ? [row.studentId] : []));
   const priorPayers = studentIds.length ? await db.select({ studentId: payments.studentId }).from(payments)
     .where(and(eq(payments.status, "verified"), inArray(payments.studentId, studentIds)))
     .groupBy(payments.studentId) : [];
@@ -81,7 +81,7 @@ export async function GET(request: Request) {
       registrationNumber: row.registrationNumber,
       department: row.department,
       category: priorPayerIds.has(row.id) ? "continuing" : "new",
-      hasFeeSchedule: row.currency !== null,
+      hasFeeSchedule: scheduledStudentIds.has(row.id),
       balances: new Map<string, number>(),
     };
     if (row.currency && row.balance !== null) student.balances.set(row.currency, Number(row.balance));

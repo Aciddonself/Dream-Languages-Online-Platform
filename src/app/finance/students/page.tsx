@@ -4,7 +4,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { FinanceStudentFeesManager } from "@/components/finance-student-fees-manager";
 import { db } from "@/db";
-import { classes, departments, enrolments, feeSchedules, feeStructures, levels, users } from "@/db/schema";
+import { classes, departments, enrolments, feeSchedules, feeStructures, levels, payments, users } from "@/db/schema";
 import { requireRole } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
@@ -63,12 +63,24 @@ export default async function FinanceStudentsPage({ searchParams }: { searchPara
   }).from(feeSchedules).leftJoin(feeStructures, eq(feeSchedules.feeStructureId, feeStructures.id))
     .leftJoin(levels, eq(feeStructures.levelId, levels.id)).where(inArray(feeSchedules.studentId, ids))
     .orderBy(desc(feeSchedules.createdAt)) : [];
+  const paidPayments = ids.length ? await db.select({
+    id: payments.id, studentId: payments.studentId, amount: payments.amount, currency: payments.currency,
+    method: payments.method, createdAt: payments.createdAt,
+  }).from(payments).where(and(inArray(payments.studentId, ids), eq(payments.status, "verified")))
+    .orderBy(desc(payments.createdAt)) : [];
   const byStudent = new Map<string, typeof schedules>();
   for (const schedule of schedules) {
     if (!schedule.studentId) continue;
     const list = byStudent.get(schedule.studentId) ?? [];
     list.push(schedule);
     byStudent.set(schedule.studentId, list);
+  }
+  const receiptsByStudent = new Map<string, typeof paidPayments>();
+  for (const payment of paidPayments) {
+    if (!payment.studentId) continue;
+    const list = receiptsByStudent.get(payment.studentId) ?? [];
+    list.push(payment);
+    receiptsByStudent.set(payment.studentId, list);
   }
   const students = studentRows.map((student) => {
     const assigned = currentLevel.get(student.id);
@@ -81,6 +93,10 @@ export default async function FinanceStudentsPage({ searchParams }: { searchPara
       departmentName: student.departmentName,
       currentLevelId: assigned?.id ?? null,
       currentLevelCode: assigned?.code ?? null,
+      receipts: (receiptsByStudent.get(student.id) ?? []).map((payment) => ({
+        paymentId: payment.id, amount: payment.amount, currency: payment.currency,
+        method: payment.method, paidAt: payment.createdAt.toLocaleDateString(),
+      })),
       schedules: (byStudent.get(student.id) ?? []).map((schedule) => ({
         ...schedule, dueDate: schedule.dueDate ? String(schedule.dueDate) : "",
         levelId: schedule.levelId ?? assigned?.id ?? null,
