@@ -5,6 +5,10 @@ import { financeCashEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { createTextPdf } from "@/lib/pdf";
 
+const weekdayDate = (value: string) => new Intl.DateTimeFormat("en-UG", {
+  weekday: "long", day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Kampala",
+}).format(new Date(`${value}T12:00:00.000Z`));
+
 export async function GET(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
@@ -59,11 +63,11 @@ export async function GET(request: Request) {
         .from(financeCashEntries).where(and(lt(financeCashEntries.entryDate, weekBoundary), isNull(financeCashEntries.reversedAt))).groupBy(financeCashEntries.currency);
       for (const row of carriedRows) opening[row.currency] = Number(row.amount ?? 0);
     }
-    lines.push("", `Week beginning ${week} · reporting days ${weekBoundary} to ${new Date(Math.min(Date.parse(`${end}T00:00:00Z`), Date.parse(`${week}T00:00:00Z`) + 6 * 86_400_000)).toISOString().slice(0, 10)}`);
+    lines.push("", `Week beginning ${weekdayDate(week)} · reporting days ${weekdayDate(weekBoundary)} to ${weekdayDate(new Date(Math.min(Date.parse(`${end}T00:00:00Z`), Date.parse(`${week}T00:00:00Z`) + 6 * 86_400_000)).toISOString().slice(0, 10))}`);
     for (const { entry, recorder, email } of rows) {
       const target = entry.direction === "income" ? income : expenses;
       target[entry.currency] = (target[entry.currency] ?? 0) + entry.amount;
-      lines.push(`${entry.entryDate} | ${entry.direction.toUpperCase()} | ${entry.currency} ${entry.amount.toLocaleString()} | ${entry.category} | ${entry.purpose} | recorded by ${recorder || email || "Staff"}`);
+      lines.push(`${weekdayDate(entry.entryDate)} | ${entry.direction.toUpperCase()} | ${entry.currency} ${entry.amount.toLocaleString()} | ${entry.category} | ${entry.purpose} | recorded by ${recorder || email || "Staff"}`);
     }
     if (!rows.length) lines.push("No transactions recorded this week.");
     for (const currency of new Set([...Object.keys(opening), ...Object.keys(income), ...Object.keys(expenses)])) {

@@ -11,6 +11,9 @@ type Week = { weekStart: string; income: Record<string, number>; expenses: Recor
 type Report = { month: string; selectedWeekStart: string; selectedWeekEnd: string; openingBalance: Record<string, number>; entries: Entry[]; weeks: Week[]; monthOpening: Record<string, number>; monthIncome: Record<string, number>; monthExpenses: Record<string, number>; monthClosing: Record<string, number> };
 const ugx = (value: number) => new Intl.NumberFormat("en-UG", { maximumFractionDigits: 0 }).format(value);
 const today = () => new Date().toISOString().slice(0, 10);
+const weekdayDate = (value: string) => new Intl.DateTimeFormat("en-UG", {
+  weekday: "long", day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Kampala",
+}).format(new Date(`${value}T12:00:00.000Z`));
 function apiError(error: unknown, fallback: string) {
   if (typeof error === "string") return error;
   if (error && typeof error === "object" && "formErrors" in error) {
@@ -138,15 +141,15 @@ export function FinanceCashbook() {
     <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white/45">
       <div className="border-b border-current/10 p-4"><h2 className="font-bold">Weekly balances</h2><p className="text-sm opacity-65">Opening balance comes from earlier entries. Each closing balance rolls into the next week.</p></div>
       <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead><tr className="border-b border-current/10"><th className="p-3">Week starting</th><th className="p-3">Opening</th><th className="p-3">Money in</th><th className="p-3">Money out</th><th className="p-3">Closing</th><th className="p-3">Entries</th></tr></thead><tbody>
-        {(report?.weeks ?? []).map((week) => <tr key={week.weekStart} className="border-b border-current/5"><td className="p-3 font-semibold">{week.weekStart}</td><td className="p-3">{Object.entries(week.opening).map(([c, n]) => <div key={c}>{c} {ugx(n)}</div>) || "—"}</td><td className="p-3">{Object.entries(week.income).map(([c, n]) => <div key={c}>{c} {ugx(n)}</div>)}</td><td className="p-3">{Object.entries(week.expenses).map(([c, n]) => <div key={c}>{c} {ugx(n)}</div>)}</td><td className="p-3 font-bold">{Object.entries(week.closing).map(([c, n]) => <div key={c}>{c} {ugx(n)}</div>)}</td><td className="p-3">{week.entryCount}</td></tr>)}
+        {(report?.weeks ?? []).map((week) => <tr key={week.weekStart} className="border-b border-current/5"><td className="p-3 font-semibold">{weekdayDate(week.weekStart)}</td><td className="p-3">{Object.entries(week.opening).map(([c, n]) => <div key={c}>{c} {ugx(n)}</div>) || "—"}</td><td className="p-3">{Object.entries(week.income).map(([c, n]) => <div key={c}>{c} {ugx(n)}</div>)}</td><td className="p-3">{Object.entries(week.expenses).map(([c, n]) => <div key={c}>{c} {ugx(n)}</div>)}</td><td className="p-3 font-bold">{Object.entries(week.closing).map(([c, n]) => <div key={c}>{c} {ugx(n)}</div>)}</td><td className="p-3">{week.entryCount}</td></tr>)}
         {!report?.weeks.length && <tr><td colSpan={6} className="p-4 opacity-65">No weekly entries found for this month.</td></tr>}
       </tbody></table></div>
     </section>
 
     <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white/45">
-      <div className="border-b border-current/10 p-4"><h2 className="font-bold">Entries for week {report?.selectedWeekStart ?? ""} to {report?.selectedWeekEnd ?? ""}</h2></div>
+      <div className="border-b border-current/10 p-4"><h2 className="font-bold">Entries for week {report?.selectedWeekStart ? weekdayDate(report.selectedWeekStart) : ""} to {report?.selectedWeekEnd ? weekdayDate(report.selectedWeekEnd) : ""}</h2></div>
       <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left text-sm"><thead><tr className="border-b border-current/10"><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Category</th><th className="p-3">Purpose</th><th className="p-3">Amount</th><th className="p-3">Recorded by</th><th className="p-3">Correct</th></tr></thead><tbody>
-        {(report?.entries ?? []).map((entry) => <tr key={entry.id} className="border-b border-current/5"><td className="p-3">{entry.entryDate}</td><td className="p-3 font-semibold">{entry.direction === "income" ? "Money in" : "Money out"}</td><td className="p-3">{entry.category}</td><td className="p-3">{entry.purpose}{entry.reference ? <span className="block text-xs opacity-60">Ref: {entry.reference}</span> : null}</td><td className="p-3">{entry.currency} {ugx(entry.amount)}</td><td className="p-3">{entry.recorder}</td><td className="p-3"><button type="button" className="text-xs font-semibold underline" onClick={() => void reverseEntry(entry)} disabled={busy}>Reverse</button></td></tr>)}
+        {(report?.entries ?? []).map((entry) => <tr key={entry.id} className="border-b border-current/5"><td className="p-3">{weekdayDate(entry.entryDate)}</td><td className="p-3 font-semibold">{entry.direction === "income" ? "Money in" : "Money out"}</td><td className="p-3">{entry.category}</td><td className="p-3">{entry.purpose}{entry.reference ? <span className="block text-xs opacity-60">Ref: {entry.reference}</span> : null}</td><td className="p-3">{entry.currency} {ugx(entry.amount)}</td><td className="p-3">{entry.recorder}</td><td className="p-3"><button type="button" className="text-xs font-semibold underline" onClick={() => void reverseEntry(entry)} disabled={busy}>Reverse</button></td></tr>)}
         {!report?.entries.length && <tr><td colSpan={7} className="p-4 opacity-65">No entries for this week.</td></tr>}
       </tbody></table></div>
     </section>
