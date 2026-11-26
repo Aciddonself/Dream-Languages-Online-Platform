@@ -2,6 +2,7 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { auditLogs, feeSchedules, payments, users } from "@/db/schema";
+import { recordFeeIncome } from "@/lib/finance-cashbook";
 
 type VerifyResponse = { status?: string; data?: { status?: string; tx_ref?: string; amount?: number | string; currency?: string } };
 
@@ -61,6 +62,7 @@ export async function GET(request: Request) {
       remaining -= paid - fee.paid;
       await tx.update(feeSchedules).set({ paid, status: paid >= fee.amount ? "paid" : "partial" }).where(eq(feeSchedules.id, fee.id));
     }
+    await recordFeeIncome(tx, { paymentId: current.id, actorId: current.studentId!, amount: current.amount, currency: current.currency, method: current.method, reference: current.reference, date: now });
     await tx.insert(auditLogs).values({ actorId: current.studentId, action: "verify_flutterwave_payment", entityType: "payment", entityId: current.id, after: { txRef, transactionId, amount: current.amount, currency: current.currency } });
     return "success" as const;
   });

@@ -828,6 +828,9 @@ select:disabled, input:disabled, textarea:disabled { opacity: .6; }
 .portal-popover button:hover, .portal-account-menu a:hover { background: var(--portal-surface-soft); }
 .portal-account-menu { display: grid; min-width: 190px; }
 .portal-account-menu > strong { padding: 9px 9px 6px; font-size: 0.77rem; }
+.portal-account-photo-control { padding: 5px 8px 8px; border-bottom: 1px solid var(--portal-line); }
+.portal-account-photo-control > div { flex-wrap: wrap; }
+.portal-account-photo-control button { width: auto; min-height: 32px; padding: 0 8px; border: 1px solid var(--portal-line); white-space: nowrap; }
 .portal-auto-theme { display: inline-grid; width: 16px; place-items: center; font-size: 0.72rem; font-weight: 800; }
 .portal-main { width: min(100%, 1560px); min-height: calc(100vh - 72px); margin: 0 auto; padding: 28px 30px 42px; }
 .portal-main > * { animation: dashboardEnter 260ms ease both; }

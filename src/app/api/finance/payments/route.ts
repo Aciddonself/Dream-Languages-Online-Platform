@@ -1,15 +1,25 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { auditLogs, feeSchedules, payments, users } from "@/db/schema";
+import { auditLogs, feeSchedules, payments, receipts, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { recordFeeIncome } from "@/lib/finance-cashbook";
 
 const submitSchema = z.object({
   amount: z.number().int().positive().max(100_000_000),
   currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3,8}$/),
   method: z.enum(["bank", "momo", "airtel_money", "cash", "other"]),
   reference: z.string().trim().min(2).max(160),
+}).strict();
+
+const manualPaymentSchema = z.object({
+  studentId: z.string().uuid(),
+  amount: z.number().int().positive().max(100_000_000),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3,8}$/),
+  method: z.enum(["bank", "momo", "airtel_money", "cash", "other"]),
+  reference: z.string().trim().max(160).optional().default(""),
 }).strict();
 
 const decisionSchema = z.object({
@@ -21,12 +31,61 @@ const decisionSchema = z.object({
 export async function POST(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "student") return NextResponse.json({ error: "Only students can submit payment records" }, { status: 403 });
 
   let body: unknown;
   try { body = await request.json(); } catch {
     return NextResponse.json({ error: "Request body must be valid JSON" }, { status: 400 });
   }
+  if (["finance", "admin", "super_admin"].includes(actor.role)) {
+    const parsed = manualPaymentSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const input = parsed.data;
+    const result = await db.transaction(async (tx: any) => {
+      const [student] = await tx.select({ id: users.id }).from(users).where(and(
+        eq(users.id, input.studentId), eq(users.role, "student"), isNull(users.deletedAt),
+      )).for("update").limit(1);
+      if (!student) return { error: "Active student account not found", status: 404 as const };
+
+      const schedules = await tx.select().from(feeSchedules).where(and(
+        eq(feeSchedules.studentId, input.studentId), eq(feeSchedules.currency, input.currency),
+        sql`${feeSchedules.paid} < ${feeSchedules.amount}`,
+      )).orderBy(asc(feeSchedules.dueDate), asc(feeSchedules.createdAt)).for("update");
+      const outstanding = schedules.reduce((sum: number, row: { amount: number; paid: number }) => sum + Math.max(row.amount - row.paid, 0), 0);
+      if (!schedules.length || outstanding === 0) return { error: `No outstanding ${input.currency} fee balance was found for this student`, status: 409 as const };
+      if (input.amount > outstanding) return { error: `Amount exceeds the outstanding balance (${input.currency} ${outstanding.toLocaleString()})`, status: 400 as const };
+
+      const reference = input.reference || `MANUAL-${randomUUID().slice(0, 8).toUpperCase()}`;
+      const [duplicate] = await tx.select({ id: payments.id }).from(payments).where(and(
+        eq(payments.studentId, input.studentId), eq(payments.currency, input.currency),
+        sql`lower(trim(${payments.reference})) = ${reference.toLowerCase()}`,
+      )).limit(1);
+      if (duplicate) return { error: "That payment reference is already recorded for this student", status: 409 as const };
+
+      const now = new Date();
+      const [payment] = await tx.insert(payments).values({
+        studentId: input.studentId, amount: input.amount, currency: input.currency,
+        method: input.method, reference, status: "verified", verifiedBy: actor.id, verifiedAt: now,
+      }).returning({ id: payments.id });
+      let remaining = input.amount;
+      for (const schedule of schedules) {
+        if (!remaining) break;
+        const allocated = Math.min(Math.max(schedule.amount - schedule.paid, 0), remaining);
+        const paid = schedule.paid + allocated;
+        remaining -= allocated;
+        await tx.update(feeSchedules).set({ paid, status: paid >= schedule.amount ? "paid" : "partial" }).where(eq(feeSchedules.id, schedule.id));
+      }
+      const receiptNumber = `DLA-RCPT-${now.getFullYear()}-${randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;
+      await tx.insert(receipts).values({ paymentId: payment.id, number: receiptNumber });
+      await recordFeeIncome(tx, { paymentId: payment.id, actorId: actor.id, amount: input.amount, currency: input.currency, method: input.method, reference });
+      await tx.insert(auditLogs).values({ actorId: actor.id, action: "record_manual_fee_payment", entityType: "payment", entityId: payment.id,
+        after: { studentId: input.studentId, amount: input.amount, currency: input.currency, method: input.method, reference, receiptNumber } });
+      return { ok: true as const, paymentId: payment.id, receiptNumber };
+    });
+    if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
+    return NextResponse.json(result, { status: 201 });
+  }
+  if (actor.role !== "student") return NextResponse.json({ error: "Finance access required" }, { status: 403 });
+
   const parsed = submitSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
@@ -135,6 +194,7 @@ export async function PATCH(request: Request) {
       await tx.update(feeSchedules).set({ paid, status: paid >= schedule.amount ? "paid" : "partial" }).where(eq(feeSchedules.id, schedule.id));
       remaining -= allocated;
     }
+    await recordFeeIncome(tx, { paymentId: payment.id, actorId: actor.id, amount: payment.amount, currency: payment.currency, method: payment.method, reference: payment.reference });
     await tx.insert(auditLogs).values({ actorId: actor.id, action: "verify_payment", entityType: "payment", entityId: payment.id,
       before: { status: payment.status }, after: { status: "verified", amount: payment.amount, currency: payment.currency } });
     return { ok: true as const, status: "verified" };

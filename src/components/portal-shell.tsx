@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
+import { ProfilePhotoControl } from "@/components/profile-photo-control";
 import { useTheme } from "@/components/theme-provider";
 
 import { navForPath, type NavItem } from "@/lib/portal-nav";
@@ -390,14 +391,15 @@ export function PortalShell({
                 <ChevronDown size={14} />
               </button>
               {menuOpen && (
-                <div className="portal-popover portal-account-menu" role="menu">
+                <div className="portal-popover portal-account-menu">
                   <strong>{title}</strong>
-                  <Link href={nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Home</Link>
-                  <Link href={nav.find((item) => /inbox|message/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Inbox</Link>
-                  <Link href={nav.find((item) => /chat|community/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Chat</Link>
-                  <Link href={nav.find((item) => /activity/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Activity</Link>
-                  <Link href={nav.find((item) => /settings|profile/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Account settings</Link>
-                  <Link href="/contact" role="menuitem" onClick={() => setMenuOpen(false)}>Help &amp; support</Link>
+                  <div className="portal-account-photo-control" aria-label="Profile picture"><ProfilePhotoControl /></div>
+                  <Link href={nav[0]?.href ?? "/"} onClick={() => setMenuOpen(false)}>Home</Link>
+                  <Link href={nav.find((item) => /inbox|message/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} onClick={() => setMenuOpen(false)}>Inbox</Link>
+                  <Link href={nav.find((item) => /chat|community/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} onClick={() => setMenuOpen(false)}>Chat</Link>
+                  <Link href={nav.find((item) => /activity/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} onClick={() => setMenuOpen(false)}>Activity</Link>
+                  <Link href={nav.find((item) => /settings|profile/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} onClick={() => setMenuOpen(false)}>Account settings</Link>
+                  <Link href="/contact" onClick={() => setMenuOpen(false)}>Help &amp; support</Link>
                   <div className="portal-menu-logout"><LogoutButton /></div>
                 </div>
               )}
