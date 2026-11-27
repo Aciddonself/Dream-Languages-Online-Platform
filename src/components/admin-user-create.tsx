@@ -46,11 +46,9 @@ export function AdminUserCreate({ canCreateAdmin = false, departments = [], clas
     setLoading(true);
     try {
       const payload = new FormData();
-      for (const [key, value] of Object.entries(form)) {
-        if (key === "teachingLevels") continue;
-        payload.set(key, value);
-      }
-      for (const level of form.teachingLevels) payload.append("teachingLevel", level);
+      const { teachingLevels, ...formFields } = form;
+      for (const [key, value] of Object.entries(formFields)) payload.set(key, value);
+      for (const level of teachingLevels) payload.append("teachingLevel", level);
       const photo = photoInput.current?.files?.[0];
       if (photo) payload.set("profilePhoto", await prepareProfilePhoto(photo));
       const response = await fetch("/api/admin/users", {
