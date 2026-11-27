@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { GlassButton, GlassCard } from "@/components/ui/glass";
 import Image from "next/image";
 
@@ -39,7 +40,7 @@ type AttendanceState = {
 };
 
 function time(value: string | null | undefined) {
-  return value ? new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+  return value ? new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Not recorded";
 }
 
 export function AttendanceSessionPanel({
@@ -49,6 +50,7 @@ export function AttendanceSessionPanel({
   sessions: SessionOption[];
   audience: "student" | "teacher";
 }) {
+  const router = useRouter();
   const [states, setStates] = useState<Record<string, AttendanceState>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
@@ -97,6 +99,7 @@ export function AttendanceSessionPanel({
         return false;
       }
       await refresh(sessionId);
+      router.refresh();
       return true;
     } catch {
       setErrors((current) => ({ ...current, [sessionId]: "Unable to update attendance. Check your connection." }));
@@ -154,7 +157,7 @@ export function AttendanceSessionPanel({
                   </>
                 ) : (
                   <>
-                    {session.meetUrl && live && <a className="btn-glass btn-glass-primary rounded-xl px-4 py-2 font-semibold" href={session.meetUrl} target="_blank" rel="noreferrer">Join class</a>}
+                    {session.meetUrl && live && <a className="btn-glass btn-glass-primary rounded-xl px-4 py-2 font-semibold" href={session.meetUrl}>Join class</a>}
                     {live && !attendee?.checkInAt && <GlassButton disabled={busy[session.id]} onClick={() => void act(session.id, "check_in")}>Check in</GlassButton>}
                     {live && attendee?.checkInAt && !attendee.checkOutAt && <GlassButton variant="glass" disabled={busy[session.id]} onClick={() => void act(session.id, "check_out")}>Check out</GlassButton>}
                   </>
@@ -172,7 +175,7 @@ export function AttendanceSessionPanel({
                       <tbody>
                         {state.roster.map((student) => (
                           <tr key={student.studentId} className="border-t border-white/10">
-                            <td className="py-2"><span className="flex items-center gap-2">{student.avatarUrl && <Image src={student.avatarUrl} alt="" width={32} height={32} unoptimized className="h-8 w-8 rounded-full object-cover" />} {student.name}</span></td>
+                            <td className="py-2"><span className="flex items-center gap-2">{student.avatarUrl && <Image src={student.avatarUrl} alt="" width={32} height={32} unoptimized className="h-8 w-8 rounded-full bg-[var(--surface)] object-contain" />} {student.name}</span></td>
                             <td>{student.confirmedAt ? student.status : student.checkInAt ? "Needs confirmation" : student.status ?? "Not checked in"}</td>
                             <td>{time(student.checkInAt)}</td>
                             <td>{time(student.checkOutAt)}</td>
@@ -201,7 +204,7 @@ export function AttendanceSessionPanel({
                     </form>
                   ) : null;
                 })()}
-                {session.meetUrl && <a className="mt-3 inline-block text-sm font-semibold underline" href={session.meetUrl} target="_blank" rel="noreferrer">Open private class meeting</a>}
+                {session.meetUrl && <a className="mt-3 inline-block text-sm font-semibold underline" href={session.meetUrl}>Open private class meeting</a>}
               </>
             ) : (
               <div className="mt-3 text-sm opacity-70">

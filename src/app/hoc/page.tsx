@@ -4,18 +4,23 @@ import { GlassCard, GlassButton } from "@/components/ui/glass";
 import { AdminSessionCreate } from "@/components/admin-session-create";
 import { db } from "@/db";
 import { classes, departments, exams, timetableSessions, users } from "@/db/schema";
-import { asc, count, eq, gt, or } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray, isNull, or } from "drizzle-orm";
 import Link from "next/link";
+import { formatSchoolDateTime } from "@/lib/school-time";
+import { MailAccessCard } from "@/components/mail-access-card";
 
 const nav = [
   { href: "/hoc", label: "Dashboard", icon: "🏠" },
+  { href: "/hoc/reviews", label: "Public reviews", icon: "⭐" },
   { href: "/hoc/live-classes", label: "Live Classes", icon: "🎥" },
+  { href: "/hoc/attendance", label: "Attendance", icon: "✅" },
   { href: "/hoc/timetable", label: "Timetable", icon: "🗓️" },
   { href: "/hoc/community", label: "Class discussions", icon: "💬" },
 ];
 
-export default async function HocDashboard() {
+export default async function HocDashboard({ searchParams }: { searchParams: Promise<{ departmentId?: string }> }) {
   await requireRole(["head_academics", "super_admin"]);
+  const { departmentId = "" } = await searchParams;
   const [teacherCount, classCount, approvalCount, pendingExams, allDepts, schoolClasses, teachers, applicants, upcomingSessions] = await Promise.all([
     db.select({ total: count() }).from(users).where(eq(users.role, "teacher")),
     db.select({ total: count() }).from(classes),
@@ -24,10 +29,14 @@ export default async function HocDashboard() {
     db
       .select({ id: departments.id, name: departments.name, code: departments.code, flagEmoji: departments.flagEmoji })
       .from(departments)
-      .where(eq(departments.isLanguage, true))
+      .where(and(eq(departments.isLanguage, true), isNull(departments.deletedAt)))
       .orderBy(asc(departments.name)),
     db.select({ id: classes.id, name: classes.name, departmentId: classes.departmentId }).from(classes).orderBy(asc(classes.name)),
-    db.select({ id: users.id, name: users.displayName }).from(users).where(or(eq(users.role, "teacher"), eq(users.role, "head_academics"))),
+    db.select({ id: users.id, name: users.displayName }).from(users).where(and(
+      or(eq(users.role, "teacher"), eq(users.role, "head_academics")),
+      inArray(users.status, ["active", "registered"]),
+      isNull(users.deletedAt),
+    )),
     db.select({
       id: users.id,
       name: users.displayName,
@@ -35,11 +44,14 @@ export default async function HocDashboard() {
       phone: users.phone,
       address: users.address,
       registrationNumber: users.registrationNumber,
-      course: users.departmentId,
+      departmentId: users.departmentId,
+      departmentName: departments.name,
       studyFormat: users.studyFormat,
       nextOfKinName: users.nextOfKinName,
       nextOfKinPhone: users.nextOfKinPhone,
-    }).from(users).where(eq(users.role, "applicant")).limit(50),
+    }).from(users).leftJoin(departments, eq(users.departmentId, departments.id))
+      .where(and(eq(users.role, "applicant"), isNull(users.deletedAt), departmentId === "unassigned" ? isNull(users.departmentId) : departmentId ? eq(users.departmentId, departmentId) : undefined))
+      .orderBy(asc(departments.name), asc(users.createdAt)).limit(100),
     db.select({
       id: timetableSessions.id,
       title: timetableSessions.title,
@@ -56,6 +68,7 @@ export default async function HocDashboard() {
 
   return (
     <PortalShell title="Head of Academics & Languages" nav={nav}>
+      <MailAccessCard />
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="display-font text-3xl font-bold">Head of Languages & Academics</h1>
@@ -134,7 +147,7 @@ export default async function HocDashboard() {
                       <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" title="Live Now" />
                     )}
                     <span>
-                      {session.startsAt.toLocaleString()} · <strong>{session.title}</strong>
+                      {formatSchoolDateTime(session.startsAt)} · <strong>{session.title}</strong>
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -142,8 +155,6 @@ export default async function HocDashboard() {
                       <a
                         className="rounded-lg bg-emerald-600/80 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
                         href={`/api/portal/sessions/${session.id}/join`}
-                        target="_blank"
-                        rel="noreferrer"
                       >
                         🎥 {isLive ? "Join Live Meet" : "Launch Google Meet"}
                       </a>
@@ -178,12 +189,21 @@ export default async function HocDashboard() {
       {/* Applicant Overview */}
       <GlassCard className="mt-5 p-6" strong>
         <h2 className="mb-2 font-semibold">Applicant overview (view only)</h2>
-        <p className="mb-3 text-sm opacity-65">The Head of Academics can view applications but cannot approve or admit applicants; admission approval remains with the school administrator.</p>
+        <p className="mb-3 text-sm opacity-65">Applications are stored in User Management as accounts with the Applicant role. Filter them by the language selected on the application; admission approval remains with the school administrator.</p>
+        <form method="get" className="mb-4 flex flex-wrap gap-2">
+          <select name="departmentId" defaultValue={departmentId} className="glass min-w-56 px-3 py-2.5">
+            <option value="">All language departments</option>
+            <option value="unassigned">Department unassigned</option>
+            {allDepts.map((department) => <option value={department.id} key={department.id}>{department.name}</option>)}
+          </select>
+          <button type="submit" className="glass rounded-xl px-4 py-2.5 font-semibold">Filter applicants</button>
+          {departmentId && <Link href="/hoc" className="glass rounded-xl px-4 py-2.5">Clear</Link>}
+        </form>
         {applicants.length ? (
           <ul className="space-y-2 text-sm">
             {applicants.map((applicant) => (
               <li key={applicant.id} className="rounded-xl bg-white/5 p-3">
-                <strong>{applicant.name}</strong> · {applicant.registrationNumber} · {applicant.email} · {applicant.phone}
+                <strong>{applicant.name}</strong> · <strong className="text-[var(--brand-accent)]">{applicant.departmentName ?? "Department not assigned"}</strong> · {applicant.registrationNumber} · {applicant.email} · {applicant.phone}
                 <div className="mt-1 text-xs opacity-70">
                   {applicant.address} · Next of kin: {applicant.nextOfKinName} {applicant.nextOfKinPhone} · {applicant.studyFormat?.replaceAll("_", " ") ?? "Study format pending"}
                 </div>

@@ -1,27 +1,30 @@
 import type { Metadata } from "next";
-import { Crimson_Text, Playball, Romanesco } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SiteChrome } from "@/components/site-chrome";
 import { AppToaster } from "@/components/app-toaster";
+import { CookieConsent } from "@/components/cookie-consent";
+import { GoogleTracking } from "@/components/google-tracking";
+import { SiteChrome } from "@/components/site-chrome";
 
-const romanesco = Romanesco({ subsets: ["latin"], weight: "400", variable: "--font-romanesco", display: "swap" });
-const playball = Playball({ subsets: ["latin"], weight: "400", variable: "--font-playball", display: "swap" });
-const crimson = Crimson_Text({ subsets: ["latin"], weight: ["400", "600", "700"], style: ["normal", "italic"], variable: "--font-crimson", display: "swap" });
-
+// The proxy creates a per-request CSP nonce and Next.js copies it onto its
+// inline hydration scripts. Static/ISR HTML would cache an older nonce, causing
+// browsers to block hydration and remain on the route loading skeleton. Keep
+// the route tree request-rendered so the HTML nonce matches the response CSP.
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.dreamlanguagesug.com"),
+  metadataBase: new URL("https://dreamlanguagesug.online"),
   title: {
     default: "Dream Languages And Adult Literacy",
     template: "%s | DLA",
   },
   description:
-    "Dream Languages and Adult Literacy offers modern language learning, adult literacy, placement assessments, and student support in Uganda.",
+    "Learn French, German, English, Spanish, Mandarin, Kiswahili and more with Dream Languages Uganda. Explore online and in-person language classes, adult literacy and study support.",
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Dream Languages And Adult Literacy",
     description:
-      "Dream Languages and Adult Literacy offers modern language learning, adult literacy, placement assessments, and student support in Uganda.",
-    url: "https://www.dreamlanguagesug.com",
+      "Learn French, German, English, Spanish, Mandarin, Kiswahili and more with Dream Languages Uganda. Explore online and in-person language classes, adult literacy and study support.",
+    url: "https://dreamlanguagesug.online",
     siteName: "Dream Languages And Adult Literacy",
     type: "website",
     images: [
@@ -38,10 +41,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${romanesco.variable} ${playball.variable} ${crimson.variable} antialiased`}>
+      <body className="antialiased">
         <ThemeProvider>
           <SiteChrome>{children}</SiteChrome>
           <AppToaster />
+          <CookieConsent />
+          <GoogleTracking />
         </ThemeProvider>
       </body>
     </html>

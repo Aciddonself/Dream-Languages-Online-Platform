@@ -12,6 +12,7 @@ const nav = [
   { href: "/student/exams", label: "Exams", icon: "📝" },
   { href: "/student/results", label: "Results", icon: "📊" },
   { href: "/student/materials", label: "Materials", icon: "📄" },
+  { href: "/student/recordings", label: "Recorded classes", icon: "🎬" },
   { href: "/student/community", label: "Class discussion", icon: "💬" },
   { href: "/student/reviews", label: "Share a Review", icon: "⭐" },
 ];

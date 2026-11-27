@@ -1,14 +1,16 @@
 import { requireRole } from "@/lib/rbac";
 import { PortalShell } from "@/components/portal-shell";
-import { GlassCard, GlassButton } from "@/components/ui/glass";
+import { GlassCard } from "@/components/ui/glass";
 import { AdminSessionCreate } from "@/components/admin-session-create";
 import Link from "next/link";
 import { db } from "@/db";
 import { classes, enrolments, exams, timetableSessions } from "@/db/schema";
-import { and, count, eq, gt } from "drizzle-orm";
+import { and, count, eq, gt, isNull } from "drizzle-orm";
+import { formatSchoolDateTime } from "@/lib/school-time";
 
 const nav = [
   { href: "/teacher", label: "Dashboard", icon: "🏠" },
+  { href: "/teacher/assignments", label: "Assignments", icon: "🗂️" },
   { href: "/teacher/timetable", label: "Timetable", icon: "🗓️" },
   { href: "/teacher/classes", label: "My Classes", icon: "📚" },
   { href: "/teacher/attendance", label: "Attendance", icon: "✅" },
@@ -21,7 +23,7 @@ const nav = [
 export default async function TeacherDashboard() {
   const user = await requireRole(["teacher", "head_academics", "super_admin"]);
   const [teacherClasses, studentCount, pendingExams, upcomingSessions] = await Promise.all([
-    db.select().from(classes).where(eq(classes.teacherId, user.id)),
+    db.select().from(classes).where(and(eq(classes.teacherId, user.id), isNull(classes.deletedAt))),
     db.select({ total: count() })
       .from(enrolments)
       .innerJoin(classes, eq(enrolments.classId, classes.id))
@@ -36,7 +38,7 @@ export default async function TeacherDashboard() {
           <h1 className="display-font text-3xl font-bold">Teacher Dashboard</h1>
           <p className="text-sm opacity-60">Your classes and tasks at a glance.</p>
         </div>
-        <a className="btn-glass btn-glass-primary inline-flex items-center px-4 py-2" href="https://meet.google.com/new" target="_blank" rel="noreferrer">Start live class</a>
+        <a className="btn-glass btn-glass-primary inline-flex items-center px-4 py-2" href="https://meet.google.com/new">Start live class</a>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -63,13 +65,13 @@ export default async function TeacherDashboard() {
           <ul className="space-y-2 text-sm">
             {upcomingSessions.length ? upcomingSessions.map((session) => (
               <li key={session.id} className="glass px-3 py-2 flex flex-wrap items-center justify-between gap-2">
-                <span>{session.startsAt.toLocaleString()} · {session.title}</span>
+                <span>{formatSchoolDateTime(session.startsAt)} · {session.title}</span>
                 {session.meetUrl && <a href={`/api/portal/sessions/${session.id}/join`} className="font-semibold hover:underline">Join Meet</a>}
               </li>
             )) : <li className="glass px-3 py-2">No upcoming sessions are scheduled.</li>}
           </ul>
           <div className="mt-4">
-            <GlassButton variant="glass" className="w-full">Take Attendance</GlassButton>
+            <Link href="/teacher/attendance" className="btn-glass btn-glass-primary inline-flex w-full justify-center px-4 py-2">Take Attendance</Link>
           </div>
         </GlassCard>
       </div>
@@ -77,16 +79,16 @@ export default async function TeacherDashboard() {
       <GlassCard className="p-6">
         <div className="font-semibold mb-3">Quick Actions</div>
         <div className="flex flex-wrap gap-3">
-          <GlassButton variant="glass">Upload Material</GlassButton>
-          <GlassButton variant="glass">Create Exam</GlassButton>
-          <GlassButton variant="glass">Mark Submissions</GlassButton>
-          <GlassButton variant="glass">Publish Results</GlassButton>
+          <Link href="/teacher/materials" className="btn-glass inline-flex items-center px-4 py-2">Upload Material</Link>
+          <Link href="/teacher/exams" className="btn-glass inline-flex items-center px-4 py-2">Create or Review Exams</Link>
+          <Link href="/teacher/exams" className="btn-glass inline-flex items-center px-4 py-2">Mark Submissions</Link>
+          <Link href="/teacher/exams" className="btn-glass inline-flex items-center px-4 py-2">Publish Results</Link>
         </div>
       </GlassCard>
       <GlassCard className="mt-6 p-6" strong>
         <h2 className="mb-2 font-semibold">Schedule a class or meeting</h2>
         <p className="mb-4 text-sm opacity-70">Schedule a session for one of your assigned classes and add its Google Meet URL for enrolled students.</p>
-        <AdminSessionCreate classes={teacherClasses.map(({ id, name }) => ({ id, name }))} />
+        <AdminSessionCreate classes={teacherClasses.map(({ id, name }) => ({ id, name }))} classRequired={user.role === "teacher"} />
       </GlassCard>
     </PortalShell>
   );

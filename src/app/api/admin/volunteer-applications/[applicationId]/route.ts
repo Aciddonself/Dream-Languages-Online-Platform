@@ -10,7 +10,7 @@ const schema = z.object({ status: z.enum(["shortlisted", "rejected"]) });
 export async function PATCH(request: Request, { params }: { params: Promise<{ applicationId: string }> }) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+  if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
   let body: unknown;
   try {
     body = await request.json();

@@ -85,6 +85,8 @@ export function FatherDlaChat({ name, staff = false, suggestions }: { name: stri
       }
     } catch {
       setError("Connection issue. Please check your internet and try again.");
+      setMessages((prev) => prev.slice(0, -2));
+      setInput(text);
     } finally {
       setBusy(false);
       setStatus("");
@@ -96,6 +98,7 @@ export function FatherDlaChat({ name, staff = false, suggestions }: { name: stri
     if (!message?.id) return;
     const res = await fetch("/api/father-dla/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messageId: message.id, rating, ...(report ? { report } : {}) }) });
     if (res.ok) setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, rating, reported: m.reported || !!report } : m)));
+    else setError("Your feedback could not be saved. Please try again.");
   }
 
   function report(index: number) {
@@ -110,8 +113,13 @@ export function FatherDlaChat({ name, staff = false, suggestions }: { name: stri
   }
 
   async function changeLevel(next: string) {
+    const previous = level;
     setLevel(next);
-    await fetch("/api/father-dla", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ level: next }) });
+    const response = await fetch("/api/father-dla", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ level: next }) }).catch(() => null);
+    if (!response?.ok) {
+      setError("Your language level could not be saved. Please try again.");
+      setLevel(previous);
+    }
   }
 
   return (

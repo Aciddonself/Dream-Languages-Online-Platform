@@ -6,14 +6,16 @@ export function GlassCard({
   children,
   strong,
   tilt,
+  id,
 }: {
   className?: string;
+  id?: string;
   children: ReactNode;
   strong?: boolean;
   tilt?: boolean;
 }) {
   return (
-    <div className={cn("glass", strong && "glass-strong", tilt && "tilt", className)}>
+    <div id={id} className={cn("glass", strong && "glass-strong", tilt && "tilt", className)}>
       {children}
     </div>
   );

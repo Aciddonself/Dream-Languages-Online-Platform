@@ -7,7 +7,7 @@ export default function DesignPage() {
   return (
     <main className="min-h-screen px-6 py-10 max-w-6xl mx-auto space-y-10">
       <h1 className="display-font text-4xl font-bold">Design System Showcase</h1>
-      <p className="opacity-70">Liquid Glass interface components — Apple iOS 27</p>
+      <p className="opacity-70">Liquid Glass interface components inspired by Apple iOS 27.</p>
 
       <section>
         <h2 className="text-2xl font-bold mb-3">Glass Cards</h2>
@@ -70,7 +70,7 @@ export default function DesignPage() {
         <ResultsSlip
           studentName="Kamoga Ronald"
           registrationNumber="DLA/2026/GER/0042"
-          className="German A1 - Morning"
+          className="German A1 Morning"
           term="Term 1 2026"
           subjects={[
             { name: "Grammar", score: 82, grade: "A" },

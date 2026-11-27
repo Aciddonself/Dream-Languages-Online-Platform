@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { auditLogs, cmsPages, newsPosts, testimonials } from "@/db/schema";
@@ -16,6 +16,7 @@ const createNewsSchema = z.object({
   slug: z.string().trim().max(128).optional(),
   excerpt: z.string().trim().max(500).optional(),
   body: z.string().trim().min(1).max(20_000),
+  coverUrl: z.string().trim().url().max(1000).optional().or(z.literal("")),
   status: z.enum(["draft", "published"]).default("draft"),
 }).strict();
 const createPageSchema = z.object({
@@ -42,7 +43,17 @@ const updatePageSchema = z.object({
   seoDescription: z.string().trim().max(320).optional(),
   status: z.enum(["draft", "published", "unpublished", "archived"]),
 }).strict();
-const patchSchema = z.discriminatedUnion("action", [reviewSchema, updatePageSchema]);
+const updateNewsSchema = z.object({
+  action: z.literal("save_news"),
+  postId: z.string().uuid(),
+  title: z.string().trim().min(1).max(180),
+  slug: z.string().trim().min(1).max(128),
+  excerpt: z.string().trim().max(500).optional(),
+  body: z.string().trim().min(1).max(20_000),
+  coverUrl: z.string().trim().url().max(1000).optional().or(z.literal("")),
+  status: z.enum(["draft", "preview", "published", "unpublished", "archived"]),
+}).strict();
+const patchSchema = z.discriminatedUnion("action", [reviewSchema, updatePageSchema, updateNewsSchema]);
 
 function makeSlug(value: string) {
   return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
@@ -52,7 +63,7 @@ function makeSlug(value: string) {
 export async function POST(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
+  if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
   const limit = await rateLimit("admin-cms", actor.id, 30, "1 m");
   if (!limit.ok) return tooManyRequests(limit.retryAfter);
   let body: unknown;
@@ -64,6 +75,9 @@ export async function POST(request: Request) {
   const parsed = z.discriminatedUnion("kind", [createNewsSchema, createPageSchema]).safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const { data } = parsed;
+  if (data.kind === "news" && data.coverUrl && !isSiteMediaUrl(data.coverUrl)) {
+    return NextResponse.json({ error: "Choose media uploaded to the DLA website media library." }, { status: 400 });
+  }
   if (detectPhoneOrHandle(`${data.title} ${data.body}`).blocked) {
     return NextResponse.json({ error: "Public content cannot contain personal phone numbers or external contact handles." }, { status: 400 });
   }
@@ -98,10 +112,11 @@ export async function POST(request: Request) {
     slug,
     excerpt: data.excerpt || null,
     body: data.body,
+    coverUrl: data.coverUrl || null,
     status: data.status,
     publishedAt: data.status === "published" ? new Date() : null,
     authorId: actor.id,
-  }).onConflictDoNothing().returning({ id: newsPosts.id, title: newsPosts.title, slug: newsPosts.slug, status: newsPosts.status });
+  }).onConflictDoNothing().returning({ id: newsPosts.id, title: newsPosts.title, slug: newsPosts.slug, status: newsPosts.status, coverUrl: newsPosts.coverUrl });
   if (!post) return NextResponse.json({ error: "That website address is already in use. Choose another slug." }, { status: 409 });
   await db.insert(auditLogs).values({
     actorId: actor.id,
@@ -110,6 +125,7 @@ export async function POST(request: Request) {
     entityId: post.id,
     after: { title: post.title, slug: post.slug, status: post.status },
   });
+  revalidatePath("/blog");
   revalidateTag("public-content", "max");
   return NextResponse.json({ ok: true, post }, { status: 201 });
 }
@@ -117,7 +133,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
+  if ((actor.role !== "super_admin" && actor.role !== "admin") && actor.role !== "head_academics") return NextResponse.json({ error: "Administrator or Head of Academics access required" }, { status: 403 });
   const limit = await rateLimit("admin-cms", actor.id, 30, "1 m");
   if (!limit.ok) return tooManyRequests(limit.retryAfter);
   let body: unknown;
@@ -128,6 +144,9 @@ export async function PATCH(request: Request) {
   }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (actor.role === "head_academics" && parsed.data.action !== "approve_review" && parsed.data.action !== "reject_review") {
+    return NextResponse.json({ error: "Head of Academics can only review and moderate testimonials here." }, { status: 403 });
+  }
   if (parsed.data.action === "save_page") {
     if (detectPhoneOrHandle(`${parsed.data.title} ${parsed.data.body}`).blocked) {
       return NextResponse.json({ error: "Public content cannot contain personal phone numbers or external contact handles." }, { status: 400 });
@@ -166,6 +185,46 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ ok: true, page: updated });
   }
 
+  if (parsed.data.action === "save_news") {
+    if (detectPhoneOrHandle(`${parsed.data.title} ${parsed.data.body}`).blocked) {
+      return NextResponse.json({ error: "Public content cannot contain personal phone numbers or external contact handles." }, { status: 400 });
+    }
+    const slug = makeSlug(parsed.data.slug);
+    if (!slug) return NextResponse.json({ error: "Use a valid website address." }, { status: 400 });
+    if (parsed.data.coverUrl && !isSiteMediaUrl(parsed.data.coverUrl)) {
+      return NextResponse.json({ error: "Choose media uploaded to the DLA website media library." }, { status: 400 });
+    }
+    const [existing] = await db.select().from(newsPosts).where(eq(newsPosts.id, parsed.data.postId)).limit(1);
+    if (!existing) return NextResponse.json({ error: "News post not found." }, { status: 404 });
+    const [slugOwner] = await db.select({ id: newsPosts.id }).from(newsPosts).where(and(eq(newsPosts.slug, slug), ne(newsPosts.id, existing.id))).limit(1);
+    if (slugOwner) return NextResponse.json({ error: "That website address is already in use. Choose another slug." }, { status: 409 });
+    const publishedAt = parsed.data.status === "published"
+      ? existing.status === "published" ? existing.publishedAt ?? new Date() : new Date()
+      : null;
+    const [updated] = await db.update(newsPosts).set({
+      title: parsed.data.title,
+      slug,
+      excerpt: parsed.data.excerpt || null,
+      body: parsed.data.body,
+      coverUrl: parsed.data.coverUrl || null,
+      status: parsed.data.status,
+      publishedAt,
+    }).where(eq(newsPosts.id, existing.id))
+      .returning({ id: newsPosts.id, title: newsPosts.title, slug: newsPosts.slug, status: newsPosts.status, coverUrl: newsPosts.coverUrl });
+    if (!updated) return NextResponse.json({ error: "News post could not be saved." }, { status: 500 });
+    await db.insert(auditLogs).values({
+      actorId: actor.id,
+      action: "update_news_post",
+      entityType: "news_post",
+      entityId: updated.id,
+      before: { title: existing.title, slug: existing.slug, excerpt: existing.excerpt, body: existing.body, status: existing.status, coverUrl: existing.coverUrl },
+      after: { title: parsed.data.title, slug, excerpt: parsed.data.excerpt || null, body: parsed.data.body, status: updated.status, coverUrl: updated.coverUrl },
+    });
+    revalidatePath("/blog");
+    revalidateTag("public-content", "max");
+    return NextResponse.json({ ok: true, post: updated });
+  }
+
   const [review] = await db.select().from(testimonials).where(eq(testimonials.id, parsed.data.reviewId)).limit(1);
   if (!review) return NextResponse.json({ error: "Review not found" }, { status: 404 });
   const published = parsed.data.action === "approve_review";
@@ -178,6 +237,15 @@ export async function PATCH(request: Request) {
     before: { published: review.published },
     after: { published },
   });
+  revalidatePath("/testimonials");
   revalidateTag("public-content", "max");
   return NextResponse.json({ ok: true, published });
+}
+
+function isSiteMediaUrl(value: string) {
+  try {
+    const target = new URL(value);
+    const project = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder-project.supabase.co");
+    return target.protocol === "https:" && target.hostname === project.hostname && target.pathname.includes("/storage/v1/object/public/site-media/news/");
+  } catch { return false; }
 }

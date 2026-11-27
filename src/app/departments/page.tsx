@@ -1,8 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { getPublicDepartments } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Language Departments and Programmes",
+  description: "Explore language programmes at Dream Languages Uganda, including French, German, English, Spanish, Mandarin, Kiswahili, Luganda, Arabic and more.",
+  alternates: { canonical: "/departments" },
+};
 
 export default async function DepartmentsPage() {
   const depts = await getPublicDepartments();

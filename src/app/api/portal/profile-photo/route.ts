@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   }
   let photoOwner = user;
   if (requestedUserId && requestedUserId !== user.id) {
-    if (!["teacher", "head_academics", "super_admin"].includes(user.role)) return NextResponse.json({ error: "Profile photo access denied" }, { status: 403 });
+    if (!["teacher", "head_academics", "super_admin", "admin"].includes(user.role)) return NextResponse.json({ error: "Profile photo access denied" }, { status: 403 });
     const classId = url.searchParams.get("classId");
     if (user.role === "teacher") {
       if (!classId) return NextResponse.json({ error: "Class context required" }, { status: 400 });
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   let photoOwnerId = user.id;
   let oldKey = user.avatarStorageKey;
   if (typeof requestedUserId === "string" && requestedUserId !== user.id) {
-    if (user.role !== "super_admin") return NextResponse.json({ error: "Administrator access is required to upload another user's photo" }, { status: 403 });
+    if (user.role !== "super_admin" && user.role !== "admin") return NextResponse.json({ error: "Administrator access is required to upload another user's photo" }, { status: 403 });
     const [target] = await db.select({ id: users.id, role: users.role, avatarStorageKey: users.avatarStorageKey })
       .from(users)
       .where(and(

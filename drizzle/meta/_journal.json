@@ -64,6 +64,62 @@
       "when": 1793101072975,
       "tag": "0008_bored_rachel_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794464388497,
+      "tag": "0009_durable_assignment_storage",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794556895446,
+      "tag": "0010_recordings_and_media_storage",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794850518441,
+      "tag": "0011_requested_intake",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794898400425,
+      "tag": "0012_site_media_library",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794922268137,
+      "tag": "0013_shop_products",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795014451000,
+      "tag": "0014_admin_access_and_user_protection",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1795014452000,
+      "tag": "0015_assign_designated_admin_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795676813103,
+      "tag": "0016_weekly_cashbook_student_access",
+      "breakpoints": true
     }
   ]
 }

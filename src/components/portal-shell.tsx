@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,13 +17,17 @@ import {
   Moon,
   Search,
   Sun,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
+import { ProfilePhotoControl } from "@/components/profile-photo-control";
 import { useTheme } from "@/components/theme-provider";
 
 import { navForPath, type NavItem } from "@/lib/portal-nav";
-type NotificationTab = "All" | "Following" | "Archive";
+type NotificationTab = "All" | "Unread";
+type PortalNotification = { id: string; title: string; body: string | null; read: boolean; createdAt: string };
 
 export function PortalShell({
   title,
@@ -37,6 +41,7 @@ export function PortalShell({
   const pathname = usePathname();
   // Role menus are defined once in portal-nav so every page shows the same sidebar.
   const nav = navForPath(pathname) ?? navProp;
+  const sidebarScrollKey = `dla-portal-sidebar-scroll:${pathname.split("/")[1] || "root"}`;
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -44,6 +49,14 @@ export function PortalShell({
   const [searchValue, setSearchValue] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationTab, setNotificationTab] = useState<NotificationTab>("All");
+  const [notificationRows, setNotificationRows] = useState<PortalNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [notificationError, setNotificationError] = useState("");
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const soundEnabledRef = useRef(true);
+  const previousNotificationCountsRef = useRef<{ total: number; messages: number } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
 
@@ -71,6 +84,124 @@ export function PortalShell({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  useLayoutEffect(() => {
+    try {
+      const savedScrollTop = Number(window.sessionStorage.getItem(sidebarScrollKey) ?? 0);
+      const sidebarNav = document.querySelector<HTMLElement>(".portal-sidebar-nav");
+      if (sidebarNav && Number.isFinite(savedScrollTop)) sidebarNav.scrollTop = savedScrollTop;
+    } catch {
+      // Keep navigation usable when the browser blocks session storage.
+    }
+  }, [pathname, sidebarScrollKey]);
+
+  const playNotificationSound = useCallback((isMessage: boolean) => {
+    const context = audioContextRef.current;
+    if (!soundEnabledRef.current || !context || context.state !== "running") return;
+    const startAt = context.currentTime;
+    const frequencies = isMessage ? [740, 988] : [660];
+    frequencies.forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, startAt + index * 0.13);
+      gain.gain.exponentialRampToValueAtTime(0.12, startAt + index * 0.13 + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startAt + index * 0.13 + 0.17);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(startAt + index * 0.13);
+      oscillator.stop(startAt + index * 0.13 + 0.18);
+    });
+  }, []);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("dla-notification-sounds");
+      const enabled = saved !== "off";
+      soundEnabledRef.current = enabled;
+      setSoundEnabled(enabled);
+    } catch { /* Sounds remain enabled for this session when storage is unavailable. */ }
+    function unlockAudio() {
+      if (!window.AudioContext || !soundEnabledRef.current) return;
+      audioContextRef.current ??= new window.AudioContext();
+      if (audioContextRef.current.state === "suspended") void audioContextRef.current.resume();
+    }
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", unlockAudio);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function refreshNotifications() {
+      try {
+        const response = await fetch("/api/portal/notifications", { cache: "no-store" });
+        const result = await response.json().catch(() => ({})) as { notifications?: PortalNotification[]; unreadCount?: number; unreadMessagesCount?: number };
+        if (!response.ok) throw new Error("Could not load notifications.");
+        if (active) {
+          const nextTotal = result.unreadCount ?? 0;
+          const nextMessages = result.unreadMessagesCount ?? 0;
+          const previous = previousNotificationCountsRef.current;
+          if (previous) {
+            if (nextMessages > previous.messages) playNotificationSound(true);
+            if (nextTotal - nextMessages > previous.total - previous.messages) playNotificationSound(false);
+          }
+          previousNotificationCountsRef.current = { total: nextTotal, messages: nextMessages };
+          setNotificationRows(result.notifications ?? []);
+          setUnreadCount(nextTotal);
+          setUnreadMessagesCount(nextMessages);
+          setNotificationError("");
+        }
+      } catch (cause) {
+        if (active) setNotificationError(cause instanceof Error ? cause.message : "Could not load notifications.");
+      }
+    }
+    void refreshNotifications();
+    const timer = window.setInterval(() => { void refreshNotifications(); }, 15_000);
+    const handleNotificationRefresh = () => { void refreshNotifications(); };
+    window.addEventListener("dla:notifications-refresh", handleNotificationRefresh);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("dla:notifications-refresh", handleNotificationRefresh);
+    };
+  }, [playNotificationSound]);
+
+  function toggleNotificationSound() {
+    const enabled = !soundEnabled;
+    soundEnabledRef.current = enabled;
+    setSoundEnabled(enabled);
+    try { window.localStorage.setItem("dla-notification-sounds", enabled ? "on" : "off"); } catch { /* Current session preference still applies. */ }
+    if (enabled && window.AudioContext) {
+      audioContextRef.current ??= new window.AudioContext();
+      if (audioContextRef.current.state === "suspended") void audioContextRef.current.resume();
+    }
+  }
+
+  async function markNotificationRead(notificationId?: string) {
+    const response = await fetch("/api/portal/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(notificationId ? { notificationId } : { markAllRead: true }),
+    });
+    if (!response.ok) {
+      setNotificationError("Could not update notification status. Please try again.");
+      return;
+    }
+    setNotificationRows((rows) => rows.map((row) => !notificationId || row.id === notificationId ? { ...row, read: true } : row));
+    if (notificationId) {
+      const target = notificationRows.find((row) => row.id === notificationId && !row.read);
+      if (target) {
+        setUnreadCount((count) => Math.max(0, count - 1));
+        if (target.title.startsWith("New message from ")) setUnreadMessagesCount((count) => Math.max(0, count - 1));
+      }
+    } else {
+      setUnreadCount(0);
+      setUnreadMessagesCount(0);
+    }
+  }
+
+  const visibleNotifications = notificationTab === "Unread" ? notificationRows.filter((row) => !row.read) : notificationRows;
+
   const groups = useMemo(() => {
     const map = new Map<string, NavItem[]>();
     for (const item of nav) {
@@ -80,6 +211,13 @@ export function PortalShell({
     return [...map.entries()];
   }, [nav]);
   const activeLabel = nav.find((item) => pathname === item.href)?.label ?? title;
+  function notificationHref(notification: PortalNotification) {
+    if (notification.title.startsWith("New student application")) return "/admin/users?role=applicant";
+    if (notification.title.startsWith("New message")) return nav.find((item) => /inbox/i.test(item.label))?.href;
+    if (/class scheduled|live class started/i.test(notification.title)) return nav.find((item) => /calendar|timetable/i.test(item.label))?.href;
+    if (notification.title.startsWith("School announcement")) return nav.find((item) => /news|announcement/i.test(item.label))?.href;
+    return undefined;
+  }
 
   function renderNavItems(items: NavItem[]) {
     return items.map((item) => {
@@ -88,9 +226,18 @@ export function PortalShell({
         <Link
           key={item.href}
           href={item.href}
+          scroll={false}
           className={`portal-nav-link${active ? " is-active" : ""}`}
           aria-current={active ? "page" : undefined}
-          onClick={() => setMobileOpen(false)}
+          onClick={(event) => {
+            try {
+              const sidebarNav = event.currentTarget.closest(".portal-sidebar")?.querySelector<HTMLElement>(".portal-sidebar-nav");
+              if (sidebarNav) window.sessionStorage.setItem(sidebarScrollKey, String(sidebarNav.scrollTop));
+            } catch {
+              // Link navigation should work even if browser storage is unavailable.
+            }
+            setMobileOpen(false);
+          }}
         >
           <span className="portal-nav-icon" aria-hidden="true">{item.icon || "•"}</span>
           <span className="portal-nav-label">{item.label}</span>
@@ -168,14 +315,15 @@ export function PortalShell({
               <span>Search</span>
               <kbd><Command size={11} /> K</kbd>
             </button>
-            <Link className="portal-icon-button portal-inbox-button" href={nav.find((item) => /inbox|message/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} aria-label="Inbox">
+            <Link className="portal-icon-button portal-inbox-button" scroll={false} href={nav.find((item) => /inbox|message/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} aria-label={unreadMessagesCount ? `Inbox, ${unreadMessagesCount} unread messages` : "Inbox"}>
               <Inbox size={18} />
+              {unreadMessagesCount > 0 && <span className="portal-count-badge">{unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}</span>}
             </Link>
             <div className="portal-popover-anchor">
               <button
                 className="portal-icon-button"
                 type="button"
-                aria-label="Notifications"
+                aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
                 aria-expanded={notificationsOpen}
                 onClick={() => {
                   setNotificationsOpen((value) => !value);
@@ -184,9 +332,12 @@ export function PortalShell({
                 }}
               >
                 <Bell size={18} />
-                <span className="portal-notification-dot" />
+                {unreadCount > 0 && <span className="portal-count-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
               </button>
             </div>
+            <button className="portal-icon-button" type="button" onClick={toggleNotificationSound} aria-label={soundEnabled ? "Mute notification and inbox sounds" : "Enable notification and inbox sounds"} title={soundEnabled ? "Notification sounds on" : "Notification sounds off"}>
+              {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </button>
             <div className="portal-popover-anchor">
               <button
                 className="portal-theme-trigger"
@@ -240,14 +391,15 @@ export function PortalShell({
                 <ChevronDown size={14} />
               </button>
               {menuOpen && (
-                <div className="portal-popover portal-account-menu" role="menu">
+                <div className="portal-popover portal-account-menu">
                   <strong>{title}</strong>
-                  <Link href={nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Home</Link>
-                  <Link href={nav.find((item) => /inbox|message/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Inbox</Link>
-                  <Link href={nav.find((item) => /chat|community/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Chat</Link>
-                  <Link href={nav.find((item) => /activity/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Activity</Link>
-                  <Link href={nav.find((item) => /settings|profile/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} role="menuitem" onClick={() => setMenuOpen(false)}>Account settings</Link>
-                  <Link href="/contact" role="menuitem" onClick={() => setMenuOpen(false)}>Help &amp; support</Link>
+                  <div className="portal-account-photo-control" aria-label="Profile picture"><ProfilePhotoControl /></div>
+                  <Link href={nav[0]?.href ?? "/"} onClick={() => setMenuOpen(false)}>Home</Link>
+                  <Link href={nav.find((item) => /inbox|message/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} onClick={() => setMenuOpen(false)}>Inbox</Link>
+                  <Link href={nav.find((item) => /chat|community/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} onClick={() => setMenuOpen(false)}>Chat</Link>
+                  <Link href={nav.find((item) => /activity/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} onClick={() => setMenuOpen(false)}>Activity</Link>
+                  <Link href={nav.find((item) => /settings|profile/i.test(item.label))?.href ?? nav[0]?.href ?? "/"} onClick={() => setMenuOpen(false)}>Account settings</Link>
+                  <Link href="/contact" onClick={() => setMenuOpen(false)}>Help &amp; support</Link>
                   <div className="portal-menu-logout"><LogoutButton /></div>
                 </div>
               )}
@@ -271,14 +423,31 @@ export function PortalShell({
               <button className="portal-icon-button" type="button" aria-label="Close notifications" onClick={() => setNotificationsOpen(false)}><X size={18} /></button>
             </div>
             <div className="portal-notification-tabs" role="tablist" aria-label="Notification filters">
-              {(["All", "Following", "Archive"] as const).map((tab) => (
+              {(["All", "Unread"] as const).map((tab) => (
                 <button key={tab} type="button" role="tab" aria-selected={notificationTab === tab} onClick={() => setNotificationTab(tab)}>{tab}</button>
               ))}
+              {unreadCount > 0 && <button type="button" className="ml-auto text-xs" onClick={() => void markNotificationRead()}>Mark all read</button>}
             </div>
-            <div className="portal-notification-empty">
-              <span className="portal-empty-icon"><CalendarDays size={20} /></span>
-              <strong>{notificationTab === "All" ? "You’re all caught up" : `${notificationTab} notifications`}</strong>
-              <p>New learning hub updates will appear here.</p>
+            {notificationError && <p className="px-4 py-2 text-sm text-[var(--danger)]" role="alert">{notificationError}</p>}
+            <div className="portal-notification-list" aria-live="polite">
+              {visibleNotifications.length ? visibleNotifications.map((notification) => (
+                <article key={notification.id} className={`portal-notification-item${notification.read ? " is-read" : ""}`}>
+                  <button type="button" className="portal-notification-title" onClick={() => !notification.read && void markNotificationRead(notification.id)}>
+                    <strong>{notification.title}</strong>{!notification.read && <span className="portal-notification-unread" aria-label="Unread" />}
+                  </button>
+                  {notification.body && <div className="portal-notification-body">{notification.body.split(/(https?:\/\/[^\s]+)/g).map((part, index) => part.startsWith("http")
+                    ? <a key={index} href={part.replace(/[),.]+$/, "")} target="_blank" rel="noreferrer" onClick={() => !notification.read && void markNotificationRead(notification.id)}>{part}</a>
+                    : part)}</div>}
+                  <time dateTime={notification.createdAt}>{new Date(notification.createdAt).toLocaleString()}</time>
+                  {notificationHref(notification) && <Link className="portal-notification-action" href={notificationHref(notification)!} onClick={() => { setNotificationsOpen(false); if (!notification.read) void markNotificationRead(notification.id); }}>Open related page</Link>}
+                </article>
+              )) : (
+                <div className="portal-notification-empty">
+                  <span className="portal-empty-icon"><CalendarDays size={20} /></span>
+                  <strong>{notificationTab === "All" ? "You’re all caught up" : "No unread notifications"}</strong>
+                  <p>Scheduled classes, announcements, messages, and application updates will appear here.</p>
+                </div>
+              )}
             </div>
           </aside>
         </div>

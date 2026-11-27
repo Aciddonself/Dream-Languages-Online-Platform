@@ -1,12 +1,26 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { GlassCard, GlassButton, Badge } from "@/components/ui/glass";
 import { db } from "@/db";
 import { classes, departments, levels, timetableSessions } from "@/db/schema";
 import { eq, or, ilike, asc, and, gt, sql } from "drizzle-orm";
-import { DEFAULT_DEPARTMENTS } from "@/lib/public-content";
+import { DEFAULT_DEPARTMENTS, getPublicDepartments } from "@/lib/public-content";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ code: string }> }): Promise<Metadata> {
+  const { code } = await params;
+  const departments = await getPublicDepartments();
+  const department = departments.find((item) => item.code.toLowerCase() === code.trim().toLowerCase());
+  const name = department?.name ?? code.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const canonicalCode = department?.code.toLowerCase() ?? code.toLowerCase();
+  return {
+    title: `${name} Language Classes in Uganda`,
+    description: `Explore ${name} classes at Dream Languages Uganda. Review course levels, study options and upcoming lessons, then apply for an intake.`,
+    alternates: { canonical: `/departments/${canonicalCode}` },
+  };
+}
 
 const CEFR_LEVELS = [
   { code: "A1", name: "Beginner", desc: "Basic greetings, everyday phrases, pronunciation, self-introduction, and numbers." },
@@ -58,7 +72,7 @@ export default async function DepartmentDetailPage({
 
   // Fetch classes and upcoming live Google Meet sessions in this department
   let deptClasses: { id: string; name: string }[] = [];
-  let liveSessions: { id: string; title: string; startsAt: Date; endsAt: Date; meetUrl: string | null }[] = [];
+  let liveSessions: { id: string; title: string; startsAt: Date; endsAt: Date }[] = [];
 
   try {
     deptClasses = await db
@@ -75,7 +89,6 @@ export default async function DepartmentDetailPage({
           title: timetableSessions.title,
           startsAt: timetableSessions.startsAt,
           endsAt: timetableSessions.endsAt,
-          meetUrl: timetableSessions.meetUrl,
         })
         .from(timetableSessions)
         .where(
@@ -120,9 +133,9 @@ export default async function DepartmentDetailPage({
                 `Master ${department.name} with certified language instructors, immersive speaking sessions, and live Google Meet classes at Dream Languages Uganda.`}
             </p>
             <div className="flex flex-wrap gap-3 pt-3">
-              <Link href={`/apply?dept=${encodeURIComponent(department.id)}`}>
+              <Link href={`/apply?dept=${encodeURIComponent(department.id)}&intake=next`}>
                 <GlassButton className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold">
-                  Apply for {department.name}
+                  Book {department.name} for the Next Intake
                 </GlassButton>
               </Link>
               <Link href="/courses">
@@ -134,7 +147,7 @@ export default async function DepartmentDetailPage({
           <div className="rounded-2xl border border-white/15 bg-white/5 p-5 min-w-[240px] space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider opacity-70">Programme Highlights</h3>
             <ul className="space-y-2 text-xs opacity-85">
-              <li>✓ CEFR Certified Levels (A1 – C2)</li>
+              <li>✓ CEFR certified levels from A1 to C2</li>
               <li>✓ Live Google Meet Interactive Video</li>
               <li>✓ Weekend, Evening &amp; Day Batches</li>
               <li>✓ 24/7 Father-DLA AI Study Companion</li>
@@ -176,8 +189,8 @@ export default async function DepartmentDetailPage({
               {deptClasses.map((c) => (
                 <li key={c.id} className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
                   <span className="font-semibold text-white">{c.name}</span>
-                  <Link href={`/apply?dept=${encodeURIComponent(department.id)}`} className="text-xs text-indigo-400 hover:underline">
-                    Enrol →
+                  <Link href={`/apply?dept=${encodeURIComponent(department.id)}&intake=next`} className="text-xs text-indigo-400 hover:underline">
+                    Book Now →
                   </Link>
                 </li>
               ))}
@@ -204,16 +217,6 @@ export default async function DepartmentDetailPage({
                       {new Date(s.startsAt).toLocaleDateString()} · {new Date(s.startsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
-                  {s.meetUrl && (
-                    <a
-                      href={`/api/portal/sessions/${s.id}/join`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white"
-                    >
-                      Join Meet
-                    </a>
-                  )}
                 </li>
               ))}
             </ul>
@@ -233,9 +236,9 @@ export default async function DepartmentDetailPage({
           Submit your admission details in 2 minutes. Receive your student registration number and access your live Google Meet classes.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link href={`/apply?dept=${encodeURIComponent(department.id)}`}>
+          <Link href={`/apply?dept=${encodeURIComponent(department.id)}&intake=next`}>
             <GlassButton className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold">
-              Submit Application for {department.name}
+              Book for the Next Intake
             </GlassButton>
           </Link>
           <Link href="/courses">

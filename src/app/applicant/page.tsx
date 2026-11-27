@@ -41,7 +41,7 @@ export default async function ApplicantDashboard() {
       <div className="grid md:grid-cols-2 gap-4">
         <GlassCard className="p-6">
           <div className="font-semibold mb-2">Placement Test</div>
-          <p className="text-sm opacity-70 mb-3">Take your CEFR placement test (A1–C2) to be placed at the right level.</p>
+          <p className="text-sm opacity-70 mb-3">Take your CEFR placement test from A1 to C2 to find the right level for you.</p>
           <button className="btn-glass btn-glass-primary px-4 py-2 rounded-xl font-semibold">Start Test</button>
         </GlassCard>
         <GlassCard className="p-6">

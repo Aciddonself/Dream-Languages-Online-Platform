@@ -21,7 +21,7 @@ const schema = z.object({
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["teacher", "head_academics", "super_admin"].includes(user.role)) {
+  if (!["teacher", "head_academics", "super_admin", "admin"].includes(user.role)) {
     return NextResponse.json({ error: "Academic staff access required" }, { status: 403 });
   }
   let body: unknown;
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     endsAt: parsed.data.endsAt ?? null,
     durationMinutes: parsed.data.durationMinutes,
     published: true,
-    approvedBy: user.role === "head_academics" || user.role === "super_admin" ? user.id : null,
+    approvedBy: user.role === "head_academics" || user.role === "super_admin" || user.role === "admin" ? user.id : null,
   }).returning({ id: exams.id, title: exams.title, assessmentType: exams.assessmentType });
   return NextResponse.json({ ok: true, exam }, { status: 201 });
 }

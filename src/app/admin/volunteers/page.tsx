@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { desc } from "drizzle-orm";
 import { requireRole } from "@/lib/rbac";
 import { db } from "@/db";
 import { teacherApplications } from "@/db/schema";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
+import { TeacherApplicationDocumentControl } from "@/components/teacher-application-document-control";
 import { TeacherApplicationReview } from "@/components/teacher-application-review";
 
 const nav = [
@@ -17,7 +17,7 @@ const nav = [
 export const dynamic = "force-dynamic";
 
 export default async function VolunteerApplicationsPage() {
-  await requireRole(["super_admin"]);
+  await requireRole(["super_admin", "admin"]);
   const applications = await db.select().from(teacherApplications).orderBy(desc(teacherApplications.createdAt));
   return (
     <PortalShell title="Teacher Applications" nav={nav}>
@@ -38,9 +38,9 @@ export default async function VolunteerApplicationsPage() {
               <TeacherApplicationReview id={application.id} status={application.status} />
             </div>
             <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
-              <Link className="underline" href={`/api/admin/volunteer-applications/${application.id}/cv`}>CV</Link>
-              <Link className="underline" href={`/api/admin/volunteer-applications/${application.id}/cover-letter`}>Cover letter</Link>
-              {application.recommendationPath ? <Link className="underline" href={`/api/admin/volunteer-applications/${application.id}/recommendation`}>Recommendation letter</Link> : null}
+              <TeacherApplicationDocumentControl applicationId={application.id} document="cv" label="CV" />
+              <TeacherApplicationDocumentControl applicationId={application.id} document="cover-letter" label="Cover letter" />
+              {application.recommendationPath ? <TeacherApplicationDocumentControl applicationId={application.id} document="recommendation" label="Recommendation letter" /> : null}
             </div>
           </GlassCard>
         )) : <GlassCard className="p-5 text-sm opacity-70">No teacher applications have been submitted.</GlassCard>}

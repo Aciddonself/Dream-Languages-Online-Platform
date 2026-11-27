@@ -1,5 +1,5 @@
 export function AttendanceRing({ percentage, hasSessions }: { percentage: number; hasSessions: boolean }) {
-  const display = hasSessions ? `${percentage}%` : "—";
+  const display = hasSessions ? `${percentage}%` : "No data";
   const label = hasSessions
     ? `Attendance for completed classes: ${percentage}%`
     : "Attendance is available after your first completed class";

@@ -1,19 +1,40 @@
+import Image from "next/image";
+import type { Metadata } from "next";
 import { GlassCard } from "@/components/ui/glass";
 import Link from "next/link";
 import { whatsappContacts } from "@/lib/contacts";
 import { getPublicDepartments } from "@/lib/public-content";
+import { getSiteImages } from "@/lib/site-images";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Language Courses and Fees in Uganda",
+  description: "Compare Dream Languages Uganda programmes in French, German, English, Spanish, Mandarin, Kiswahili and more. Review study formats and apply for an upcoming intake.",
+  alternates: { canonical: "/courses" },
+};
 
 export default async function CoursesPage() {
-  const depts = await getPublicDepartments();
+  const [depts, images] = await Promise.all([getPublicDepartments(), getSiteImages()]);
   return (
     <main className="min-h-screen px-6 py-10 max-w-6xl mx-auto">
       <h1 className="display-font text-3xl font-bold mb-2">Courses &amp; Fees</h1>
       <p className="opacity-70 mb-6">Choose a language or practical skills programme and a study format that fits your goals.</p>
+      <div className="grid sm:grid-cols-2 gap-4 mb-8">
+        <GlassCard className="p-6 text-center">
+          <div className="text-3xl mb-2">📅</div>
+          <h3 className="display-font text-xl font-bold mb-1">Language Course</h3>
+          <p className="text-2xl font-bold text-[var(--brand-primary)]">~10 months</p>
+          <p className="text-sm opacity-70 mt-1">Approximately one year of structured language learning from beginner to advanced.</p>
+        </GlassCard>
+        <GlassCard className="p-6 text-center">
+          <div className="text-3xl mb-2">⚡</div>
+          <h3 className="display-font text-xl font-bold mb-1">Short Course</h3>
+          <p className="text-2xl font-bold text-[var(--brand-primary)]">4 months</p>
+          <p className="text-sm opacity-70 mt-1">Intensive short-term programme for focused skill building.</p>
+        </GlassCard>
+      </div>
       <div className="courses-portrait">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/site-media/hero-language-class.jpg" alt="Students taking part in a DLA language class" />
+        <Image src={images.courses_hero?.url ?? "/site-media/hero-language-class.jpg"} alt={images.courses_hero?.altText ?? "Students taking part in a DLA language class"} fill quality={90} sizes="100vw" unoptimized={Boolean(images.courses_hero)} />
       </div>
       <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
         {depts.map((d) => (
@@ -23,15 +44,15 @@ export default async function CoursesPage() {
                 <span className="text-3xl">{d.flagEmoji ?? "🌐"}</span>
                 <span className="text-xs font-mono font-semibold opacity-60 bg-white/10 px-2 py-0.5 rounded">{d.code}</span>
               </div>
-              <div className="font-bold text-lg text-white">{d.name}</div>
+              <div className="font-bold text-lg text-[var(--brand-primary)]">{d.name}</div>
               <div className="text-xs opacity-75 mt-1.5 leading-relaxed">{d.description ?? "Accredited language and skills programme."}</div>
             </div>
             <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold">
               <Link href={`/departments/${d.code.toLowerCase()}`} className="text-indigo-400 hover:text-indigo-300">
                 View Curriculum →
               </Link>
-              <Link href={`/apply?dept=${encodeURIComponent(d.id)}`} className="text-[var(--brand-primary)] hover:underline">
-                Apply Now →
+              <Link href={`/apply?dept=${encodeURIComponent(d.id)}&intake=next`} className="text-[var(--brand-primary)] hover:underline">
+                Book Now →
               </Link>
             </div>
           </GlassCard>
@@ -58,25 +79,28 @@ export default async function CoursesPage() {
           </tbody></table>
           <p className="mt-2 text-xs opacity-65">International rates are for language study. Contact admissions to confirm the course schedule and payment method.</p>
         </GlassCard>
-        <div className="mt-4"><Link href="/apply" className="btn-glass btn-glass-primary inline-flex rounded-xl px-5 py-3 font-semibold">Choose a language and apply</Link></div>
+        <div className="mt-4"><Link href="/apply?intake=next" className="btn-glass btn-glass-primary inline-flex rounded-xl px-5 py-3 font-semibold">Book a language course for the next intake</Link></div>
       </section>
       <section className="mt-12 grid gap-4 md:grid-cols-2">
         <GlassCard className="p-6">
           <h2 className="display-font text-2xl font-bold mb-2">Communication skills</h2>
           <p className="text-sm opacity-75">Build confidence for everyday and professional communication. Learners practise listening, clear speaking, vocabulary, pronunciation, reading comprehension, writing, presentations, and respectful conversation in guided activities.</p>
           <p className="mt-3 text-sm opacity-70">Contact admissions for current intake dates, study format, and fees.</p>
+          <Link href="/apply?intake=next" className="btn-glass btn-glass-primary mt-4 inline-flex rounded-xl px-5 py-3 font-semibold">Book Now for the Next Intake</Link>
         </GlassCard>
         <GlassCard className="p-6">
-          <h2 className="display-font text-2xl font-bold mb-2">Basic computer studies — MS Office</h2>
+          <h2 className="display-font text-2xl font-bold mb-2">Basic computer studies and MS Office</h2>
           <p className="text-sm opacity-75">A practical three-month programme: Month 1, computer fundamentals and file management; Month 2, Microsoft Word and PowerPoint; Month 3, Microsoft Excel, internet safety, and useful digital workflows.</p>
           <p className="mt-3 font-semibold">UGX 500,000 per month · UGX 1,500,000 for three months</p>
           <p className="mt-2 text-sm opacity-70">Available in-person or online. Online learners need a computer or laptop (not a phone), stable internet, and a quiet study environment.</p>
+          <Link href="/apply?intake=next" className="btn-glass btn-glass-primary mt-4 inline-flex rounded-xl px-5 py-3 font-semibold">Book Now for the Next Intake</Link>
         </GlassCard>
         <GlassCard className="p-6 md:col-span-2">
           <h2 className="display-font text-2xl font-bold mb-2">Web development, design &amp; programming</h2>
           <p className="text-sm opacity-75">Learn to build and style websites, create responsive interfaces, and develop programming foundations through practical projects. Topics include HTML, CSS, JavaScript, React, and Python. Contact admissions to discuss the right pathway, schedule, and fees.</p>
           <div className="mt-4 flex flex-wrap gap-2">{["HTML", "CSS", "JavaScript", "React", "Python", "Web design"].map((skill) => <span key={skill} className="rounded-full border border-white/15 px-3 py-1 text-sm">{skill}</span>)}</div>
           <p className="mt-3 text-sm opacity-70">Online classes require a computer or laptop, stable internet, and a quiet learning space.</p>
+          <Link href="/apply?intake=next" className="btn-glass btn-glass-primary mt-4 inline-flex rounded-xl px-5 py-3 font-semibold">Book Now for the Next Intake</Link>
         </GlassCard>
       </section>
       <section className="mt-12">
@@ -93,13 +117,14 @@ export default async function CoursesPage() {
       </section>
       <section className="mt-10 grid gap-4 md:grid-cols-3">
         {[
-          ["German in 6 Months at DLA", "german-class.jpg"],
-          ["Dream Nurses Class 2024", "nursing-class.jpg"],
-          ["Confusing German grammar made easy", "language-learning.jpg"],
-        ].map(([title, image]) => (
+          { title: "German in 6 Months at DLA", image: "german-class.jpg", slot: "home_german" as const },
+          { title: "Dream Nurses Class 2024", image: "nursing-class.jpg", slot: "home_nursing" as const },
+          { title: "Confusing German grammar made easy", image: "language-learning.jpg", slot: "home_learning" as const },
+        ].map(({ title, image, slot }) => (
           <GlassCard className="overflow-hidden" key={title}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/site-media/${image}`} alt={title} className="h-48 w-full object-cover" loading="lazy" />
+            <div className="course-photo-frame">
+              <Image src={images[slot]?.url ?? `/site-media/${image}`} alt={images[slot]?.altText ?? title} fill quality={90} sizes="(max-width: 767px) 100vw, 33vw" unoptimized={Boolean(images[slot])} />
+            </div>
             <div className="p-4">
               <div className="font-semibold">{title}</div>
               <Link href="/apply" className="mt-3 inline-block text-sm font-semibold text-[var(--brand-secondary-soft)] hover:underline">Ask about enrolment →</Link>

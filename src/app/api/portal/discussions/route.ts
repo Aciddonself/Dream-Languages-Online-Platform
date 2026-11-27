@@ -14,7 +14,7 @@ const createSchema = z.object({
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  const records = user.role === "super_admin"
+  const records = user.role === "super_admin" || user.role === "admin"
     ? await db.select({
         id: discussionRooms.id,
         title: discussionRooms.title,
@@ -41,7 +41,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["teacher", "head_academics", "super_admin"].includes(user.role)) {
+  if (!["teacher", "head_academics", "super_admin", "admin"].includes(user.role)) {
     return NextResponse.json({ error: "Teacher or Head of Academics access required" }, { status: 403 });
   }
   let body: unknown;

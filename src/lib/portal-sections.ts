@@ -39,11 +39,11 @@ async function inbox(user: Viewer): Promise<SectionData> {
 
 async function myNotifications(user: Viewer): Promise<SectionData> {
   const list = await db.select().from(notifications).where(eq(notifications.userId, user.id)).orderBy(desc(notifications.createdAt)).limit(50);
-  return { description: "Updates sent to you by the school.", rows: list.map((n) => ({ title: n.title, detail: `${n.body} · ${when(n.createdAt)}`, status: n.read ? "Read" : "Unread" })) };
+  return { description: "School announcements, class schedules, live class reminders, messages, and application updates sent to you.", rows: list.map((n) => ({ title: n.title, detail: `${n.body ? `${n.body} · ` : ""}${when(n.createdAt)}`, status: n.read ? "Read" : "Unread" })) };
 }
 
 async function calendar(user: Viewer): Promise<SectionData> {
-  const ids = user.role === "super_admin" || user.role === "finance" ? null : await myClassIds(user);
+  const ids = ["super_admin", "admin", "finance"].includes(user.role) ? null : await myClassIds(user);
   const filter = ids === null ? undefined : ids.length ? inArray(timetableSessions.classId, ids) : sql`false`;
   const list = await db.select().from(timetableSessions).where(and(gte(timetableSessions.endsAt, new Date()), filter)).orderBy(timetableSessions.startsAt).limit(60);
   const rows: SectionRow[] = list.map((s) => ({ title: s.title, detail: `${when(s.startsAt)}${s.room ? ` · ${s.room}` : ""}`, status: s.meetUrl ? "Live link ready" : "Scheduled" }));
@@ -55,7 +55,7 @@ async function calendar(user: Viewer): Promise<SectionData> {
 }
 
 async function helpDesk(user: Viewer): Promise<SectionData> {
-  const admin = user.role === "super_admin";
+  const admin = user.role === "super_admin" || user.role === "admin";
   const list = await db.select().from(supportTickets).where(admin ? undefined : eq(supportTickets.userId, user.id)).orderBy(desc(supportTickets.createdAt)).limit(100);
   return { description: admin ? "Every support ticket from students, staff and applicants." : "Requests you sent to the school and their status.", rows: list.map((t) => ({ title: t.subject, detail: `${t.body.slice(0, 160)} · ${day(t.createdAt)}`, status: t.status })) };
 }
@@ -152,7 +152,7 @@ async function myCertificates(user: Viewer): Promise<SectionData> {
 }
 
 async function rooms(user: Viewer): Promise<SectionData> {
-  const ids = user.role === "super_admin" ? null : await myClassIds(user);
+  const ids = user.role === "super_admin" || user.role === "admin" ? null : await myClassIds(user);
   const list = await db.select().from(discussionRooms).where(ids === null ? undefined : or(eq(discussionRooms.visibility, "public"), ids.length ? inArray(discussionRooms.classId, ids) : sql`false`)).orderBy(desc(discussionRooms.createdAt)).limit(60);
   return { description: "Rooms where learners practise together.", rows: list.map((r) => ({ title: r.title, detail: `${r.language ?? "Any language"} · ${r.level ?? "All levels"}${r.topic ? ` · ${r.topic}` : ""}`, status: r.status })) };
 }
@@ -242,8 +242,22 @@ async function discountList(): Promise<SectionData> {
 }
 
 async function refunds(): Promise<SectionData> {
-  const list = await db.select().from(payments).where(or(eq(payments.status, "reversed"), eq(payments.status, "rejected"))).orderBy(desc(payments.createdAt)).limit(100);
-  return { description: "Payments that were reversed or rejected.", rows: list.map((p) => ({ title: `${money(p.amount, p.currency)} · ${p.method}`, detail: day(p.createdAt), status: p.status })) };
+  const [list, [rejected]] = await Promise.all([
+    db.select({ amount: payments.amount, currency: payments.currency, method: payments.method, reference: payments.reference,
+      createdAt: payments.createdAt, displayName: users.displayName, firstName: users.firstName, lastName: users.lastName,
+      email: users.email, registrationNumber: users.registrationNumber,
+    }).from(payments).leftJoin(users, eq(payments.studentId, users.id))
+      .where(eq(payments.status, "reversed")).orderBy(desc(payments.createdAt)).limit(100),
+    db.select({ total: sql<number>`count(*)::int` }).from(payments).where(eq(payments.status, "rejected")),
+  ]);
+  return {
+    description: `Reversed payments only. Rejected payments are not refunds. Refund requests, approvals, and payout transactions are not stored in the current database. ${rejected?.total ?? 0} rejected payment(s) are recorded separately.`,
+    rows: list.map((payment) => ({
+      title: `${money(payment.amount, payment.currency)} · ${payment.displayName ?? ([payment.firstName, payment.lastName].filter(Boolean).join(" ") || payment.email || "Student not linked")}`,
+      detail: `${payment.registrationNumber ?? "No registration number"} · ${payment.method.replaceAll("_", " ")} · reference ${payment.reference ?? "not supplied"} · ${when(payment.createdAt)}`,
+      status: "Reversed",
+    })),
+  };
 }
 
 async function financeReports(): Promise<SectionData> {
@@ -358,7 +372,7 @@ async function adminExtras(slug: string): Promise<SectionData | null> {
 export async function portalSection(portal: string, slug: string, user: Viewer): Promise<SectionData | null> {
   try {
     if (slug === "inbox") return await inbox(user);
-    if (slug === "notifications" && portal !== "admin") return await myNotifications(user);
+    if (slug === "notifications") return await myNotifications(user);
     if (slug === "calendar" && portal !== "admin") return await calendar(user);
     if (slug === "help-desk" && portal !== "hoc") return await helpDesk(user);
     if (slug === "documents" || slug === "teacher-documents") return slug === "teacher-documents" ? await teacherDocuments() : await myDocuments(user);

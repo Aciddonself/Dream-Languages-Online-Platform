@@ -27,7 +27,7 @@ const createSchema = z.object({
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["super_admin", "head_academics"].includes(user.role)) {
+  if (!["super_admin", "head_academics", "admin"].includes(user.role)) {
     return NextResponse.json({ error: "Administrator or Head of Academics access required" }, { status: 403 });
   }
   const holidays = await db.select({
@@ -50,7 +50,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["super_admin", "head_academics"].includes(user.role)) {
+  if (!["super_admin", "head_academics", "admin"].includes(user.role)) {
     return NextResponse.json({ error: "Administrator or Head of Academics access required" }, { status: 403 });
   }
   const limited = await rateLimit("school-holiday-create", user.id, 20, "10 m");

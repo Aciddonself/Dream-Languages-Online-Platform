@@ -12,6 +12,7 @@ import {
   exams,
   enrolments,
   feeSchedules,
+  departments,
   holds,
   materials,
   payments,
@@ -23,17 +24,19 @@ import {
 import { requireRole } from "@/lib/rbac";
 import { portalSection } from "@/lib/portal-sections";
 import { PORTAL_NAVS } from "@/lib/portal-nav";
+import { PortalInbox } from "@/components/portal-inbox";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 const portalConfig = {
-  admin: { title: "Admin Console", roles: ["super_admin"] },
+  admin: { title: "Admin Console", roles: ["super_admin", "admin"] },
   applicant: { title: "Applicant Portal", roles: ["applicant", "student", "super_admin"] },
   student: { title: "Student Portal", roles: ["student", "super_admin"] },
   teacher: { title: "Teacher Portal", roles: ["teacher", "head_academics", "super_admin"] },
-  finance: { title: "Finance Portal", roles: ["finance", "super_admin"] },
+  finance: { title: "Finance Portal", roles: ["finance", "admin", "super_admin"] },
   hoc: { title: "Head of Academics", roles: ["head_academics", "super_admin"] },
 } as const;
 
-type Row = { title: string; detail: string; status?: string };
+type Row = { title: string; detail: string; status?: string; href?: string };
 
 function headingFromSlug(slug: string) {
   return slug
@@ -44,10 +47,13 @@ function headingFromSlug(slug: string) {
 
 export default async function PortalSectionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ portal: string; section: string[] }>;
+  searchParams: Promise<{ departmentId?: string }>;
 }) {
-  const { portal, section } = await params;
+  const [{ portal, section }, query] = await Promise.all([params, searchParams]);
+  const selectedDepartmentId = query.departmentId ?? "";
   const config = portalConfig[portal as keyof typeof portalConfig];
   if (!config || section.length !== 1) notFound();
 
@@ -58,7 +64,18 @@ export default async function PortalSectionPage({
   let rows: Row[] = [];
   let description = `Your ${title.toLowerCase()} information and updates.`;
   const links: { href: string; label: string }[] = [];
+  let teacherLanguageOptions: { id: string; name: string }[] = [];
 
+  const feeGatedSections = new Set(["classes", "timetable", "assignments", "exams", "materials", "recordings", "community"]);
+  const financeAccess = portal === "student" && user.role === "student" && feeGatedSections.has(currentSection)
+    ? await getStudentFinanceAccess(user.id)
+    : null;
+  if (financeAccess && !financeAccess.canLearn) {
+    description = financeAccess.balanceByCurrency.length
+      ? `Learning access is paused until your fees are cleared. Outstanding: ${financeAccess.balanceByCurrency.map((item) => `${item.currency} ${item.amount.toLocaleString()}`).join(" · ")}. An administrator can record an approved exception.`
+      : "No fee schedule is assigned to your account yet. Contact the finance office to confirm your fee record or ask an administrator about an exception.";
+    links.push({ href: "/student/fees", label: "View fees and payment information" });
+  } else {
   const extra = await portalSection(portal, currentSection, user);
   if (extra) {
     rows = extra.rows;
@@ -85,7 +102,7 @@ export default async function PortalSectionPage({
         .orderBy(desc(results.createdAt));
       rows = records.map((record: { title?: string | null; score?: number | string | null; grade?: string | null; comments?: string | null }) => ({ title: record.title ?? "Assessment", detail: `Score: ${record.score ?? "Pending"} · Grade: ${record.grade ?? "Not graded"}${record.comments ? ` · ${record.comments}` : ""}` }));
       description = "Results released by your academic team. Download the full exam and test statement below.";
-      links.push({ href: "/api/portal/documents/results", label: "Download results PDF" });
+      if (records.length) links.push({ href: "/api/portal/documents/results", label: "Download results PDF" });
     } else if (currentSection === "attendance") {
       const records = await db.select().from(attendance).where(eq(attendance.studentId, user.id)).orderBy(desc(attendance.markedAt)).limit(50);
       rows = records.map((record: { status: string; markedAt: Date | string; note?: string | null }) => ({ title: record.status, detail: `${new Date(record.markedAt).toLocaleString()}${record.note ? ` · ${record.note}` : ""}` }));
@@ -111,9 +128,14 @@ export default async function PortalSectionPage({
     }
   } else if (portal === "teacher") {
     if (currentSection === "classes") {
-      const records = await db.select().from(classes).where(and(eq(classes.teacherId, user.id), isNull(classes.deletedAt)));
-      rows = records.map((record: { name: string; capacity?: number | null }) => ({ title: record.name, detail: `Capacity: ${record.capacity ?? "Not set"}` }));
-      description = "Classes assigned to your teacher account.";
+      teacherLanguageOptions = await db.selectDistinct({ id: departments.id, name: departments.name }).from(classes)
+        .innerJoin(departments, eq(classes.departmentId, departments.id))
+        .where(and(eq(classes.teacherId, user.id), isNull(classes.deletedAt), isNull(departments.deletedAt)));
+      const records = await db.select({ name: classes.name, capacity: classes.capacity, departmentName: departments.name }).from(classes)
+        .leftJoin(departments, eq(classes.departmentId, departments.id))
+        .where(and(eq(classes.teacherId, user.id), isNull(classes.deletedAt), selectedDepartmentId ? eq(classes.departmentId, selectedDepartmentId) : undefined));
+      rows = records.map((record) => ({ title: record.name, detail: `${record.departmentName ?? "Department unassigned"} · Capacity: ${record.capacity ?? "Not set"}` }));
+      description = "Classes assigned to your teacher account. Filter by the language department to focus on one group of learners.";
     } else if (currentSection === "exams") {
       const records = await db.select().from(exams).where(eq(exams.teacherId, user.id)).orderBy(desc(exams.createdAt));
       rows = records.map((record: { title: string; published: boolean; durationMinutes?: number | null }) => ({ title: record.title, detail: `${record.published ? "Published" : "Awaiting review"} · ${record.durationMinutes ?? 60} minutes`, status: record.published ? "Published" : "Draft" }));
@@ -157,6 +179,7 @@ export default async function PortalSectionPage({
       description = "Assessments awaiting academic approval.";
     }
   }
+  }
 
   return (
     <PortalShell title={config.title} nav={nav}>
@@ -164,6 +187,16 @@ export default async function PortalSectionPage({
         <h1 className="display-font text-3xl font-bold">{title}</h1>
         <p className="text-sm opacity-65">{description}</p>
       </div>
+      {portal === "teacher" && currentSection === "classes" && (
+        <form method="get" className="mb-5 flex flex-wrap gap-2">
+          <select name="departmentId" defaultValue={selectedDepartmentId} className="glass min-w-56 px-3 py-2.5">
+            <option value="">All my language departments</option>
+            {teacherLanguageOptions.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+          </select>
+          <button type="submit" className="glass rounded-xl px-4 py-2.5 font-semibold">Filter classes</button>
+          {selectedDepartmentId && <Link href="/teacher/classes" className="glass rounded-xl px-4 py-2.5">Clear</Link>}
+        </form>
+      )}
       {links.length > 0 && (
         <div className="flex flex-wrap gap-3 mb-5">
           {links.map((link) => (
@@ -173,7 +206,7 @@ export default async function PortalSectionPage({
           ))}
         </div>
       )}
-      <GlassCard className="p-5" strong>
+      {currentSection === "inbox" ? <PortalInbox currentUserId={user.id} /> : <GlassCard className="p-5" strong>
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="font-semibold">{title} records</h2>
           <Badge tone={rows.length ? "info" : "warning"}>{rows.length} records</Badge>
@@ -186,7 +219,10 @@ export default async function PortalSectionPage({
                   <div className="font-medium">{row.title}</div>
                   <div className="text-sm opacity-65">{row.detail}</div>
                 </div>
-                {row.status && <Badge tone={row.status.toLowerCase().includes("pending") || row.status.toLowerCase().includes("review") ? "warning" : "success"}>{row.status}</Badge>}
+                <div className="flex items-center gap-3">
+                  {row.status && <Badge tone={row.status.toLowerCase().includes("pending") || row.status.toLowerCase().includes("review") || row.status.toLowerCase().includes("overdue") ? "warning" : "success"}>{row.status}</Badge>}
+                  {row.href && <Link className="text-sm font-semibold text-[var(--brand-primary)] underline" href={row.href} target={row.href.startsWith("http") ? "_blank" : undefined} rel={row.href.startsWith("http") ? "noreferrer" : undefined}>Download receipt</Link>}
+                </div>
               </li>
             ))}
           </ul>
@@ -195,7 +231,7 @@ export default async function PortalSectionPage({
             There are no {title.toLowerCase()} records to show yet. New school records will appear here when they are added.
           </p>
         )}
-      </GlassCard>
+      </GlassCard>}
     </PortalShell>
   );
 }

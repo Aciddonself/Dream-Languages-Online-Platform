@@ -18,7 +18,7 @@ type Holiday = {
 
 function holidayDates(holiday: Holiday) {
   if (holiday.endsOn && holiday.endsOn !== holiday.startsOn) {
-    return `${formatHolidayDate(holiday.startsOn)} – ${formatHolidayDate(holiday.endsOn)}`;
+    return `${formatHolidayDate(holiday.startsOn)} to ${formatHolidayDate(holiday.endsOn)}`;
   }
   return formatHolidayDate(holiday.startsOn);
 }

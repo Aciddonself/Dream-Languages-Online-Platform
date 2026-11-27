@@ -5,7 +5,7 @@ import { GlassCard } from "@/components/ui/glass";
 import { db } from "@/db";
 import { cmsPages } from "@/db/schema";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 async function getPage(slug: string) {
   const [page] = await db.select({

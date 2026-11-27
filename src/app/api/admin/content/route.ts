@@ -22,7 +22,7 @@ const schema = z.discriminatedUnion("action", [addPartner, removePartner, decide
 export async function POST(request: Request) {
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (actor.role !== "super_admin") return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
+  if ((actor.role !== "super_admin" && actor.role !== "admin")) return NextResponse.json({ error: "School administrator access required" }, { status: 403 });
   const limit = await rateLimit("admin-cms", actor.id, 30, "1 m");
   if (!limit.ok) return tooManyRequests(limit.retryAfter);
   let body: unknown;

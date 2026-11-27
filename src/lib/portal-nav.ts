@@ -25,6 +25,7 @@ const admin = build("/admin", {
     ["chat", "Chat and Community", "💬"],
     ["inbox", "Inbox", "📥"],
     ["notifications", "Notifications", "🔔"],
+    ["activity", "School activity", "📡"],
   ],
   People: [
     ["applications", "Applications", "📋"],
@@ -52,6 +53,8 @@ const admin = build("/admin", {
     ["materials", "Learning materials library", "📄"],
   ],
   Finance: [
+    ["weekly-cashbook", "Weekly cashbook", "🧾"],
+    ["student-fees", "Student fees by language", "🧮"],
     ["fee-structures", "Fee structures", "🏷️"],
     ["payments", "Payments", "💳"],
     ["holds", "Holds", "⏸️"],
@@ -144,10 +147,10 @@ const teacher = build("/teacher", {
   ],
   Teaching: [
     ["classes", "My Classes", "📚"],
+    ["assignments", "Assignments", "🗂️"],
     ["live", "Live Class (Start / Join)", "🎥"],
     ["attendance", "Attendance", "✅"],
     ["materials", "Materials", "📄"],
-    ["assignments", "Assignments (Kanban)", "🗂️"],
     ["exams", "Tests and Exams", "📝"],
     ["results", "Results", "📊"],
     ["gradebook", "Gradebook", "📒"],
@@ -168,6 +171,7 @@ const finance = build("/finance", {
   ],
   Finance: [
     ["fee-structures", "Fee structures", "🏷️"],
+    ["students", "Student fees by language", "🧮"],
     ["verification", "Payment verification queue", "🔍"],
     ["payments", "Record payment", "💳"],
     ["receipts", "Receipts", "🧾"],

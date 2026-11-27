@@ -6,13 +6,45 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 const bucket = "student-photos";
 
+export class StudentPhotoStorageError extends Error {
+  readonly code: string;
+  readonly statusCode: string | null;
+
+  constructor(message: string, statusCode: string | null) {
+    const code = statusCode === "401" || statusCode === "403"
+      ? "STORAGE_UNAUTHORIZED"
+      : statusCode === "404"
+        ? "STORAGE_BUCKET_NOT_FOUND"
+        : statusCode === "413" || statusCode === "415"
+          ? "STORAGE_FILE_REJECTED"
+          : "STORAGE_UPLOAD_FAILED";
+    super(message);
+    this.name = "StudentPhotoStorageError";
+    this.code = code;
+    this.statusCode = statusCode;
+  }
+}
+
 export async function storeStudentPhoto(key: string, bytes: Uint8Array) {
-  const { error } = await createSupabaseAdminClient().storage.from(bucket).upload(key, bytes, {
+  const storage = createSupabaseAdminClient().storage;
+  const upload = () => storage.from(bucket).upload(key, bytes, {
     contentType: "image/jpeg",
     cacheControl: "3600",
     upsert: false,
   });
-  if (error) throw new Error(`Could not save the student photo: ${error.message}`);
+  let { error } = await upload();
+  // Recover if the production bucket was missed during database migrations.
+  if (error && (error.message.toLowerCase().includes("bucket not found") || error.statusCode === "404")) {
+    const created = await storage.createBucket(bucket, {
+      public: false,
+      fileSizeLimit: String(5 * 1024 * 1024),
+      allowedMimeTypes: ["image/jpeg"],
+    });
+    if (!created.error || created.error.message.toLowerCase().includes("already exists")) {
+      ({ error } = await upload());
+    }
+  }
+  if (error) throw new StudentPhotoStorageError(error.message, error.statusCode ?? null);
 }
 
 export async function deleteStudentPhoto(key: string) {

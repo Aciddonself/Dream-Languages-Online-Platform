@@ -3,9 +3,12 @@ import { and, eq, inArray } from "drizzle-orm";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { db } from "@/db";
-import { classes, enrolments, exams } from "@/db/schema";
+import { classes, enrolments, examAttempts, exams, results } from "@/db/schema";
 import { getStudentExamEligibility } from "@/lib/exam-eligibility";
 import { requireRole } from "@/lib/rbac";
+import { OnlineExam } from "@/components/online-exam";
+import { StudentFeeAccessNotice } from "@/components/student-fee-access-notice";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 export const dynamic = "force-dynamic";
 
@@ -16,12 +19,17 @@ const nav = [
   { href: "/student/exams", label: "Exams", icon: "📝" },
   { href: "/student/results", label: "Results", icon: "📊" },
   { href: "/student/materials", label: "Materials", icon: "📄" },
+  { href: "/student/recordings", label: "Recorded classes", icon: "🎬" },
   { href: "/student/community", label: "Community", icon: "💬" },
   { href: "/student/reviews", label: "Share a Review", icon: "⭐" },
 ];
 
 export default async function StudentExamsPage() {
   const user = await requireRole(["student"]);
+  const financeAccess = await getStudentFinanceAccess(user.id);
+  if (!financeAccess.canLearn) return <PortalShell title="Student Portal" nav={nav}><StudentFeeAccessNotice hasFeeSchedule={financeAccess.balanceByCurrency.length > 0} balances={financeAccess.balanceByCurrency} /></PortalShell>;
+  const publishedResults = await db.select({ assessmentType: exams.assessmentType }).from(results)
+    .innerJoin(exams, eq(results.examId, exams.id)).where(and(eq(results.studentId, user.id), eq(results.published, true)));
   const enrolled = await db.select({ id: classes.id, name: classes.name }).from(enrolments)
     .innerJoin(classes, eq(enrolments.classId, classes.id))
     .where(and(eq(enrolments.studentId, user.id), eq(enrolments.status, "active")));
@@ -41,20 +49,24 @@ export default async function StudentExamsPage() {
         .where(and(inArray(exams.classId, classIds), eq(exams.published, true)))
         .orderBy(exams.startsAt)
     : [];
-  const records = await Promise.all(examsList.map(async (exam) => ({
-    exam,
-    eligibility: await getStudentExamEligibility(user.id, exam.classId!),
-  })));
+  const records = await Promise.all(examsList.map(async (exam) => {
+    const [eligibility, attempt] = await Promise.all([
+      getStudentExamEligibility(user.id, exam.classId!),
+      db.select({ status: examAttempts.status }).from(examAttempts)
+        .where(and(eq(examAttempts.examId, exam.id), eq(examAttempts.studentId, user.id))).limit(1),
+    ]);
+    return { exam, eligibility, attempt: attempt[0] };
+  }));
   return (
     <PortalShell title="Student Portal" nav={nav}>
       <h1 className="display-font text-3xl font-bold mb-2">Tests and Examinations</h1>
-      <p className="text-sm opacity-65 mb-5">Exam eligibility requires at least 60% attendance or a cleared fee balance. Attendance is calculated from teacher-confirmed class sessions.</p>
+      <p className="text-sm opacity-65 mb-5">A cleared fee schedule is required before a student can sit a test or examination. An administrator may grant a documented exception.</p>
       <div className="flex flex-wrap gap-3 mb-5">
-        <Link className="glass rounded-xl px-4 py-2 text-sm font-semibold" href="/api/portal/documents/test-report">Download test report card</Link>
-        <Link className="glass rounded-xl px-4 py-2 text-sm font-semibold" href="/api/portal/documents/final-report">Download final exam report card</Link>
+        {publishedResults.some((result) => result.assessmentType === "test") && <Link className="glass rounded-xl px-4 py-2 text-sm font-semibold" href="/api/portal/documents/test-report">Download test report card</Link>}
+        {publishedResults.some((result) => result.assessmentType === "final_exam") && <Link className="glass rounded-xl px-4 py-2 text-sm font-semibold" href="/api/portal/documents/final-report">Download final exam report card</Link>}
       </div>
       <div className="grid gap-3">
-        {records.length ? records.map(({ exam, eligibility }) => (
+        {records.length ? records.map(({ exam, eligibility, attempt }) => (
           <GlassCard key={exam.id} className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -66,7 +78,8 @@ export default async function StudentExamsPage() {
                 {eligibility.eligible ? "Eligible" : "Not eligible"}
               </span>
             </div>
-            <p className="mt-3 text-sm opacity-70">Attendance: {eligibility.attendancePercent}% · Fee balance: {eligibility.feeBalanceLabel}{eligibility.basis === "fees_clear" && eligibility.attendancePercent < 60 ? " · Fee-clear exception applied" : ""}{eligibility.basis === "not_eligible" && eligibility.feeBalance === 0 && eligibility.attendancePercent < 60 ? " · No cleared fee schedule is on file" : ""}</p>
+            <p className="mt-3 text-sm opacity-70">Fee status: {eligibility.feeBalanceLabel}{eligibility.basis === "admin_override" ? ` · Admin exception: ${eligibility.overrideReason}` : ""}</p>
+            <OnlineExam examId={exam.id} eligible={eligibility.eligible} existingStatus={attempt?.status} />
           </GlassCard>
         )) : <GlassCard className="p-5 text-sm opacity-65">No published assessments are assigned to your active classes.</GlassCard>}
       </div>

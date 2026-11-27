@@ -5,6 +5,9 @@ import { GlassCard } from "@/components/ui/glass";
 import { db } from "@/db";
 import { feeSchedules, payments } from "@/db/schema";
 import { requireRole } from "@/lib/rbac";
+import { StudentPaymentReport } from "@/components/student-payment-report";
+import { PesapalCheckout } from "@/components/pesapal-checkout";
+import { pesapalConfigured } from "@/lib/pesapal";
 
 export const dynamic = "force-dynamic";
 
@@ -16,12 +19,14 @@ const nav = [
   { href: "/student/exams", label: "Exams", icon: "📝" },
   { href: "/student/results", label: "Results", icon: "📊" },
   { href: "/student/materials", label: "Materials", icon: "📄" },
+  { href: "/student/recordings", label: "Recorded classes", icon: "🎬" },
   { href: "/student/community", label: "Community", icon: "💬" },
   { href: "/student/reviews", label: "Share a Review", icon: "⭐" },
 ];
 
-export default async function StudentFeesPage() {
+export default async function StudentFeesPage({ searchParams }: { searchParams: Promise<{ payment?: string }> }) {
   const user = await requireRole(["student"]);
+  const { payment: paymentResult } = await searchParams;
   const [schedules, paymentRows] = await Promise.all([
     db.select().from(feeSchedules).where(eq(feeSchedules.studentId, user.id)).orderBy(desc(feeSchedules.createdAt)),
     db.select().from(payments).where(and(eq(payments.studentId, user.id), gte(payments.createdAt, user.createdAt))).orderBy(desc(payments.createdAt)),
@@ -42,6 +47,10 @@ export default async function StudentFeesPage() {
     <PortalShell title="Student Portal" nav={nav}>
       <h1 className="display-font text-3xl font-bold mb-2">Fees and Payments</h1>
       <p className="text-sm opacity-65 mb-5">Payment history is shown from your admission date ({user.createdAt.toLocaleDateString()}). Receipts become available after payment verification.</p>
+      {paymentResult === "success" && <p role="status" className="mb-4 rounded-xl border border-emerald-600/30 bg-emerald-500/10 p-3 text-sm">Your payment was verified and applied to your fee schedule. Download the receipt from your payment history.</p>}
+      {paymentResult === "verification-pending" && <p role="status" className="mb-4 rounded-xl border border-amber-600/30 bg-amber-500/10 p-3 text-sm">The payment provider has not confirmed this payment yet. Your balance will update only after verification. Contact Finance if the amount was charged.</p>}
+      {paymentResult === "cancelled" && <p role="status" className="mb-4 rounded-xl border border-amber-600/30 bg-amber-500/10 p-3 text-sm">Checkout was cancelled. No payment was applied to your account.</p>}
+      {(paymentResult === "failed" || paymentResult === "invalid" || paymentResult === "not-found") && <p role="status" className="mb-4 rounded-xl border border-red-600/30 bg-red-500/10 p-3 text-sm">Online checkout was not completed. No unverified payment will be applied. You can try again or use the manual payment instructions.</p>}
       {totals.length ? <div className="mb-5 space-y-4">{totals.map((total) => (
         <div key={total.currency} className="grid gap-4 sm:grid-cols-3">
           <GlassCard className="p-5"><div className="text-sm opacity-65">Scheduled fees · {total.currency}</div><div className="mt-2 text-2xl font-bold">{total.currency} {total.fees.toLocaleString()}</div></GlassCard>
@@ -58,6 +67,13 @@ export default async function StudentFeesPage() {
           </div>
         ))}</div> : <p className="text-sm opacity-65">No fee schedule has been assigned yet. Contact the finance office to confirm your programme charges.</p>}
       </GlassCard>
+      {schedules.some((fee) => fee.amount > fee.paid) && <GlassCard className="p-5 mb-5">
+        <h2 className="font-semibold mb-2">Report a payment</h2>
+        <p className="mb-4 text-sm opacity-65">Pay using the official bank or mobile money instructions, then submit the amount and transaction reference here. Your balance changes only after Finance verifies the transfer.</p>
+        <Link className="mb-4 inline-flex text-sm font-semibold underline" href="/pay-now">View official bank and mobile money instructions</Link>
+        <StudentPaymentReport currencies={Array.from(new Set<string>(schedules.filter((fee) => fee.amount > fee.paid).map((fee) => fee.currency)))} />
+      <PesapalCheckout outstandingUgx={schedules.filter((fee) => fee.currency === "UGX").reduce((sum, fee) => sum + Math.max(0, fee.amount - fee.paid), 0)} configured={pesapalConfigured()} />
+      </GlassCard>}
       <GlassCard className="p-5">
         <h2 className="font-semibold mb-3">Payment history</h2>
         {paymentRows.length ? <div className="space-y-2">{paymentRows.map((payment) => (

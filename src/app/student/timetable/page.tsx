@@ -4,6 +4,9 @@ import { db } from "@/db";
 import { classes, departments, enrolments, timetableSessions } from "@/db/schema";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
+import { formatSchoolDate, formatSchoolTime } from "@/lib/school-time";
+import { StudentFeeAccessNotice } from "@/components/student-fee-access-notice";
+import { getStudentFinanceAccess } from "@/lib/student-finance-access";
 
 const nav = [
   { href: "/student", label: "Dashboard", icon: "🏠" },
@@ -17,6 +20,8 @@ export const dynamic = "force-dynamic";
 
 export default async function StudentTimetablePage() {
   const user = await requireRole(["student"]);
+  const financeAccess = await getStudentFinanceAccess(user.id);
+  if (!financeAccess.canLearn) return <PortalShell title="Student Portal" nav={nav}><StudentFeeAccessNotice hasFeeSchedule={financeAccess.balanceByCurrency.length > 0} balances={financeAccess.balanceByCurrency} /></PortalShell>;
   const activeClasses = await db.select({ id: enrolments.classId }).from(enrolments)
     .where(and(eq(enrolments.studentId, user.id), eq(enrolments.status, "active")));
   const classIds = activeClasses.map((item) => item.id).filter((id): id is string => Boolean(id));
@@ -88,9 +93,7 @@ export default async function StudentTimetablePage() {
                   <h2 className="font-semibold text-lg">{session.title}</h2>
                   <p className="text-sm opacity-70">
                     {session.className ?? "Open Language Session"} ·{" "}
-                    {session.startsAt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} ·{" "}
-                    {session.startsAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} –{" "}
-                    {session.endsAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {formatSchoolDate(session.startsAt)} · {formatSchoolTime(session.startsAt)} to {formatSchoolTime(session.endsAt)}
                     {session.room ? ` · ${session.room}` : ""}
                   </p>
                 </div>
@@ -98,8 +101,6 @@ export default async function StudentTimetablePage() {
                   {session.hasMeeting ? (
                     <a
                       href={`/api/portal/sessions/${session.id}/join`}
-                      target="_blank"
-                      rel="noreferrer"
                       className={`rounded-xl px-5 py-2.5 font-bold text-sm shadow flex items-center gap-2 transition-all ${
                         isLive
                           ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:scale-105"

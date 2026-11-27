@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { attendance, auditLogs, classes, enrolments, timetableSessions, users } from "@/db/schema";
+import { attendance, auditLogs, classes, departments, enrolments, timetableSessions, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { calculateAttendancePercent } from "@/lib/attendance";
+import { notifySchoolAudience } from "@/lib/notification-delivery";
 import { z } from "zod";
 
 const actionSchema = z.object({
@@ -17,7 +18,7 @@ const actionSchema = z.object({
 
 type RouteContext = { params: Promise<{ sessionId: string }> };
 async function canManageSession(userId: string, role: string, session: { teacherId: string | null; classId: string | null }) {
-  if (role === "super_admin" || role === "head_academics") return true;
+  if (role === "super_admin" || role === "admin" || role === "head_academics") return true;
   if (role !== "teacher") return false;
   if (session.teacherId === userId) return true;
   if (!session.classId) return false;
@@ -34,7 +35,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
   if (user.role === "student") {
     if (!session.classId) return NextResponse.json({ error: "This session has no enrolled class" }, { status: 403 });
-    const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(eq(enrolments.studentId, user.id), eq(enrolments.classId, session.classId))).limit(1);
+    const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(eq(enrolments.studentId, user.id), eq(enrolments.classId, session.classId), eq(enrolments.status, "active"))).limit(1);
     if (!enrollment) return NextResponse.json({ error: "You are not enrolled in this class" }, { status: 403 });
     const [record] = await db.select().from(attendance).where(and(eq(attendance.sessionId, session.id), eq(attendance.studentId, user.id))).limit(1);
     const completedSessions = await db
@@ -157,6 +158,21 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Class can only be started from 30 minutes before its scheduled time until its scheduled end" }, { status: 409 });
     }
     await db.update(timetableSessions).set({ liveStartedAt: now, teacherCheckInAt: now }).where(eq(timetableSessions.id, session.id));
+    try {
+      const [schoolClass] = session.classId
+        ? await db.select({ departmentName: departments.name }).from(classes)
+          .leftJoin(departments, eq(classes.departmentId, departments.id)).where(eq(classes.id, session.classId)).limit(1)
+        : [];
+      await notifySchoolAudience({
+        title: `Live class started: ${session.title}`,
+        body: `${schoolClass?.departmentName ? `${schoolClass.departmentName} learners` : "The school"} class is live now.${session.meetUrl ? ` Join at ${session.meetUrl}` : " Open your class calendar to join."}`,
+        audience: session.classId ? "class" : "all",
+        classId: session.classId,
+        excludeUserId: user.id,
+      });
+    } catch (error) {
+      console.error("Class started, but live class notifications could not be delivered", error instanceof Error ? error.message : "unknown error");
+    }
     return NextResponse.json({ ok: true, liveStartedAt: now });
   }
 
@@ -200,7 +216,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Student, corrected status, and a reason are required" }, { status: 400 });
     }
     if (!session.liveEndedAt) return NextResponse.json({ error: "Attendance corrections are available after class ends" }, { status: 409 });
-    const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(eq(enrolments.studentId, studentId), eq(enrolments.classId, session.classId))).limit(1);
+    const [enrollment] = await db.select({ id: enrolments.id }).from(enrolments).where(and(eq(enrolments.studentId, studentId), eq(enrolments.classId, session.classId), eq(enrolments.status, "active"))).limit(1);
     if (!enrollment) return NextResponse.json({ error: "Student is not enrolled in this class" }, { status: 404 });
     const checkInAt = parsed.data.checkInAt ?? null;
     const checkOutAt = parsed.data.checkOutAt ?? null;

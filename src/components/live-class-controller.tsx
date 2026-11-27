@@ -94,7 +94,7 @@ export function LiveClassController({ sessions: initialSessions, canManage = tru
     const meetLink = session.meetUrl || "Google Meet";
     const startTime = new Date(session.startsAt).toLocaleString();
     const text =
-      `🎓 *Dream Languages Uganda — Live Class Invitation*\n` +
+      `🎓 *Dream Languages Uganda: Live Class Invitation*\n` +
       `📖 *Subject*: ${session.title}\n` +
       `🌐 *Language/Department*: ${session.departmentName ?? "Languages"}\n` +
       `⏰ *Time*: ${startTime}\n` +
@@ -212,7 +212,7 @@ export function LiveClassController({ sessions: initialSessions, canManage = tru
 
                     <p className="text-xs opacity-75">
                       🗓️ {starts.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} ·{" "}
-                      {starts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} –{" "}
+                      {starts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} to{" "}
                       {ends.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       {session.teacherName ? ` · Instructor: ${session.teacherName}` : ""}
                     </p>
@@ -233,8 +233,6 @@ export function LiveClassController({ sessions: initialSessions, canManage = tru
                     {session.meetUrl && (
                       <a
                         href={`/api/portal/sessions/${session.id}/join`}
-                        target="_blank"
-                        rel="noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-95 transition-opacity"
                       >
                         <span>🎥</span>

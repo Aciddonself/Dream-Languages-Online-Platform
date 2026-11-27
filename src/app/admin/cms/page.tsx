@@ -3,23 +3,31 @@ import { PortalShell } from "@/components/portal-shell";
 import { GlassCard } from "@/components/ui/glass";
 import { db } from "@/db";
 import { cmsPages, newsPosts, partners, teacherRatings, testimonials, users } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { PartnerAdd, PartnerRemove, TeacherRatingDecision } from "@/components/content-controls";
-import { AdminCmsPageCreate, AdminCmsPageEditor, AdminNewsCreate, AdminReviewDecision } from "@/components/admin-cms-controls";
+import { AdminCmsPageCreate, AdminCmsPageEditor, AdminNewsCreate, AdminNewsEditor, AdminReviewDecision } from "@/components/admin-cms-controls";
 import { AnnouncementCreate } from "@/components/announcement-create";
-import { classes } from "@/db/schema";
-import { isNull } from "drizzle-orm";
+import { classes, departments } from "@/db/schema";
+import { AdminSocialLinksForm } from "@/components/admin-social-links-form";
+import { getSocialLinks } from "@/lib/social-links";
+import { CmsMediaLibrary } from "@/components/cms-media-library";
+import { SITE_IMAGE_SLOTS } from "@/lib/site-image-slots";
+import { AdminShopControl } from "@/components/admin-shop-control";
 
-const nav = [{ href: "/admin", label: "Dashboard", icon: "🏠" }, { href: "/admin/cms", label: "CMS", icon: "📝" }, { href: "/admin/sms", label: "Bulk SMS", icon: "✉️" }];
+const nav = [{ href: "/admin", label: "Dashboard", icon: "🏠" }, { href: "/admin/recordings", label: "Class recordings", icon: "🎬" }, { href: "/admin/cms", label: "CMS", icon: "📝" }, { href: "/admin/sms", label: "Bulk SMS", icon: "✉️" }];
 
 export default async function AdminCms() {
   await requireRole(["super_admin"]);
-  const [pages, posts, reviews] = await Promise.all([
+  const [pages, posts, reviews, socialLinks] = await Promise.all([
     db.select().from(cmsPages).orderBy(desc(cmsPages.updatedAt)).limit(50),
     db.select().from(newsPosts).orderBy(desc(newsPosts.createdAt)).limit(50),
     db.select().from(testimonials).orderBy(desc(testimonials.createdAt)).limit(100),
+    getSocialLinks(),
   ]);
-  const schoolClasses = await db.select({ id: classes.id, name: classes.name }).from(classes).where(isNull(classes.deletedAt)).orderBy(classes.name);
+  const [schoolClasses, languages] = await Promise.all([
+    db.select({ id: classes.id, name: classes.name }).from(classes).where(isNull(classes.deletedAt)).orderBy(classes.name),
+    db.select({ id: departments.id, name: departments.name }).from(departments).where(and(isNull(departments.deletedAt), eq(departments.isLanguage, true))).orderBy(departments.name),
+  ]);
   const partnerList = await db.select({ id: partners.id, name: partners.name }).from(partners).orderBy(partners.name);
   const ratingRows = await db
     .select({ id: teacherRatings.id, rating: teacherRatings.rating, comment: teacherRatings.comment, firstName: users.firstName, lastName: users.lastName, displayName: users.displayName })
@@ -39,8 +47,23 @@ export default async function AdminCms() {
           <AdminNewsCreate />
         </GlassCard>
         <GlassCard className="p-5" strong>
+          <h2 className="font-semibold mb-3">Social media pages</h2>
+          <p className="mb-3 text-sm opacity-65">Manage the social links shown beside Legal in the website footer.</p>
+          <AdminSocialLinksForm links={socialLinks} />
+        </GlassCard>
+        <GlassCard className="p-5 lg:col-span-2" strong>
+          <h2 className="font-semibold mb-3">My DLA Shop</h2>
+          <p className="mb-4 text-sm opacity-70">Add products or student artwork, upload photos, set prices and choose which items visitors can see. Visitors can contact DLA to order.</p>
+          <AdminShopControl />
+        </GlassCard>
+        <GlassCard className="p-5 lg:col-span-2" strong>
+          <h2 className="font-semibold mb-2">Website images and media library</h2>
+          <p className="mb-4 text-sm opacity-70">Upload an image, keep it in the library, or publish it into a website image location. New images replace the current image while previous uploads remain available.</p>
+          <CmsMediaLibrary slots={SITE_IMAGE_SLOTS} />
+        </GlassCard>
+        <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">Publish a school announcement</h2>
-          <AnnouncementCreate classes={schoolClasses} allowAll />
+          <AnnouncementCreate classes={schoolClasses} languages={languages} allowAll />
         </GlassCard>
         <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">Create a website page</h2>
@@ -55,14 +78,12 @@ export default async function AdminCms() {
         </GlassCard>
         <GlassCard className="p-5" strong>
           <h2 className="font-semibold mb-3">News and stories ({posts.length})</h2>
-          {posts.length ? <ul className="space-y-2 text-sm">{posts.map((post: { id: string; title: string; status: string }) => (
-            <li className="glass flex items-center justify-between gap-3 px-3 py-2" key={post.id}>
-              <span>{post.title}</span><span className="text-xs opacity-65">{post.status}</span>
-            </li>
-          ))}</ul> : <p className="text-sm opacity-65">No news posts have been added yet.</p>}
+          {posts.length ? <div className="space-y-3">{posts.map((post: { id: string; title: string; slug: string; excerpt: string | null; body: string | null; status: string; coverUrl: string | null }) => (
+            <AdminNewsEditor key={post.id} post={post} />
+          ))}</div> : <p className="text-sm opacity-65">No news posts have been added yet.</p>}
         </GlassCard>
         <GlassCard className="p-5 lg:col-span-2" strong>
-          <h2 className="font-semibold mb-3">Student reviews/comments awaiting approval ({reviews.filter((review: { published: boolean | null }) => !review.published).length})</h2>
+          <h2 className="font-semibold mb-3">Public reviews awaiting approval ({reviews.filter((review: { published: boolean | null }) => !review.published).length})</h2>
           {reviews.filter((review: { published: boolean | null }) => !review.published).length ? (
             <ul className="space-y-3">{reviews.filter((review: { published: boolean | null }) => !review.published).map((review: { id: string; authorName: string; rating?: number | null; quote: string }) => (
               <li className="rounded-xl border border-white/10 p-3" key={review.id}>

@@ -6,23 +6,24 @@ const PROTECTED = ["/admin", "/hoc", "/teacher", "/finance", "/student", "/appli
 const ADMIN_IDLE_MS = 30 * 60 * 1000;
 const isProd = process.env.NODE_ENV === "production";
 
-function buildCsp(nonce: string) {
+function buildCsp() {
   const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const supabaseWs = supabase.replace(/^https:/, "wss:");
-  const script = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'", "https://challenges.cloudflare.com", ...(isProd ? [] : ["'unsafe-eval'"])];
+  const script = ["'self'", "'unsafe-inline'", "https://challenges.cloudflare.com", "https://www.googletagmanager.com", "https://www.googleadservices.com", "https://www.google.com", ...(isProd ? [] : ["'unsafe-eval'"])];
   const connect = [
     "'self'", supabase, supabaseWs,
     "https://fcm.googleapis.com", "https://fcmregistrations.googleapis.com", "https://firebaseinstallations.googleapis.com",
-    "https://challenges.cloudflare.com", ...(isProd ? [] : ["ws:", "http://localhost:*"]),
+    "https://challenges.cloudflare.com", "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://region1.google-analytics.com", "https://analytics.google.com", "https://www.google.com", "https://www.googleadservices.com", "https://googleads.g.doubleclick.net", "https://stats.g.doubleclick.net", "https://pagead2.googlesyndication.com", "https://ad.doubleclick.net", ...(isProd ? [] : ["ws:", "http://localhost:*"]),
   ].filter(Boolean);
   return [
     "default-src 'self'",
     `script-src ${script.join(" ")}`,
+    "script-src-attr 'none'",
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob: https://www.dreamlanguagesug.com https://dreamlanguagesug.com ${supabase}`.trim(),
+    `img-src 'self' data: blob: https://www.dreamlanguagesug.online https://dreamlanguagesug.online https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://stats.g.doubleclick.net ${supabase}`.trim(),
     "font-src 'self' data:",
     `connect-src ${connect.join(" ")}`,
-    "frame-src https://challenges.cloudflare.com",
+    "frame-src https://challenges.cloudflare.com https://www.googletagmanager.com https://www.google.com https://td.doubleclick.net",
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
@@ -50,7 +51,7 @@ export async function proxy(req: NextRequest) {
       const allowed = isAdminPath || pathname.startsWith("/api/") || pathname.startsWith("/_next/");
       if (!allowed) {
         const url = req.nextUrl.clone();
-        url.pathname = "/admin/login";
+        url.pathname = "/admin/sign-in";
         url.search = "";
         return NextResponse.redirect(url);
       }
@@ -59,28 +60,33 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  const nonce = btoa(crypto.randomUUID());
-  const csp = buildCsp(nonce);
+  const csp = buildCsp();
   const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
 
   const protectedArea = PROTECTED.find((p) => pathname === p || pathname.startsWith(`${p}/`));
-  const adminPublicPage = pathname === "/admin/login" || pathname.startsWith("/admin/forgot-password");
+  const adminPublicPage = pathname === "/admin/sign-in" || pathname === "/admin/login" || pathname.startsWith("/admin/forgot-password");
   if (!protectedArea || adminPublicPage) return response;
+
+  // Admin pages validate the Supabase session, database role, and MFA assurance in
+  // requireRole/getSession at the server-render boundary. Avoid a second token
+  // refresh/verification in the proxy, which can race the freshly written MFA
+  // cookies and send a successfully authenticated admin back to sign-in.
+  if (protectedArea === "/admin" && !pathname.startsWith("/api/")) return response;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const loginPath = protectedArea === "/admin" ? "/admin/login" : "/login";
+  const loginPath = protectedArea === "/admin" ? "/admin/sign-in" : "/login";
 
   const loginRedirect = () => {
     const url = req.nextUrl.clone();
     url.pathname = loginPath;
     url.search = "";
     url.searchParams.set("next", pathname);
+    url.searchParams.set("error", "proxy_session_missing");
     return NextResponse.redirect(url);
   };
 
@@ -98,6 +104,9 @@ export async function proxy(req: NextRequest) {
       getAll: () => req.cookies.getAll(),
       setAll(items) {
         for (const { name, value } of items) req.cookies.set(name, value);
+        // Pass refreshed Supabase auth cookies to the route handler and Server Components
+        // for this same request, as well as setting them on the browser response below.
+        requestHeaders.set("cookie", req.cookies.toString());
         response = NextResponse.next({ request: { headers: requestHeaders } });
         response.headers.set("Content-Security-Policy", csp);
         for (const { name, value, options } of items) {

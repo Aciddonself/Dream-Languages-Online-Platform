@@ -1,9 +1,11 @@
-import { and, eq, gte, isNull, or } from "drizzle-orm";
+import { and, asc, count, eq, gte, inArray, isNotNull, isNull, or } from "drizzle-orm";
 import { AttendanceSessionPanel } from "@/components/attendance-session-panel";
+import { AttendanceTrendChart } from "@/components/attendance-trend-chart";
 import { PortalShell } from "@/components/portal-shell";
 import { db } from "@/db";
-import { classes, timetableSessions } from "@/db/schema";
+import { attendance, classes, departments, enrolments, timetableSessions } from "@/db/schema";
 import { requireRole } from "@/lib/rbac";
+import { classAttendanceTrend } from "@/lib/attendance-trends";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +19,11 @@ const nav = [
   { href: "/teacher/live", label: "Live Classes", icon: "🎥" },
 ];
 
-export default async function TeacherAttendancePage() {
+export default async function TeacherAttendancePage({ searchParams }: { searchParams: Promise<{ departmentId?: string }> }) {
   const user = await requireRole(["teacher", "head_academics", "super_admin"]);
+  const { departmentId = "" } = await searchParams;
+  const languageDepartments = await db.select({ id: departments.id, name: departments.name }).from(departments)
+    .where(and(eq(departments.isLanguage, true), isNull(departments.deletedAt))).orderBy(asc(departments.name));
   const sessionFilter = user.role === "teacher"
     ? eq(timetableSessions.teacherId, user.id)
     : undefined;
@@ -28,6 +33,7 @@ export default async function TeacherAttendancePage() {
       id: timetableSessions.id,
       title: timetableSessions.title,
       className: classes.name,
+      departmentName: departments.name,
       startsAt: timetableSessions.startsAt,
       endsAt: timetableSessions.endsAt,
       liveStartedAt: timetableSessions.liveStartedAt,
@@ -38,21 +44,45 @@ export default async function TeacherAttendancePage() {
     })
     .from(timetableSessions)
     .leftJoin(classes, eq(timetableSessions.classId, classes.id))
+    .leftJoin(departments, eq(classes.departmentId, departments.id))
     .where(and(
       gte(timetableSessions.endsAt, since),
       or(isNull(classes.deletedAt), isNull(timetableSessions.classId)),
       sessionFilter,
+      departmentId === "unassigned" ? isNull(classes.departmentId) : departmentId ? eq(classes.departmentId, departmentId) : undefined,
     ))
     .orderBy(timetableSessions.startsAt)
     .limit(30);
+  const completed = await db.select({ id: timetableSessions.id, classId: timetableSessions.classId, startsAt: timetableSessions.startsAt, endsAt: timetableSessions.endsAt })
+    .from(timetableSessions).leftJoin(classes, eq(timetableSessions.classId, classes.id))
+    .where(and(isNotNull(timetableSessions.liveEndedAt), sessionFilter, departmentId === "unassigned" ? isNull(classes.departmentId) : departmentId ? eq(classes.departmentId, departmentId) : undefined));
+  const classIds: string[] = [...new Set<string>(completed.map((session: { classId: string | null }) => session.classId).filter((id: string | null): id is string => Boolean(id)))];
+  const counts: Array<{ classId: string; students: number }> = classIds.length ? await db.select({ classId: enrolments.classId, students: count() }).from(enrolments)
+    .where(and(inArray(enrolments.classId, classIds), eq(enrolments.status, "active"))).groupBy(enrolments.classId) : [];
+  const countByClass = new Map<string, number>(counts.map((item) => [item.classId, item.students]));
+  const completedIds = completed.map((session) => session.id);
+  const records = completedIds.length ? await db.select({ sessionId: attendance.sessionId, studentId: attendance.studentId, status: attendance.status, checkInAt: attendance.checkInAt, checkOutAt: attendance.checkOutAt })
+    .from(attendance).where(inArray(attendance.sessionId, completedIds)) : [];
+  const trend = classAttendanceTrend(completed, records, new Map<string, number>(completed.map((session) => [session.id, session.classId ? countByClass.get(session.classId) ?? 0 : 0])));
   return (
     <PortalShell title="Teacher Portal" nav={nav}>
       <div className="mb-5">
         <h1 className="display-font text-3xl font-bold">Class Attendance</h1>
         <p className="text-sm opacity-65">Start class to record your attendance, monitor student check-ins, and confirm or correct records. The roster never exposes student phone numbers.</p>
       </div>
+      <form method="get" className="mb-5 flex flex-wrap gap-2">
+        <select name="departmentId" defaultValue={departmentId} className="glass min-w-56 px-3 py-2.5">
+          <option value="">All language departments</option>
+          <option value="unassigned">Department unassigned</option>
+          {languageDepartments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+        </select>
+        <button type="submit" className="glass rounded-xl px-4 py-2.5 font-semibold">Filter class attendance</button>
+        {departmentId && <a href={user.role === "teacher" ? "/teacher/attendance" : "/hoc/attendance"} className="glass rounded-xl px-4 py-2.5">Clear</a>}
+      </form>
+      <AttendanceTrendChart title="Class attendance" months={trend} />
       <AttendanceSessionPanel sessions={sessions.map((session) => ({
         ...session,
+        className: session.className ? `${session.departmentName ?? "Unassigned"} · ${session.className}` : session.className,
         startsAt: session.startsAt.toISOString(),
         endsAt: session.endsAt.toISOString(),
         liveStartedAt: session.liveStartedAt?.toISOString() ?? null,

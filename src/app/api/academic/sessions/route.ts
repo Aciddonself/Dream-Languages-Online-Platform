@@ -3,29 +3,33 @@ import { z } from "zod";
 import { db } from "@/db";
 import { classes, timetableSessions, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, or } from "drizzle-orm";
+import { isSupportedMeetingUrl } from "@/lib/meeting-links";
+import { notifySchoolAudience } from "@/lib/notification-delivery";
 
 const schema = z.object({
   title: z.string().trim().min(1).max(160),
   classId: z.string().uuid().optional().or(z.literal("")),
+  departmentId: z.string().uuid().optional().or(z.literal("")),
   teacherId: z.string().uuid().optional().or(z.literal("")),
   startsAt: z.coerce.date(),
   endsAt: z.coerce.date(),
   room: z.string().trim().max(160).optional(),
   meetUrl: z.string().trim().url().optional().or(z.literal("")),
   recurring: z.boolean().default(false),
+  recurrenceCount: z.coerce.number().int().min(2).max(52).default(8),
 }).refine((data) => data.endsAt > data.startsAt, {
   message: "Session end must be after its start",
   path: ["endsAt"],
-}).refine((data) => !data.meetUrl || new URL(data.meetUrl).hostname === "meet.google.com", {
-  message: "Enter a Google Meet URL from meet.google.com",
+}).refine((data) => !data.meetUrl || isSupportedMeetingUrl(data.meetUrl), {
+  message: "Enter a valid Google Meet link (or an existing configured Jitsi room)",
   path: ["meetUrl"],
 });
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  if (!["super_admin", "head_academics", "teacher"].includes(user.role)) {
+  if (!["super_admin", "head_academics", "teacher", "admin"].includes(user.role)) {
     return NextResponse.json({ error: "Academic scheduling access required" }, { status: 403 });
   }
 
@@ -38,42 +42,108 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { title, classId, teacherId, startsAt, endsAt, room, meetUrl, recurring } = parsed.data;
+  const { title, classId, departmentId, teacherId, startsAt, endsAt, room, recurring, recurrenceCount } = parsed.data;
+  let meetUrl = parsed.data.meetUrl || "";
+  if (!meetUrl) {
+    return NextResponse.json({ error: "Create a Google Meet link, then paste it into the meeting link field" }, { status: 400 });
+  }
+  if (departmentId && !classId) {
+    return NextResponse.json({ error: "Choose a class in the selected department, or clear the department filter for a school-wide session" }, { status: 400 });
+  }
+  if (startsAt <= new Date()) {
+    return NextResponse.json({ error: "Choose a future start time for the class" }, { status: 400 });
+  }
+  if (endsAt.getTime() - startsAt.getTime() > 12 * 60 * 60_000) {
+    return NextResponse.json({ error: "A class session cannot be longer than 12 hours" }, { status: 400 });
+  }
+
+  let schoolClass: { id: string; teacherId: string | null; departmentId: string | null } | undefined;
+  if (classId) {
+    [schoolClass] = await db.select({ id: classes.id, teacherId: classes.teacherId, departmentId: classes.departmentId })
+      .from(classes).where(and(eq(classes.id, classId), isNull(classes.deletedAt))).limit(1);
+    if (!schoolClass) return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    if (departmentId && schoolClass.departmentId !== departmentId) {
+      return NextResponse.json({ error: "Choose a class within the selected department" }, { status: 400 });
+    }
+  }
 
   let sessionTeacherId: string | null = null;
-
   if (user.role === "teacher") {
+    if (!schoolClass) {
+      return NextResponse.json({ error: "Select one of your assigned classes before scheduling. If your class list is empty, ask an administrator to assign your account to a class in Admin → Users." }, { status: 400 });
+    }
+    if (schoolClass.teacherId !== user.id) {
+      return NextResponse.json({ error: "You can only schedule your own assigned classes" }, { status: 403 });
+    }
     sessionTeacherId = user.id;
   } else if (teacherId) {
-    // Validate provided teacherId exists and is a teacher or academic head
-    const [assignedTeacher] = await db.select().from(users).where(eq(users.id, teacherId)).limit(1);
-    sessionTeacherId = assignedTeacher?.id ?? user.id;
+    const [assignedTeacher] = await db.select({ id: users.id, role: users.role, status: users.status, deletedAt: users.deletedAt })
+      .from(users).where(eq(users.id, teacherId)).limit(1);
+    if (!assignedTeacher || !["teacher", "head_academics"].includes(assignedTeacher.role)
+      || !["active", "registered"].includes(assignedTeacher.status) || assignedTeacher.deletedAt) {
+      return NextResponse.json({ error: "Choose an active teacher or Head of Academics" }, { status: 400 });
+    }
+    sessionTeacherId = assignedTeacher.id;
+  } else if (schoolClass?.teacherId) {
+    const [assignedTeacher] = await db.select({ id: users.id, role: users.role, status: users.status, deletedAt: users.deletedAt })
+      .from(users).where(eq(users.id, schoolClass.teacherId)).limit(1);
+    if (assignedTeacher && ["teacher", "head_academics"].includes(assignedTeacher.role)
+      && ["active", "registered"].includes(assignedTeacher.status) && !assignedTeacher.deletedAt) {
+      sessionTeacherId = assignedTeacher.id;
+    }
   }
 
-  if (classId) {
-    const [schoolClass] = await db.select().from(classes).where(eq(classes.id, classId)).limit(1);
-    if (!schoolClass) return NextResponse.json({ error: "Class not found" }, { status: 404 });
-    if (user.role === "teacher" && schoolClass.teacherId !== user.id) {
-      return NextResponse.json({ error: "You can only schedule your own classes" }, { status: 403 });
-    }
-    if (!sessionTeacherId) {
-      sessionTeacherId = schoolClass.teacherId ?? user.id;
-    }
+  const assignedTeacherId: string = sessionTeacherId ?? user.id;
+
+  const occurrenceCount = recurring ? recurrenceCount : 1;
+  const occurrences = Array.from({ length: occurrenceCount }, (_, index) => ({
+    startsAt: new Date(startsAt.getTime() + index * 7 * 24 * 60 * 60_000),
+    endsAt: new Date(endsAt.getTime() + index * 7 * 24 * 60 * 60_000),
+  }));
+  const firstStart = occurrences[0].startsAt;
+  const lastEnd = occurrences[occurrences.length - 1].endsAt;
+  const matchingAssignments = [eq(timetableSessions.teacherId, assignedTeacherId)];
+  if (classId) matchingAssignments.push(eq(timetableSessions.classId, classId));
+  const existingSessions = await db.select({ startsAt: timetableSessions.startsAt, endsAt: timetableSessions.endsAt })
+    .from(timetableSessions)
+    .where(and(
+      or(...matchingAssignments),
+      lt(timetableSessions.startsAt, lastEnd),
+      gt(timetableSessions.endsAt, firstStart),
+    ));
+  const hasConflict = occurrences.some((occurrence) => existingSessions.some((existing) =>
+    occurrence.startsAt < existing.endsAt && occurrence.endsAt > existing.startsAt
+  ));
+  if (hasConflict) {
+    return NextResponse.json({ error: "The selected class or teacher already has a session during that time" }, { status: 409 });
   }
 
-  const [session] = await db
+  const sessions = await db
     .insert(timetableSessions)
-    .values({
+    .values(occurrences.map((occurrence) => ({
       title,
       classId: classId || null,
-      teacherId: sessionTeacherId || user.id,
-      startsAt,
-      endsAt,
+      teacherId: assignedTeacherId,
+      startsAt: occurrence.startsAt,
+      endsAt: occurrence.endsAt,
       room: room || null,
       meetUrl: meetUrl || null,
       recurring,
-    })
+    })))
     .returning({ id: timetableSessions.id, title: timetableSessions.title, meetUrl: timetableSessions.meetUrl });
 
-  return NextResponse.json({ ok: true, session }, { status: 201 });
+  let notifiedCount = 0;
+  try {
+    const startLabel = startsAt.toLocaleString("en-UG", { timeZone: "Africa/Kampala" });
+    notifiedCount = await notifySchoolAudience({
+      title: `Class scheduled: ${title}`,
+      body: `${classId ? "Your class" : "A school wide class"} starts ${startLabel}${recurring ? " and continues weekly" : ""}.${meetUrl ? ` Join at ${meetUrl}` : ""}`,
+      audience: classId ? "class" : "all",
+      classId: classId || null,
+      excludeUserId: user.id,
+    });
+  } catch (error) {
+    console.error("Class was scheduled, but notifications could not be delivered", error instanceof Error ? error.message : "unknown error");
+  }
+  return NextResponse.json({ ok: true, session: sessions[0], sessions, createdCount: sessions.length, notifiedCount }, { status: 201 });
 }
